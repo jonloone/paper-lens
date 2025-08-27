@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import ServiceWorkerProvider from '@/components/ServiceWorkerProvider';
+import { CopilotKit } from '@copilotkit/react-core';
+import '@copilotkit/react-ui/styles.css';
 import './globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'NexusOne GeoCore | Intelligence Platform',
@@ -18,10 +17,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} bg-black text-white overflow-hidden`}>
-        <ServiceWorkerProvider>
-          {children}
-        </ServiceWorkerProvider>
+      <body className="text-white font-sans" suppressHydrationWarning>
+        <CopilotKit runtimeUrl="/api/copilot">
+          <ServiceWorkerProvider>
+            {children}
+          </ServiceWorkerProvider>
+        </CopilotKit>
       </body>
     </html>
   );
