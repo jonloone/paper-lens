@@ -84,6 +84,17 @@ export function HomePaper({ onSpawnPaper }: HomePaperProps) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button 
+              onClick={() => onSpawnPaper({
+                type: 'overview',
+                title: 'Configuration Dashboard',
+                componentKey: 'overview-dashboard',
+                initialState: {},
+                workflowId: 'main-dashboard'
+              })}
+              className="px-3 py-1 text-xs bg-purple-500/10 text-purple-400 rounded hover:bg-purple-500/20 transition-colors font-medium">
+              Configuration Dashboard →
+            </button>
             <button className="px-3 py-1 text-xs bg-blue-500/10 text-blue-400 rounded hover:bg-blue-500/20 transition-colors">
               AI Assistant
             </button>

@@ -16,18 +16,26 @@ import {
   SourceConfigurationPaper,
   ModelDevelopmentPaper,
   QualitySetupPaper,
-  DeploymentPipelinePaper
+  DeploymentPipelinePaper,
+  OverviewDashboardPaper,
+  ProcessingConfigurationPaper,
+  QualityConfigurationPaper,
+  OperationsConfigurationPaper
 } from '@/components/papers';
 
 // Paper component registry
 const PAPER_COMPONENTS = {
   'home': HomePaper,
+  'overview-dashboard': OverviewDashboardPaper,
   'error-analysis': ErrorAnalysisPaper,
   'schema-investigation': SchemaInvestigationPaper,
   'fix-planning': FixPlanningPaper,
   'deployment-monitoring': DeploymentMonitoringPaper,
   'product-definition': ProductDefinitionPaper,
   'source-configuration': SourceConfigurationPaper,
+  'processing-configuration': ProcessingConfigurationPaper,
+  'quality-configuration': QualityConfigurationPaper,
+  'operations-configuration': OperationsConfigurationPaper,
   'model-development': ModelDevelopmentPaper,
   'quality-setup': QualitySetupPaper,
   'deployment-pipeline': DeploymentPipelinePaper
