@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedQueryBar } from '@/components/query/UnifiedQueryBar';
 import { QueryResults } from '@/components/query/QueryResults';
 import { QueryActionsBar } from '@/components/query/QueryActionsBar';
-import { DataProductMarketplace } from '@/components/marketplace/DataProductMarketplace';
+import { UnifiedDiscovery } from '@/components/discover/UnifiedDiscovery';
 import { SQLGenerationEngine } from '@/components/data-engineering/SQLGenerationEngine';
 import { DataSourceSelector } from '@/components/data-engineering/DataSourceSelector';
 import { QualityRuleManager } from '@/components/data-engineering/QualityRuleManager';
@@ -132,42 +132,47 @@ export default function DataEngineeringWorkspace() {
           </Card>
         </div>
 
-        {/* Main Workspace Tabs */}
+        {/* Main Workspace Tabs - Lifecycle Flow */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-card/50 border border-border p-1">
             <TabsTrigger value="discover" className="flex items-center gap-2">
               <Search className="h-4 w-4" />
               Discover
             </TabsTrigger>
-            <TabsTrigger value="unified-query" className="flex items-center gap-2">
+            <TabsTrigger value="create" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              Query
+              Create
             </TabsTrigger>
             <TabsTrigger value="products" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
               Products
             </TabsTrigger>
-            <TabsTrigger value="catalog" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Catalog
+            <TabsTrigger value="automate" className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Automate
             </TabsTrigger>
-            <TabsTrigger value="pipelines" className="flex items-center gap-2">
-              <GitBranch className="h-4 w-4" />
-              Pipelines
-            </TabsTrigger>
-            <TabsTrigger value="governance" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Governance
+            <TabsTrigger value="monitor" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Monitor
             </TabsTrigger>
           </TabsList>
 
-          {/* Discover Tab - Data Product Marketplace */}
+          {/* Discover Tab - Unified Discovery */}
           <TabsContent value="discover" className="space-y-6">
-            <DataProductMarketplace />
+            <UnifiedDiscovery 
+              onSelectAsset={(asset) => {
+                console.log('Selected asset:', asset);
+                setActiveTab('create');
+              }}
+              onCreateProduct={(table) => {
+                console.log('Create product from table:', table);
+                setActiveTab('create');
+              }}
+            />
           </TabsContent>
 
-          {/* Unified Query Tab */}
-          <TabsContent value="unified-query" className="space-y-6">
+          {/* Create Tab - Development Environment */}
+          <TabsContent value="create" className="space-y-6">
             {/* Unified Query Bar */}
             <UnifiedQueryBar 
               onQueryExecute={setQueryResult}
@@ -219,63 +224,46 @@ export default function DataEngineeringWorkspace() {
             )}
           </TabsContent>
 
-          <TabsContent value="sql-generation" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Data Source Selection */}
-              <DataSourceSelector onTablesSelected={setSelectedTables} />
-              
-              {/* SQL Generation */}
-              <SQLGenerationEngine 
-                selectedTables={selectedTables}
-                onSQLGenerated={setGeneratedSQL}
-              />
-            </div>
-
-            {/* Workflow Actions */}
-            {generatedSQL && (
-              <Card className="bg-card/50 border-border">
-                <CardHeader>
-                  <CardTitle className="text-foreground">Next Steps</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-4">
-                    <Button className="flex items-center gap-2">
-                      <Play className="h-4 w-4" />
-                      Run Query
-                    </Button>
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <GitBranch className="h-4 w-4" />
-                      Create Pipeline
-                    </Button>
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Add Quality Rules
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="data-sources">
-            <Card className="bg-card/50 border-border">
-              <CardContent className="p-8 text-center text-gray-400">
-                <Database className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Data source management interface coming soon...</p>
+          {/* Products Tab - Portfolio Management */}
+          <TabsContent value="products" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Data Products</CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Product portfolio management coming soon...</p>
+                <p className="text-sm mt-2">Manage versions, monitor usage, and handle deprecation</p>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="quality-rules">
-            <QualityRuleManager />
+          {/* Automate Tab - Pipeline Orchestration */}
+          <TabsContent value="automate" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Automation Hub</CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Zap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Pipeline orchestration and scheduling coming soon...</p>
+                <p className="text-sm mt-2">Create workflows, manage schedules, and monitor execution</p>
+              </CardContent>
+            </Card>
           </TabsContent>
 
-          <TabsContent value="pipelines">
-            <PerformanceChart />
-          </TabsContent>
-
-          <TabsContent value="ingestion">
-            <DataIngestionWorkflow />
+          {/* Monitor Tab - Governance & Observability */}
+          <TabsContent value="monitor" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Monitoring Dashboard</CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Quality metrics and governance dashboard coming soon...</p>
+                <p className="text-sm mt-2">Monitor data quality, track compliance, and manage alerts</p>
+              </CardContent>
+            </Card>
           </TabsContent>
 
         </Tabs>
