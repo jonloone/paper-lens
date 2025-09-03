@@ -3,8 +3,9 @@
 import '@/styles/workspace.css';
 import '@/styles/typography.css';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { datadogService } from '@/lib/services/DatadogIntegrationService';
 import { UnifiedQueryBar } from '@/components/query/UnifiedQueryBar';
 import { QueryResults } from '@/components/query/QueryResults';
 import { QueryActionsBar } from '@/components/query/QueryActionsBar';
@@ -18,6 +19,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { PerformanceChart } from '@/components/visualization/PerformanceChart';
 import { AgentStatusBadge } from '@/components/agents/AgentStatusIndicator';
 import { NexusOneLogo } from '@/components/ui/logo';
+import { DatadogDashboard } from '@/components/monitoring/DatadogDashboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,22 +48,43 @@ export default function DataEngineeringWorkspace() {
   const [generatedSQL, setGeneratedSQL] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [queryResult, setQueryResult] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('unified-query');
+  const [activeTab, setActiveTab] = useState('discover');
+  const [metrics, setMetrics] = useState<any>(null);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+
+  // Fetch metrics from Datadog on mount and periodically
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const data = await datadogService.getAllMetrics();
+        setMetrics(data);
+        setMetricsLoading(false);
+      } catch (error) {
+        console.error('Failed to fetch metrics:', error);
+        setMetricsLoading(false);
+      }
+    };
+
+    fetchMetrics();
+    const interval = setInterval(fetchMetrics, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background">
-      {/* Header */}
-      <header className="border-b border-border bg-background/80 backdrop-blur-sm px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
+      {/* Header with Navigation */}
+      <header className="border-b border-border bg-background/80 backdrop-blur-sm">
+        <div className="px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <NexusOneLogo className="h-7 text-foreground" />
-            <Badge variant="outline" className="text-blue-400 border-blue-400/30">
+            <Badge variant="outline" className="text-blue-400 border-blue-400/30 text-xs">
               Data Engineering Platform
             </Badge>
-            <AgentStatusBadge />
           </div>
           
           <div className="flex items-center gap-4">
+            <AgentStatusBadge />
             <ThemeToggle />
             <Button 
               variant="ghost" 
@@ -77,9 +100,52 @@ export default function DataEngineeringWorkspace() {
             </div>
           </div>
         </div>
+        
+        {/* Navigation Tabs in Header */}
+        <div className="px-6 pb-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="h-12 bg-transparent border-0 p-0 rounded-none">
+              <TabsTrigger 
+                value="discover" 
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-6 flex items-center gap-2"
+              >
+                <Search className="h-4 w-4" />
+                Discover
+              </TabsTrigger>
+              <TabsTrigger 
+                value="create" 
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-6 flex items-center gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Create
+              </TabsTrigger>
+              <TabsTrigger 
+                value="products" 
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-6 flex items-center gap-2"
+              >
+                <Package className="h-4 w-4" />
+                Products
+              </TabsTrigger>
+              <TabsTrigger 
+                value="automate" 
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-6 flex items-center gap-2"
+              >
+                <Zap className="h-4 w-4" />
+                Automate
+              </TabsTrigger>
+              <TabsTrigger 
+                value="monitor" 
+                className="data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-blue-500 rounded-none px-6 flex items-center gap-2"
+              >
+                <Activity className="h-4 w-4" />
+                Monitor
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </header>
 
-      {/* Main Content */}
+      {/* Main Content */>
       <div className="container mx-auto px-6 py-8">
         {/* Stats Bar */}
         <div className="grid grid-cols-4 gap-4 mb-8">
@@ -88,7 +154,9 @@ export default function DataEngineeringWorkspace() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Active Pipelines</p>
-                  <p className="text-2xl font-bold text-foreground">247</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {metricsLoading ? '...' : metrics?.pipeline?.activePipelines || 0}
+                  </p>
                 </div>
                 <Activity className="h-8 w-8 text-green-400" />
               </div>
@@ -100,7 +168,9 @@ export default function DataEngineeringWorkspace() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Data Quality</p>
-                  <p className="text-2xl font-bold text-foreground">94%</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {metricsLoading ? '...' : `${Math.round(metrics?.quality?.overallScore || 0)}%`}
+                  </p>
                 </div>
                 <Shield className="h-8 w-8 text-blue-400" />
               </div>
@@ -112,7 +182,9 @@ export default function DataEngineeringWorkspace() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Processing Speed</p>
-                  <p className="text-2xl font-bold text-foreground">1.2TB/h</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {metricsLoading ? '...' : metrics?.processing?.throughput || '0TB/h'}
+                  </p>
                 </div>
                 <Zap className="h-8 w-8 text-yellow-400" />
               </div>
@@ -124,7 +196,9 @@ export default function DataEngineeringWorkspace() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Team Members</p>
-                  <p className="text-2xl font-bold text-foreground">12</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {metricsLoading ? '...' : metrics?.team?.totalMembers || 0}
+                  </p>
                 </div>
                 <Users className="h-8 w-8 text-purple-400" />
               </div>
@@ -132,30 +206,8 @@ export default function DataEngineeringWorkspace() {
           </Card>
         </div>
 
-        {/* Main Workspace Tabs - Lifecycle Flow */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-card/50 border border-border p-1">
-            <TabsTrigger value="discover" className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Discover
-            </TabsTrigger>
-            <TabsTrigger value="create" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              Create
-            </TabsTrigger>
-            <TabsTrigger value="products" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Products
-            </TabsTrigger>
-            <TabsTrigger value="automate" className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              Automate
-            </TabsTrigger>
-            <TabsTrigger value="monitor" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Monitor
-            </TabsTrigger>
-          </TabsList>
+        {/* Main Workspace Content */}
+        <Tabs value={activeTab} className="space-y-6">
 
           {/* Discover Tab - Unified Discovery */}
           <TabsContent value="discover" className="space-y-6">
@@ -254,19 +306,11 @@ export default function DataEngineeringWorkspace() {
 
           {/* Monitor Tab - Governance & Observability */}
           <TabsContent value="monitor" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Monitoring Dashboard</CardTitle>
-              </CardHeader>
-              <CardContent className="p-8 text-center text-muted-foreground">
-                <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Quality metrics and governance dashboard coming soon...</p>
-                <p className="text-sm mt-2">Monitor data quality, track compliance, and manage alerts</p>
-              </CardContent>
-            </Card>
+            <DatadogDashboard />
           </TabsContent>
 
         </Tabs>
+      </div>
       </div>
       
       {/* Settings Modal */}
