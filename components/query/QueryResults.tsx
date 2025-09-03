@@ -51,6 +51,12 @@ import {
   ToggleLeft,
   ArrowUpDown,
   Search,
+  Eye,
+  Database,
+  DollarSign,
+  Clock,
+  Shield,
+  Maximize2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,6 +79,8 @@ interface QueryResultsProps {
         score: number;
         issues?: string[];
       };
+      detectedEntities?: string[];
+      hasPII?: boolean;
     }>;
   };
   executionTime?: number;
@@ -80,6 +88,18 @@ interface QueryResultsProps {
   truncated?: boolean;
   onExport?: (format: 'csv' | 'json' | 'parquet') => void;
   onColumnAnalyze?: (columnName: string) => void;
+  // New preview-related props
+  isPreview?: boolean;
+  samplingRate?: number;
+  estimatedCost?: number;
+  estimatedSize?: number;
+  recommendations?: Array<{
+    type: 'performance' | 'quality' | 'cost' | 'governance';
+    message: string;
+    action?: string;
+  }>;
+  onLoadFull?: () => void;
+  canLoadFull?: boolean;
 }
 
 export function QueryResults({
@@ -90,6 +110,13 @@ export function QueryResults({
   truncated,
   onExport,
   onColumnAnalyze,
+  isPreview,
+  samplingRate,
+  estimatedCost,
+  estimatedSize,
+  recommendations,
+  onLoadFull,
+  canLoadFull,
 }: QueryResultsProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -146,6 +173,24 @@ export function QueryResults({
                 <span className="text-yellow-600">Quality: {Math.round(quality.score * 100)}%</span>
               </div>
             )}
+            
+            {col.hasPII && (
+              <div className="flex items-center gap-1 text-xs">
+                <Shield className="h-3 w-3 text-red-500" />
+                <span className="text-red-600">Contains PII</span>
+              </div>
+            )}
+            
+            {col.detectedEntities && col.detectedEntities.length > 0 && (
+              <div className="flex items-center gap-1 text-xs">
+                <Badge variant="outline" className="text-xs">
+                  {col.detectedEntities[0]}
+                </Badge>
+                {col.detectedEntities.length > 1 && (
+                  <span className="text-muted-foreground">+{col.detectedEntities.length - 1}</span>
+                )}
+              </div>
+            )}
           </div>
         );
       },
@@ -190,6 +235,94 @@ export function QueryResults({
 
   return (
     <Card className="w-full">
+      {/* Preview Mode Banner */}
+      {isPreview && (
+        <div className="border-b border-border bg-muted/50 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-blue-500" />
+                <span className="font-semibold">Preview Mode</span>
+                {samplingRate && samplingRate < 1 && (
+                  <Badge variant="outline" className="ml-2">
+                    {Math.round(samplingRate * 100)}% Sample
+                  </Badge>
+                )}
+              </div>
+              
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                {estimatedCost !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="h-4 w-4" />
+                    <span>Est. Cost: ${estimatedCost.toFixed(2)}</span>
+                  </div>
+                )}
+                {estimatedSize !== undefined && (
+                  <div className="flex items-center gap-1">
+                    <Database className="h-4 w-4" />
+                    <span>Est. Size: {formatBytes(estimatedSize)}</span>
+                  </div>
+                )}
+                {rowCount && rowCount > data.length && (
+                  <div className="flex items-center gap-1">
+                    <span>Showing {data.length.toLocaleString()} of {rowCount.toLocaleString()} rows</span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {onLoadFull && canLoadFull && (
+              <Button 
+                onClick={onLoadFull}
+                className="gap-2"
+                variant="default"
+              >
+                <Maximize2 className="h-4 w-4" />
+                Load Full Results
+              </Button>
+            )}
+          </div>
+          
+          {/* Recommendations */}
+          {recommendations && recommendations.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <div className="text-sm font-medium">Recommendations:</div>
+              <div className="space-y-2">
+                {recommendations.map((rec, idx) => (
+                  <div 
+                    key={idx}
+                    className={cn(
+                      "flex items-start gap-2 rounded-lg border p-2 text-sm",
+                      rec.type === 'governance' && "border-red-200 bg-red-50",
+                      rec.type === 'cost' && "border-yellow-200 bg-yellow-50",
+                      rec.type === 'quality' && "border-blue-200 bg-blue-50",
+                      rec.type === 'performance' && "border-green-200 bg-green-50"
+                    )}
+                  >
+                    {rec.type === 'governance' && <Shield className="h-4 w-4 text-red-500 mt-0.5" />}
+                    {rec.type === 'cost' && <DollarSign className="h-4 w-4 text-yellow-600 mt-0.5" />}
+                    {rec.type === 'quality' && <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5" />}
+                    {rec.type === 'performance' && <TrendingUp className="h-4 w-4 text-green-500 mt-0.5" />}
+                    <div className="flex-1">
+                      <span>{rec.message}</span>
+                      {rec.action && (
+                        <Button 
+                          variant="link" 
+                          className="h-auto p-0 ml-2 text-xs"
+                          onClick={() => console.log('Action:', rec.action)}
+                        >
+                          {rec.action}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -403,6 +536,13 @@ export function QueryResults({
 }
 
 // Helper functions
+function formatBytes(bytes: number): string {
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  if (bytes === 0) return '0 B';
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+}
+
 function getTypeIcon(type: string) {
   switch (type.toLowerCase()) {
     case 'string':

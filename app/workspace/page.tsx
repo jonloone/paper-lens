@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedQueryBar } from '@/components/query/UnifiedQueryBar';
 import { QueryResults } from '@/components/query/QueryResults';
 import { QueryActionsBar } from '@/components/query/QueryActionsBar';
+import { DataProductMarketplace } from '@/components/marketplace/DataProductMarketplace';
 import { SQLGenerationEngine } from '@/components/data-engineering/SQLGenerationEngine';
 import { DataSourceSelector } from '@/components/data-engineering/DataSourceSelector';
 import { QualityRuleManager } from '@/components/data-engineering/QualityRuleManager';
@@ -32,7 +33,12 @@ import {
   GitBranch,
   Users,
   Terminal,
-  Package
+  Package,
+  Search,
+  Star,
+  TrendingUp,
+  Clock,
+  Filter
 } from 'lucide-react';
 
 export default function DataEngineeringWorkspace() {
@@ -129,31 +135,36 @@ export default function DataEngineeringWorkspace() {
         {/* Main Workspace Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-card/50 border border-border p-1">
+            <TabsTrigger value="discover" className="flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Discover
+            </TabsTrigger>
             <TabsTrigger value="unified-query" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
-              Unified Query
+              Query
             </TabsTrigger>
-            <TabsTrigger value="sql-generation" className="flex items-center gap-2">
-              <Terminal className="h-4 w-4" />
-              SQL Generation
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Products
             </TabsTrigger>
-            <TabsTrigger value="data-sources" className="flex items-center gap-2">
+            <TabsTrigger value="catalog" className="flex items-center gap-2">
               <Database className="h-4 w-4" />
-              Data Sources
-            </TabsTrigger>
-            <TabsTrigger value="quality-rules" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Quality Rules
+              Catalog
             </TabsTrigger>
             <TabsTrigger value="pipelines" className="flex items-center gap-2">
               <GitBranch className="h-4 w-4" />
               Pipelines
             </TabsTrigger>
-            <TabsTrigger value="ingestion" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
-              Data Ingestion
+            <TabsTrigger value="governance" className="flex items-center gap-2">
+              <Shield className="h-4 w-4" />
+              Governance
             </TabsTrigger>
           </TabsList>
+
+          {/* Discover Tab - Data Product Marketplace */}
+          <TabsContent value="discover" className="space-y-6">
+            <DataProductMarketplace />
+          </TabsContent>
 
           {/* Unified Query Tab */}
           <TabsContent value="unified-query" className="space-y-6">
