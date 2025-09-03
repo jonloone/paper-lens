@@ -174,23 +174,25 @@ export function UnifiedQueryBar({
         })
       });
       
-      // For now, create mock results
+      // For now, create mock results with preview metadata
       const mockResults: QueryResult = {
         data: [
           { customer_id: '1', email: 'john@example.com', churn_risk: 0.75, last_login: '2024-01-15' },
           { customer_id: '2', email: 'jane@example.com', churn_risk: 0.32, last_login: '2024-02-28' },
           { customer_id: '3', email: 'bob@example.com', churn_risk: 0.89, last_login: '2023-12-01' },
+          { customer_id: '4', email: 'alice@example.com', churn_risk: 0.45, last_login: '2024-03-10' },
+          { customer_id: '5', email: 'charlie@example.com', churn_risk: 0.61, last_login: '2024-02-20' },
         ],
         schema: {
           columns: [
-            { name: 'customer_id', type: 'STRING' },
-            { name: 'email', type: 'STRING' },
-            { name: 'churn_risk', type: 'FLOAT' },
-            { name: 'last_login', type: 'DATE' }
+            { name: 'customer_id', type: 'STRING', isPII: false },
+            { name: 'email', type: 'STRING', isPII: true, piiType: 'EMAIL' },
+            { name: 'churn_risk', type: 'FLOAT', isPII: false },
+            { name: 'last_login', type: 'DATE', isPII: false }
           ]
         },
         executionTime: 234,
-        rowCount: 3,
+        rowCount: 5,
         truncated: false,
         cost: { estimated: '$0.02', actual: null },
         metadata: {
@@ -198,7 +200,24 @@ export function UnifiedQueryBar({
           timestamp: new Date().toISOString()
         },
         sql: sqlToExecute,
-        naturalLanguage: mode === 'natural' ? query : undefined
+        naturalLanguage: mode === 'natural' ? query : undefined,
+        // Preview mode metadata
+        samplingRate: 0.1, // 10% sample
+        estimatedCost: 4.25, // Full query cost estimate
+        estimatedSize: 2147483648, // 2GB estimated full size
+        governanceRecommendations: [
+          {
+            type: 'pii_detected',
+            severity: 'medium',
+            message: 'PII detected in email column. Consider applying data masking.',
+            columns: ['email']
+          },
+          {
+            type: 'cost_warning',
+            severity: 'low',
+            message: 'Full query estimated at $4.25. Consider adding filters to reduce cost.',
+          }
+        ]
       };
       
       setLastResults(mockResults);

@@ -3,9 +3,8 @@
 import '@/styles/workspace.css';
 import '@/styles/typography.css';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { datadogService } from '@/lib/services/DatadogIntegrationService';
 import { UnifiedQueryBar } from '@/components/query/UnifiedQueryBar';
 import { QueryResults } from '@/components/query/QueryResults';
 import { QueryActionsBar } from '@/components/query/QueryActionsBar';
@@ -49,27 +48,6 @@ export default function DataEngineeringWorkspace() {
   const [showSettings, setShowSettings] = useState(false);
   const [queryResult, setQueryResult] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('discover');
-  const [metrics, setMetrics] = useState<any>(null);
-  const [metricsLoading, setMetricsLoading] = useState(true);
-
-  // Fetch metrics from Datadog on mount and periodically
-  useEffect(() => {
-    const fetchMetrics = async () => {
-      try {
-        const data = await datadogService.getAllMetrics();
-        setMetrics(data);
-        setMetricsLoading(false);
-      } catch (error) {
-        console.error('Failed to fetch metrics:', error);
-        setMetricsLoading(false);
-      }
-    };
-
-    fetchMetrics();
-    const interval = setInterval(fetchMetrics, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted to-background">
@@ -145,67 +123,8 @@ export default function DataEngineeringWorkspace() {
         </div>
       </header>
 
-      {/* Main Content */>
-      <div className="container mx-auto px-6 py-8">
-        {/* Stats Bar */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <Card className="bg-card/50 border-border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Active Pipelines</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {metricsLoading ? '...' : metrics?.pipeline?.activePipelines || 0}
-                  </p>
-                </div>
-                <Activity className="h-8 w-8 text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-card/50 border-border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Data Quality</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {metricsLoading ? '...' : `${Math.round(metrics?.quality?.overallScore || 0)}%`}
-                  </p>
-                </div>
-                <Shield className="h-8 w-8 text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-card/50 border-border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Processing Speed</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {metricsLoading ? '...' : metrics?.processing?.throughput || '0TB/h'}
-                  </p>
-                </div>
-                <Zap className="h-8 w-8 text-yellow-400" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-card/50 border-border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-400">Team Members</p>
-                  <p className="text-2xl font-bold text-foreground">
-                    {metricsLoading ? '...' : metrics?.team?.totalMembers || 0}
-                  </p>
-                </div>
-                <Users className="h-8 w-8 text-purple-400" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-8 pb-24">
         {/* Main Workspace Content */}
         <Tabs value={activeTab} className="space-y-6">
 
@@ -246,6 +165,11 @@ export default function DataEngineeringWorkspace() {
                   executionTime={queryResult.executionTime}
                   rowCount={queryResult.rowCount}
                   truncated={queryResult.truncated}
+                  isPreview={true}
+                  samplingRate={queryResult.samplingRate || 0.1}
+                  estimatedCost={queryResult.estimatedCost || 2.45}
+                  estimatedSize={queryResult.estimatedSize || 1073741824}
+                  governanceRecommendations={queryResult.governanceRecommendations}
                   onExport={(format) => {
                     console.log('Exporting as:', format);
                   }}
@@ -310,7 +234,6 @@ export default function DataEngineeringWorkspace() {
           </TabsContent>
 
         </Tabs>
-      </div>
       </div>
       
       {/* Settings Modal */}
