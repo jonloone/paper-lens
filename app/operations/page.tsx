@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -79,7 +80,8 @@ import {
   MoreHorizontal,
   Info,
   Cpu,
-  HardDrive
+  HardDrive,
+  GitBranch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -143,6 +145,7 @@ interface Pipeline {
 // Health indicator helper type
 interface HealthIndicatorProps {
   runs: Pipeline['recentRuns'];
+  mounted?: boolean;
 }
 
 // Mock data representing real API responses with realistic data structure
@@ -153,7 +156,7 @@ const mockPipelines: Pipeline[] = [
     name: 'customer_360',
     status: 'failed',
     schedule: 'Every 30 min',
-    owner: 'data-team',
+    team: 'data-team',
     environment: 'prod',
     domain: 'data',
     lastRun: new Date(Date.now() - 2700000),
@@ -253,29 +256,16 @@ const mockPipelines: Pipeline[] = [
     name: 'user_metrics',
     status: 'running',
     schedule: 'Hourly',
-    owner: 'data-team',
+    team: 'Data Engineering',
     environment: 'prod',
     domain: 'analytics',
     lastRun: new Date(Date.now() - 1800000),
-    performance: {
-      avgThisWeek: 1500000, // 25 minutes
-      avgLastWeek: 1440000, // 24 minutes
-      percentChange: 4.2
-    },
-    recentRuns: [
-      { timestamp: new Date(Date.now() - 1800000), success: true, duration: 1520000 },
-      { timestamp: new Date(Date.now() - 5400000), success: true, duration: 1480000 },
-      { timestamp: new Date(Date.now() - 9000000), success: true, duration: 1500000 },
-      { timestamp: new Date(Date.now() - 12600000), success: true, duration: 1510000 },
-      { timestamp: new Date(Date.now() - 16200000), success: true, duration: 1490000 }
-    ],
-    costEstimate: {
-      dailyAvg: 89.60,
-      lastRun: 3.85,
-      gbScanned: 770,
-      partitions: 192,
-      trend: 'stable'
-    },
+    avgRuntime: '25m',
+    trend: 'stable',
+    recentRuns: [true, true, false, true, true, true, true, false, true, true],
+    queryComplexity: 'High',
+    dataScanned: 770,
+    partitionsAccessed: 192,
     currentResources: {
       activeTasks: 12,
       memoryMB: 18432, // 18GB - high usage
@@ -298,33 +288,30 @@ const mockPipelines: Pipeline[] = [
     name: 'fraud_detection',
     status: 'running',
     schedule: 'Every 5 min',
-    owner: 'security-team',
+    team: 'Security',
     environment: 'prod',
     domain: 'security',
     lastRun: new Date(Date.now() - 180000),
-    performance: {
-      avgThisWeek: 180000, // 3 minutes
-      avgLastWeek: 185000,
-      percentChange: -2.7
-    },
-    recentRuns: [
-      { timestamp: new Date(Date.now() - 180000), success: true, duration: 175000 },
-      { timestamp: new Date(Date.now() - 480000), success: true, duration: 182000 },
-      { timestamp: new Date(Date.now() - 780000), success: true, duration: 178000 },
-      { timestamp: new Date(Date.now() - 1080000), success: true, duration: 180000 },
-      { timestamp: new Date(Date.now() - 1380000), success: true, duration: 185000 }
-    ],
-    costEstimate: {
-      dailyAvg: 18.20,
-      lastRun: 0.85,
-      gbScanned: 170,
-      partitions: 24,
-      trend: 'decreasing'
-    },
+    avgRuntime: '3m',
+    trend: 'stable',
+    recentRuns: [true, true, true, true, true, true, true, true, true, true],
+    queryComplexity: 'Medium',
+    dataScanned: 170,
+    partitionsAccessed: 24,
     currentResources: {
       activeTasks: 2,
       memoryMB: 2048,
       cpuCores: 1
+    },
+    lineage: {
+      upstream: [
+        { name: 'transaction_stream', type: 'stream' },
+        { name: 'user_profiles', type: 'table' }
+      ],
+      downstream: [
+        { name: 'fraud_alerts', type: 'table' },
+        { name: 'security_dashboard', type: 'view' }
+      ]
     }
   },
   // Daily pipeline
@@ -333,65 +320,76 @@ const mockPipelines: Pipeline[] = [
     name: 'marketing_attribution',
     status: 'scheduled',
     schedule: 'Daily at 00:00',
-    owner: 'marketing-team',
+    team: 'Marketing Analytics',
     environment: 'prod',
     domain: 'marketing',
     lastRun: new Date(Date.now() - 7200000),
-    performance: {
-      avgThisWeek: 2700000, // 45 minutes
-      avgLastWeek: 2640000, // 44 minutes
-      percentChange: 2.3
-    },
-    recentRuns: [
-      { timestamp: new Date(Date.now() - 7200000), success: true, duration: 2720000 },
-      { timestamp: new Date(Date.now() - 93600000), success: true, duration: 2680000 },
-      { timestamp: new Date(Date.now() - 180000000), success: true, duration: 2700000 },
-      { timestamp: new Date(Date.now() - 266400000), success: true, duration: 2650000 },
-      { timestamp: new Date(Date.now() - 352800000), success: true, duration: 2710000 }
-    ],
-    costEstimate: {
-      dailyAvg: 45.80,
-      lastRun: 47.20,
-      gbScanned: 9440,
-      partitions: 365,
-      trend: 'stable'
+    avgRuntime: '45m',
+    trend: 'increasing',
+    recentRuns: [true, true, true, false, true, true, true, true, false, true],
+    queryComplexity: 'Intensive',
+    dataScanned: 1250,
+    partitionsAccessed: 340,
+    lineage: {
+      upstream: [
+        { name: 'campaign_data', type: 'table' },
+        { name: 'user_touchpoints', type: 'table' },
+        { name: 'conversion_events', type: 'stream' }
+      ],
+      downstream: [
+        { name: 'attribution_model', type: 'table' },
+        { name: 'marketing_dashboard', type: 'view' },
+        { name: 'campaign_performance', type: 'dashboard' }
+      ]
     }
   }
 ];
 
 // Add more realistic pipelines for comprehensive view
 for (let i = 1; i <= 20; i++) {
-  const avgDuration = (10 + Math.floor(Math.random() * 30)) * 60000; // Convert to ms
-  const recentRuns = Array.from({ length: 5 }, (_, j) => ({
-    timestamp: new Date(Date.now() - (j + 1) * Math.random() * 86400000),
-    success: Math.random() > 0.15, // 85% success rate
-    duration: avgDuration + (Math.random() - 0.5) * avgDuration * 0.3
-  }));
+  const avgMinutes = 5 + Math.floor(Math.random() * 45); // 5-50 minutes
+  const avgRuntime = avgMinutes < 60 ? `${avgMinutes}m` : `${Math.floor(avgMinutes / 60)}h ${avgMinutes % 60}m`;
+  const recentRuns = Array.from({ length: 5 }, () => Math.random() > 0.2); // 80% success rate
+  const complexities: Array<'Low' | 'Medium' | 'High' | 'Intensive'> = ['Low', 'Medium', 'High', 'Intensive'];
 
   mockPipelines.push({
     id: `pipeline_${i}_v1`,
     name: `pipeline_${i}`,
     status: i % 4 === 0 ? 'running' : i % 7 === 0 ? 'failed' : 'idle',
     schedule: i % 5 === 0 ? 'Hourly' : 'Daily',
-    owner: `team-${Math.floor(i / 5)}`,
+    team: `team-${Math.floor(i / 5)}`,
     environment: 'prod',
     domain: ['analytics', 'finance', 'marketing', 'operations', 'sales'][i % 5],
     lastRun: new Date(Date.now() - Math.random() * 86400000),
-    performance: {
-      avgThisWeek: avgDuration,
-      avgLastWeek: avgDuration * (0.9 + Math.random() * 0.2),
-      percentChange: (Math.random() - 0.5) * 40
-    },
+    avgRuntime,
+    trend: ['stable', 'increasing', 'decreasing'][Math.floor(Math.random() * 3)] as 'stable' | 'increasing' | 'decreasing',
     recentRuns,
-    costEstimate: {
-      dailyAvg: 5 + Math.random() * 50,
-      lastRun: 0.5 + Math.random() * 10,
-      gbScanned: Math.floor(50 + Math.random() * 1000),
-      partitions: Math.floor(10 + Math.random() * 100),
-      trend: ['increasing', 'stable', 'decreasing'][Math.floor(Math.random() * 3)] as 'increasing' | 'stable' | 'decreasing'
+    queryComplexity: complexities[Math.floor(Math.random() * complexities.length)],
+    dataScanned: Math.floor(50 + Math.random() * 1000),
+    partitionsAccessed: Math.floor(10 + Math.random() * 100),
+    lineage: {
+      upstream: [
+        { name: `source_data_${i}`, type: 'table' },
+        { name: `raw_events_${Math.floor(i/3)}`, type: i % 3 === 0 ? 'stream' : 'table' }
+      ],
+      downstream: [
+        { name: `processed_${i}`, type: 'table' },
+        { name: `dashboard_${Math.floor(i/2)}`, type: i % 2 === 0 ? 'view' : 'dashboard' }
+      ]
     }
   });
 }
+
+// Helper functions
+const getComplexityVariant = (complexity: string) => {
+  switch (complexity) {
+    case 'Low': return 'secondary';
+    case 'Medium': return 'default';
+    case 'High': return 'destructive';
+    case 'Intensive': return 'destructive';
+    default: return 'outline';
+  }
+};
 
 // Helper components
 const StatusBadge: React.FC<{ status: Pipeline['status'] }> = ({ status }) => {
@@ -419,39 +417,32 @@ const StatusBadge: React.FC<{ status: Pipeline['status'] }> = ({ status }) => {
   );
 };
 
-const HealthIndicator: React.FC<HealthIndicatorProps> = ({ runs }) => {
-  const successCount = runs.filter(run => run.success).length;
+const HealthIndicator: React.FC<HealthIndicatorProps> = ({ runs, mounted = true }) => {
+  const successCount = runs.filter(success => success).length;
   
   return (
     <div className="flex items-center gap-2">
       <div className="flex gap-0.5">
-        {runs.slice(0, 5).map((run, i) => (
-          <Tooltip key={i}>
-            <TooltipTrigger>
-              <div
-                className={cn(
-                  "h-4 w-1 rounded-full",
-                  run.success ? "bg-green-500" : "bg-red-500"
-                )}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{run.success ? 'Success' : 'Failed'}</p>
-              <p>{new Date(run.timestamp).toLocaleString()}</p>
-              <p>Duration: {Math.round(run.duration / 60000)}m</p>
-              {run.error && <p>Error: {run.error}</p>}
-            </TooltipContent>
-          </Tooltip>
+        {runs.map((success, i) => (
+          <div
+            key={i}
+            className={cn(
+              "h-4 w-1",
+              success ? "bg-green-500" : "bg-red-500"
+            )}
+            title={success ? 'Success' : 'Failed'}
+          />
         ))}
       </div>
       <span className="text-xs text-muted-foreground">
-        {successCount}/{Math.min(runs.length, 5)}
+        {successCount}/{runs.length}
       </span>
     </div>
   );
 };
 
 export default function PipelineHealthMonitor() {
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [domainFilter, setDomainFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -459,8 +450,14 @@ export default function PipelineHealthMonitor() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
   const [hoveredPipeline, setHoveredPipeline] = useState<Pipeline | null>(null);
+  const [mounted, setMounted] = useState(false);
   const statusBarRef = useRef<HTMLDivElement>(null);
   const pipelineRefs = useRef<{ [key: string]: HTMLTableRowElement | null }>({});
+
+  // Fix hydration issues by only rendering time-sensitive content after mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Filter and sort pipelines
   const filteredPipelines = useMemo(() => {
@@ -599,6 +596,8 @@ export default function PipelineHealthMonitor() {
   };
 
   const formatRelativeTime = (date: Date) => {
+    if (!mounted) return 'Loading...';
+    
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
@@ -612,94 +611,150 @@ export default function PipelineHealthMonitor() {
     return `${days}d ago`;
   };
 
-  // Performance Section Component
-  const PerformanceSection: React.FC<{ pipeline: Pipeline }> = ({ pipeline }) => {
-    if (!pipeline.performance) return null;
+  // Primary Metrics Section - Key performance indicators with clear hierarchy
+  const PrimaryMetricsSection: React.FC<{ pipeline: Pipeline }> = ({ pipeline }) => {
+    const successRate = pipeline.recentRuns ? 
+      Math.round((pipeline.recentRuns.filter(Boolean).length / pipeline.recentRuns.length) * 100) : 100;
     
     return (
-      <div>
-        <h3 className="text-sm font-medium mb-3">Performance Trends</h3>
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Avg This Week</span>
-              <p className="font-mono text-lg">
-                {formatDuration(pipeline.performance.avgThisWeek)}
-              </p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">vs Last Week</span>
-              <p className="font-mono text-lg">
-                {pipeline.performance.percentChange > 0 ? '+' : ''}
-                {pipeline.performance.percentChange.toFixed(1)}%
-              </p>
+      <div className="border-b pb-4">
+        <h3 className="text-sm font-medium mb-4">Key Metrics</h3>
+        <div className="grid grid-cols-3 gap-6">
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Average Runtime</p>
+            <p className="text-3xl font-bold">{pipeline.avgRuntime}</p>
+            <div className="flex items-center gap-1 mt-1">
+              {pipeline.trend === 'increasing' && <TrendingUp className="h-3 w-3 text-amber-600" />}
+              {pipeline.trend === 'decreasing' && <TrendingDown className="h-3 w-3 text-green-600" />}
+              {pipeline.trend === 'stable' && <Minus className="h-3 w-3 text-muted-foreground" />}
+              <span className={cn(
+                "text-sm capitalize",
+                pipeline.trend === 'increasing' ? "text-amber-600" : 
+                pipeline.trend === 'decreasing' ? "text-green-600" : "text-muted-foreground"
+              )}>
+                {pipeline.trend || 'stable'} vs last week
+              </span>
             </div>
           </div>
           
-          {/* Recent run visualization */}
-          <div className="flex gap-1">
-            <TooltipProvider>
-              {pipeline.recentRuns.slice(0, 5).map((run, i) => (
-                <Tooltip key={i}>
-                  <TooltipTrigger>
-                    <div
-                      className={cn(
-                        "h-8 w-8 rounded",
-                        run.success ? 'bg-green-500' : 'bg-red-500'
-                      )}
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{new Date(run.timestamp).toLocaleString()}</p>
-                    <p>Duration: {formatDuration(run.duration)}</p>
-                    {!run.success && run.error && <p>Failed: {run.error}</p>}
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-            </TooltipProvider>
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Success Rate (Recent)</p>
+            <p className="text-3xl font-bold">{successRate}%</p>
+            <p className={cn(
+              "text-sm mt-1",
+              successRate >= 90 ? "text-green-600" : successRate >= 70 ? "text-amber-600" : "text-red-600"
+            )}>
+              {pipeline.recentRuns?.filter(Boolean).length || 0}/{pipeline.recentRuns?.length || 0} successful runs
+            </p>
           </div>
+          
+          <div>
+            <p className="text-xs text-muted-foreground mb-1">Query Complexity</p>
+            <div className="mt-2">
+              <ComplexityBadge complexity={pipeline.queryComplexity || 'Low'} />
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Based on Trino analysis
+            </p>
+          </div>
+        </div>
+        
+        {/* Recent runs timeline */}
+        <div className="mt-4">
+          <div className="flex justify-between items-center mb-2">
+            <p className="text-xs text-muted-foreground">Recent Run Pattern</p>
+            <p className="text-xs text-muted-foreground">Last run: {mounted ? formatRelativeTime(pipeline.lastRun) : 'Loading...'}</p>
+          </div>
+          <HealthIndicator runs={pipeline.recentRuns} mounted={mounted} />
         </div>
       </div>
     );
   };
 
-  // Cost Estimation Section Component
-  const CostSection: React.FC<{ pipeline: Pipeline }> = ({ pipeline }) => {
-    if (!pipeline.costEstimate) return null;
+  // Complexity Badge Component for query complexity indication
+  const ComplexityBadge: React.FC<{ complexity: 'Low' | 'Medium' | 'High' | 'Intensive' }> = ({ complexity }) => {
+    const getComplexityStyles = (complexity: 'Low' | 'Medium' | 'High' | 'Intensive') => {
+      switch(complexity) {
+        case 'Low': return 'bg-green-100 text-green-800 border-green-200';
+        case 'Medium': return 'bg-blue-100 text-blue-800 border-blue-200';
+        case 'High': return 'bg-amber-100 text-amber-800 border-amber-200';
+        case 'Intensive': return 'bg-red-100 text-red-800 border-red-200';
+        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      }
+    };
+
+    return (
+      <span className={cn(
+        "inline-flex items-center px-2 py-1 text-xs font-medium rounded-md border",
+        getComplexityStyles(complexity)
+      )}>
+        {complexity}
+      </span>
+    );
+  };
+
+  // Resource Usage Section - Only show meaningful data with proper grouping
+  const ResourceUsageSection: React.FC<{ pipeline: Pipeline }> = ({ pipeline }) => {
+    const hasDataMetrics = pipeline.dataScanned && pipeline.dataScanned > 0;
+    const hasMemoryData = pipeline.currentResources && pipeline.currentResources.memoryMB > 0;
+    
+    // Don't show section if no meaningful data
+    if (!hasDataMetrics && !hasMemoryData) {
+      return (
+        <div>
+          <h3 className="text-sm font-medium mb-3">Resource Usage</h3>
+          <p className="text-sm text-muted-foreground italic">
+            Resource metrics will be available after the next pipeline run.
+          </p>
+        </div>
+      );
+    }
     
     return (
       <div>
-        <h3 className="text-sm font-medium mb-3">Cost Estimates</h3>
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-xs">
-            Rough estimates based on data scanned. Actual costs may vary.
-          </AlertDescription>
-        </Alert>
+        <h3 className="text-sm font-medium mb-4">Resource Usage</h3>
         
-        <div className="grid grid-cols-2 gap-4 mt-3 text-sm">
-          <div>
-            <span className="text-muted-foreground">Daily Average</span>
-            <p className="font-mono">${pipeline.costEstimate.dailyAvg.toFixed(2)}</p>
+        {hasDataMetrics && (
+          <div className="mb-4">
+            <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Query Analysis</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Data Scanned</p>
+                <p className="text-lg font-mono">{pipeline.dataScanned?.toLocaleString()} GB</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Partitions Accessed</p>
+                <p className="text-lg font-mono">{pipeline.partitionsAccessed?.toLocaleString()}</p>
+              </div>
+            </div>
           </div>
-          <div>
-            <span className="text-muted-foreground">Last Run</span>
-            <p className="font-mono">${pipeline.costEstimate.lastRun.toFixed(2)}</p>
+        )}
+        
+        {hasMemoryData && (
+          <div className="mb-4">
+            <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">System Resources</h4>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">Memory Allocated</p>
+                <p className="text-lg font-mono">{(pipeline.currentResources.memoryMB / 1024).toFixed(1)} GB</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">CPU Cores</p>
+                <p className="text-lg font-mono">{pipeline.currentResources.cpuCores}</p>
+              </div>
+            </div>
           </div>
-          <div>
-            <span className="text-muted-foreground">Data Scanned</span>
-            <p className="font-mono">{pipeline.costEstimate.gbScanned} GB</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Partitions Hit</span>
-            <p className="font-mono">{pipeline.costEstimate.partitions}</p>
-          </div>
+        )}
+        
+        <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded border border-blue-200">
+          <Info className="h-3 w-3 inline mr-1" />
+          Data from Trino EXPLAIN analysis and Airflow resource monitoring.
         </div>
       </div>
     );
   };
 
-  // Enhanced Lineage Section Component for DataHub integration
+  // Enhanced Lineage Section Component with Horizontal Layout
   // TODO: In production, implement DataHub API integration:
   // - Fetch lineage via DataHub GraphQL API: /api/v2/graphql
   // - Use pipeline.id to query upstream/downstream entities
@@ -722,92 +777,77 @@ export default function PipelineHealthMonitor() {
     
     return (
       <div className="space-y-4">
-        <h3 className="text-sm font-medium">Data Lineage</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium">Data Lineage</h3>
+          <Button variant="outline" size="sm" asChild>
+            <a href={`http://datahub.internal/dataset/${pipeline.id}`} target="_blank" rel="noopener">
+              <ExternalLink className="h-3 w-3 mr-1" />
+              DataHub
+            </a>
+          </Button>
+        </div>
         
-        {/* Upstream Dependencies */}
-        {enhancedLineage.upstream.length > 0 && (
+        {/* Side-by-side upstream and downstream */}
+        <div className="grid grid-cols-2 gap-8">
+          {/* Upstream Dependencies */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">DEPENDS ON</span>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-muted-foreground">DEPENDS ON</span>
               <span className="text-xs text-muted-foreground">
                 {enhancedLineage.upstream.length} sources
               </span>
             </div>
-            <div className="space-y-1">
-              {enhancedLineage.upstream.map((item, idx) => (
+            <div className="space-y-2">
+              {enhancedLineage.upstream.length > 0 ? enhancedLineage.upstream.map((item, idx) => (
                 <div 
                   key={`${item.name}-${idx}`}
-                  className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                 >
-                  <ArrowLeft className="h-3 w-3 text-muted-foreground" />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium">{item.name}</span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      {item.platform}
-                    </span>
+                  <div>
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">{item.platform}</p>
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {item.type.toUpperCase()}
                   </Badge>
                 </div>
-              ))}
+              )) : (
+                <p className="text-sm text-muted-foreground italic text-center py-4">
+                  No upstream dependencies
+                </p>
+              )}
             </div>
           </div>
-        )}
 
-        {/* Current Pipeline Indicator */}
-        {enhancedLineage.upstream.length > 0 && enhancedLineage.downstream.length > 0 && (
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-muted" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-background px-2 text-sm text-muted-foreground">
-                Current Pipeline
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Downstream Dependencies */}
-        {enhancedLineage.downstream.length > 0 && (
+          {/* Downstream Dependencies */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-muted-foreground">FEEDS INTO</span>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-muted-foreground">FEEDS INTO</span>
               <span className="text-xs text-muted-foreground">
                 {enhancedLineage.downstream.length} consumers
               </span>
             </div>
-            <div className="space-y-1">
-              {enhancedLineage.downstream.map((item, idx) => (
+            <div className="space-y-2">
+              {enhancedLineage.downstream.length > 0 ? enhancedLineage.downstream.map((item, idx) => (
                 <div 
                   key={`${item.name}-${idx}`}
-                  className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                 >
-                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                  <div className="flex-1">
-                    <span className="text-sm font-medium">{item.name}</span>
-                    <span className="text-xs text-muted-foreground ml-2">
-                      {item.platform}
-                    </span>
+                  <div>
+                    <p className="text-sm font-medium">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">{item.platform}</p>
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {item.type.toUpperCase()}
                   </Badge>
                 </div>
-              ))}
+              )) : (
+                <p className="text-sm text-muted-foreground italic text-center py-4">
+                  No downstream consumers
+                </p>
+              )}
             </div>
           </div>
-        )}
-
-        {/* DataHub Link */}
-        <div className="pt-2">
-          <Button variant="outline" size="sm" className="w-full" asChild>
-            <a href={`http://datahub.internal/dataset/${pipeline.id}`} target="_blank" rel="noopener">
-              View Full Lineage in DataHub
-              <ExternalLink className="ml-2 h-3 w-3" />
-            </a>
-          </Button>
         </div>
       </div>
     );
@@ -836,36 +876,54 @@ export default function PipelineHealthMonitor() {
     );
   };
 
-  // Action Section Component
+  // Enhanced Action Section Component - Horizontal Layout
   const ActionSection: React.FC<{ pipeline: Pipeline }> = ({ pipeline }) => {
     return (
-      <div>
-        <h3 className="text-sm font-medium mb-3">Quick Actions</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" className="justify-start" asChild>
+      <div className="pt-4 border-t">
+        <h3 className="text-sm font-medium mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-5 gap-3">
+          <Button variant="outline" size="sm" className="h-auto flex-col py-3" asChild>
+            <Link href={`/develop/pipelines/studio?id=${pipeline.id}&mode=operations`}>
+              <GitBranch className="h-4 w-4 mb-1" />
+              <span className="text-xs">Studio</span>
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" className="h-auto flex-col py-3" asChild>
             <a href={`http://airflow.internal/dags/${pipeline.id}`} target="_blank" rel="noopener">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              View in Airflow
+              <ExternalLink className="h-4 w-4 mb-1" />
+              <span className="text-xs">Airflow</span>
             </a>
           </Button>
-          <Button variant="outline" className="justify-start">
-            <FileText className="h-4 w-4 mr-2" />
-            View Logs
+          <Button variant="outline" size="sm" className="h-auto flex-col py-3">
+            <FileText className="h-4 w-4 mb-1" />
+            <span className="text-xs">Logs</span>
           </Button>
-          <Button variant="outline" className="justify-start">
-            <LineChart className="h-4 w-4 mr-2" />
-            View Metrics
+          <Button variant="outline" size="sm" className="h-auto flex-col py-3">
+            <LineChart className="h-4 w-4 mb-1" />
+            <span className="text-xs">Metrics</span>
           </Button>
-          <Button variant="outline" className="justify-start">
-            <Database className="h-4 w-4 mr-2" />
-            View in DataHub
+          <Button variant="outline" size="sm" className="h-auto flex-col py-3">
+            <Database className="h-4 w-4 mb-1" />
+            <span className="text-xs">DataHub</span>
+          </Button>
+        </div>
+        
+        {/* Pipeline control actions */}
+        <div className="flex gap-2 mt-4">
+          <Button size="sm" className="flex-1">
+            <Play className="h-4 w-4 mr-2" />
+            Trigger Run
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1">
+            <Pause className="h-4 w-4 mr-2" />
+            Pause Pipeline
           </Button>
         </div>
       </div>
     );
   };
 
-  // Main Detail Panel Component using Sheet
+  // Main Detail Panel Component using Sheet - Much Wider for Better Layout
   const PipelineDetailPanel: React.FC<{ pipeline: Pipeline; open: boolean; onClose: () => void }> = ({ 
     pipeline, 
     open, 
@@ -873,28 +931,28 @@ export default function PipelineHealthMonitor() {
   }) => {
     return (
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent className="w-[600px] overflow-y-auto">
+        <SheetContent className="w-[900px] sm:max-w-[900px] overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>{pipeline.name}</SheetTitle>
-            <SheetDescription>
-              {pipeline.owner} • Last run: {formatRelativeTime(pipeline.lastRun)}
+            <SheetTitle className="text-xl">{pipeline.name}</SheetTitle>
+            <SheetDescription className="text-base">
+              {pipeline.team} • Last run: {mounted ? formatRelativeTime(pipeline.lastRun) : 'Loading...'} • {pipeline.environment}
             </SheetDescription>
           </SheetHeader>
           
           <div className="space-y-6 mt-6">
-            {/* Performance Metrics */}
-            <PerformanceSection pipeline={pipeline} />
+            {/* Primary: Key metrics with clear hierarchy */}
+            <PrimaryMetricsSection pipeline={pipeline} />
             
-            {/* Cost Estimates */}
-            <CostSection pipeline={pipeline} />
+            {/* Secondary: Resource usage - only if meaningful data */}
+            <ResourceUsageSection pipeline={pipeline} />
             
-            {/* Data Lineage */}
+            {/* Secondary: Data Lineage - Full width */}
             <LineageSection pipeline={pipeline} />
             
-            {/* Recent Errors */}
+            {/* Tertiary: Recent Errors - Only if errors exist */}
             <ErrorSection pipeline={pipeline} />
             
-            {/* Actions */}
+            {/* Tertiary: Quick Actions */}
             <ActionSection pipeline={pipeline} />
           </div>
         </SheetContent>
@@ -949,14 +1007,7 @@ export default function PipelineHealthMonitor() {
             </div>
           </div>
 
-          {/* Status Overview Bar */}
-          <div className="mt-4">
-            <StatusBar 
-              critical={statusCounts.critical}
-              degraded={statusCounts.warning}
-              healthy={statusCounts.healthy}
-            />
-          </div>
+          {/* Status counts shown in header description instead */}
         </div>
       </div>
 
@@ -973,6 +1024,20 @@ export default function PipelineHealthMonitor() {
             />
           </div>
 
+          <Select value={domainFilter} onValueChange={setDomainFilter}>
+            <SelectTrigger className="w-[140px]">
+              <Database className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="All Domains" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Domains</SelectItem>
+              {uniqueDomains.map(domain => (
+                <SelectItem key={domain} value={domain}>
+                  {domain.charAt(0).toUpperCase() + domain.slice(1)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[140px]">
@@ -1037,46 +1102,9 @@ export default function PipelineHealthMonitor() {
         )}
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - Clean Table without Duplicate Filters */}
       <div className="container mx-auto px-6 pb-6">
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Pipeline Operations</CardTitle>
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="Search pipelines..." 
-                  className="w-64"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <Select value={domainFilter} onValueChange={setDomainFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="All Domains" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Domains</SelectItem>
-                    {uniqueDomains.map(domain => (
-                      <SelectItem key={domain} value={domain}>
-                        {domain.charAt(0).toUpperCase() + domain.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="failed">Failed</SelectItem>
-                    <SelectItem value="running">Running</SelectItem>
-                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardHeader>
+        <Card className="border-0 shadow-sm">
           
           <CardContent>
             <Table>
@@ -1085,8 +1113,8 @@ export default function PipelineHealthMonitor() {
                   <TableHead className="w-[250px]">Pipeline</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Schedule</TableHead>
-                  <TableHead>Runtime Trend</TableHead>
-                  <TableHead>Est. Daily Cost</TableHead>
+                  <TableHead>Avg Runtime</TableHead>
+                  <TableHead>Complexity</TableHead>
                   <TableHead>Health</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -1111,9 +1139,15 @@ export default function PipelineHealthMonitor() {
                       >
                         <TableCell>
                           <div>
-                            <div className="font-medium">{pipeline.name}</div>
+                            <Link 
+                              href={`/develop/pipelines/studio?id=${pipeline.id}&mode=operations`}
+                              className="font-medium hover:underline hover:text-primary"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {pipeline.name}
+                            </Link>
                             <div className="text-xs text-muted-foreground">
-                              {pipeline.owner} • {pipeline.domain} • {pipeline.environment}
+                              {pipeline.team} • {pipeline.environment}
                             </div>
                           </div>
                         </TableCell>
@@ -1127,43 +1161,50 @@ export default function PipelineHealthMonitor() {
                         </TableCell>
                         
                         <TableCell>
-                          {pipeline.performance && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-mono">
-                                {formatDuration(pipeline.performance.avgThisWeek)}
-                              </span>
-                              {pipeline.performance.percentChange > 20 && (
-                                <span className="text-amber-600">
-                                  +{Math.round(pipeline.performance.percentChange)}%
-                                </span>
-                              )}
-                            </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-mono">{pipeline.avgRuntime}</span>
+                            {pipeline.trend === 'increasing' && (
+                              <TrendingUp className="h-3 w-3 text-amber-600" />
+                            )}
+                            {pipeline.trend === 'decreasing' && (
+                              <TrendingDown className="h-3 w-3 text-green-600" />
+                            )}
+                          </div>
+                        </TableCell>
+                        
+                        <TableCell>
+                          {pipeline.queryComplexity && (
+                            <Badge variant={getComplexityVariant(pipeline.queryComplexity)}>
+                              {pipeline.queryComplexity}
+                            </Badge>
                           )}
                         </TableCell>
                         
                         <TableCell>
-                          {pipeline.costEstimate && (
-                            <div className="text-sm text-muted-foreground">
-                              ~${pipeline.costEstimate.dailyAvg.toFixed(2)}
-                              {pipeline.costEstimate.trend === 'increasing' && (
-                                <TrendingUp className="inline h-3 w-3 ml-1 text-amber-600" />
-                              )}
-                            </div>
-                          )}
-                        </TableCell>
-                        
-                        <TableCell>
-                          <HealthIndicator runs={pipeline.recentRuns} />
+                          <HealthIndicator runs={pipeline.recentRuns} mounted={mounted} />
                         </TableCell>
                         
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedPipeline(pipeline)}
-                          >
-                            Details
-                          </Button>
+                          <div className="flex gap-1 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                router.push(`/develop/pipelines/studio?id=${pipeline.id}&mode=operations`);
+                              }}
+                            >
+                              <GitBranch className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedPipeline(pipeline)}
+                            >
+                              Details
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );

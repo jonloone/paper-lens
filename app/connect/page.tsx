@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { APIEndpointCatalog } from '@/components/api-management/APIEndpointCatalog';
 import { APIKeyManager } from '@/components/api-management/APIKeyManager';
@@ -16,47 +16,127 @@ import {
   Shield,
   Settings,
   ExternalLink,
-  Globe
+  Globe,
+  GitBranch,
+  Search,
+  Zap,
+  Brain,
+  BarChart,
+  Loader2
 } from 'lucide-react';
+import { APIGateway } from '@/lib/services/APIGateway';
 
 export default function ConnectPage() {
   const [activeTab, setActiveTab] = useState('apis');
+  const [hostedApps, setHostedApps] = useState<any[]>([]);
+  const [dataAPIs, setDataAPIs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [gateway] = useState(() => new APIGateway());
 
-  // Mock data for hosted apps
-  const hostedApps = [
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      // Load hosted apps from API Gateway
+      const apps = await gateway.getHostedApps();
+      setHostedApps(apps);
+
+      // Load data APIs
+      const apis = await gateway.listDataAPIs();
+      setDataAPIs(apis);
+    } catch (error) {
+      console.error('Failed to load connect data:', error);
+      // Fallback to default apps
+      setHostedApps(getDefaultApps());
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getDefaultApps = () => [
     {
-      id: '1',
-      name: 'Jupyter Hub',
-      description: 'Interactive notebooks for data analysis',
-      status: 'running',
-      url: 'https://jupyter.nexus.com',
-      icon: Code
+      id: 'datahub',
+      name: 'Global Data Catalog',
+      description: 'Browse and manage data assets',
+      url: process.env.NEXT_PUBLIC_DATAHUB_URL || 'http://localhost:9002',
+      icon: Database,
+      category: 'catalog',
+      available: true
     },
     {
-      id: '2',
-      name: 'Apache Airflow',
-      description: 'Workflow orchestration platform',
-      status: 'running',
-      url: 'https://airflow.nexus.com',
-      icon: Cloud
+      id: 'airflow',
+      name: 'Data Orchestration',
+      description: 'Manage and monitor data pipelines',
+      url: process.env.NEXT_PUBLIC_AIRFLOW_URL || 'http://localhost:8080',
+      icon: GitBranch,
+      category: 'orchestration',
+      available: true
     },
     {
-      id: '3',
-      name: 'Apache Superset',
-      description: 'Data exploration and visualization',
-      status: 'running',
-      url: 'https://superset.nexus.com',
-      icon: Database
+      id: 'trino',
+      name: 'Federated Query Engine',
+      description: 'Query data across multiple sources',
+      url: process.env.NEXT_PUBLIC_TRINO_URL || 'http://localhost:8080',
+      icon: Search,
+      category: 'query',
+      available: true
     },
     {
-      id: '4',
-      name: 'DataHub',
-      description: 'Metadata platform for data discovery',
-      status: 'running',
-      url: 'https://datahub.nexus.com',
-      icon: Globe
+      id: 'nifi',
+      name: 'NiFi Flow and Streams',
+      description: 'Design and manage data flows',
+      url: process.env.NEXT_PUBLIC_NIFI_URL || 'http://localhost:8443/nifi',
+      icon: Zap,
+      category: 'ingestion',
+      available: true
+    },
+    {
+      id: 'ranger',
+      name: 'Data Policy Engine',
+      description: 'Manage data access and security policies',
+      url: process.env.NEXT_PUBLIC_RANGER_URL || 'http://localhost:6080',
+      icon: Shield,
+      category: 'security',
+      available: true
+    },
+    {
+      id: 'mlflow',
+      name: 'Data Science Workbench',
+      description: 'ML experiments and model management',
+      url: process.env.NEXT_PUBLIC_MLFLOW_URL || 'http://localhost:5000',
+      icon: Brain,
+      category: 'ml',
+      available: true
+    },
+    {
+      id: 'superset',
+      name: 'BI Workbench',
+      description: 'Create dashboards and visualizations',
+      url: process.env.NEXT_PUBLIC_SUPERSET_URL || 'http://localhost:8088',
+      icon: BarChart,
+      category: 'analytics',
+      available: true
+    },
+    {
+      id: 'nexusone-api',
+      name: 'NexusOne API',
+      description: 'Access NexusOne programmatically',
+      url: '/api/docs',
+      icon: Code,
+      category: 'api',
+      available: true
     }
   ];
+
+  const getIconForApp = (app: any) => {
+    const iconMap: Record<string, any> = {
+      Database, GitBranch, Search, Zap, Shield, Brain, BarChart, Code, Cloud, Globe
+    };
+    return iconMap[app.icon] || app.icon || Database;
+  };
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -110,41 +190,58 @@ export default function ConnectPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {hostedApps.map((app) => {
-              const Icon = app.icon;
-              return (
-                <Card key={app.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Icon className="h-5 w-5 text-primary" />
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {hostedApps.map((app) => {
+                const Icon = getIconForApp(app);
+                return (
+                  <Card 
+                    key={app.id} 
+                    className={`hover:shadow-lg transition-all cursor-pointer ${
+                      !app.available ? 'opacity-60' : ''
+                    }`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex flex-col items-center text-center space-y-4">
+                        <div className={`p-4 rounded-lg ${
+                          app.available ? 'bg-primary/10' : 'bg-muted'
+                        }`}>
+                          <Icon className={`h-8 w-8 ${
+                            app.available ? 'text-primary' : 'text-muted-foreground'
+                          }`} />
                         </div>
-                        <span className="text-lg">{app.name}</span>
+                        <div>
+                          <h3 className="font-semibold">{app.name}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {app.description}
+                          </p>
+                        </div>
+                        <Button 
+                          className="w-full" 
+                          variant={app.available ? "default" : "outline"}
+                          disabled={!app.available}
+                          onClick={() => window.open(app.url, '_blank')}
+                        >
+                          {app.available ? (
+                            <>
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Open
+                            </>
+                          ) : (
+                            'Unavailable'
+                          )}
+                        </Button>
                       </div>
-                      <Badge variant="default" className="text-xs">
-                        {app.status}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      {app.description}
-                    </p>
-                    <Button 
-                      className="w-full" 
-                      variant="outline"
-                      onClick={() => window.open(app.url, '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Open Application
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
           {/* Additional Integrations */}
           <Card>

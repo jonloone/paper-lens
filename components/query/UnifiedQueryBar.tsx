@@ -23,12 +23,36 @@ import { format } from 'sql-formatter';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { cn } from '@/lib/utils';
 import { dataCatalogService } from '@/lib/services/DataCatalogService';
+import { dataHubService, type DataHubContext, type BusinessRule } from '@/lib/services/DataHubContextService';
+import { RulesPanel } from './RulesPanel';
 
 interface UnifiedQueryBarProps {
   onQueryExecute: (query: QueryResult) => void;
-  onProductCreate?: (product: any) => void;
+  onProductCreate: (product: DataProduct) => void;
   dataContext?: any;
   userPreferences?: any;
+  dataHubContext?: DataHubContext;
+}
+
+interface DataProduct {
+  id: string;
+  name: string;
+  description: string;
+  icebergTables: string[];
+  trinoQuery: string;
+  governance: {
+    piiMasking: boolean;
+    accessLevel: 'public' | 'restricted' | 'confidential';
+    dataClassification: string[];
+  };
+  consumers: {
+    type: 'dashboard' | 'ml-model' | 'api' | 'export';
+    name: string;
+    endpoint?: string;
+  }[];
+  refreshSchedule?: string;
+  owner: string;
+  businessContext: string;
 }
 
 interface QueryResult {
@@ -43,13 +67,14 @@ interface QueryResult {
   naturalLanguage?: string;
 }
 
-type QueryMode = 'natural' | 'sql' | 'visual' | 'hybrid';
+type QueryMode = 'intent' | 'product' | 'discovery';
 
 export function UnifiedQueryBar({ 
   onQueryExecute, 
   onProductCreate,
   dataContext,
-  userPreferences 
+  userPreferences,
+  dataHubContext: providedContext
 }: UnifiedQueryBarProps) {
   const [mode, setMode] = useState<QueryMode>('natural');
   const [query, setQuery] = useState('');
@@ -61,6 +86,45 @@ export function UnifiedQueryBar({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [confidence, setConfidence] = useState<number | null>(null);
   const [lastResults, setLastResults] = useState<QueryResult | null>(null);
+  
+  // DataHub integration
+  const [showRules, setShowRules] = useState(false);
+  const [dataHubContext, setDataHubContext] = useState<DataHubContext>(providedContext || {
+    hasContext: false,
+    piiFields: [],
+    qualityScore: 100,
+    glossaryTerms: [],
+    businessDefinitions: {},
+    tags: [],
+    availableRules: [],
+    qualityRules: []
+  });
+  const [appliedRules, setAppliedRules] = useState<BusinessRule[]>([]);
+  
+  // Fetch DataHub context when a table is detected
+  useEffect(() => {
+    const fetchDataHubContext = async () => {
+      // Detect table names in query (simple regex for demo)
+      const tablePattern = /FROM\s+(\w+\.?\w+)|JOIN\s+(\w+\.?\w+)/gi;
+      const matches = query.matchAll(tablePattern);
+      
+      for (const match of matches) {
+        const tableName = match[1] || match[2];
+        if (tableName) {
+          // Fetch DataHub context for this table
+          const context = await dataHubService.getTableContext('public', tableName);
+          if (context.hasContext) {
+            setDataHubContext(context);
+            break; // Use first table's context for now
+          }
+        }
+      }
+    };
+    
+    if (query.length > 10 && (mode === 'sql' || sqlPreview)) {
+      fetchDataHubContext();
+    }
+  }, [query, sqlPreview, mode]);
 
   // Detect query mode based on input
   useEffect(() => {
@@ -111,66 +175,87 @@ export function UnifiedQueryBar({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          description: `Generate SQL query: ${naturalLanguage}`,
-          context: {
-            workspaceId: dataContext?.workspaceId || 'workspace-1',
-            userId: dataContext?.userId || 'user-1',
-            sessionId: `query-${Date.now()}`,
-            queryMode: 'sql_generation'
-          }
+          intent,
+          discoveredTables: tables,
+          icebergMetadata: metadata,
+          mode: 'data_product_creation',
+          context: dataCatalogService.getAgentContextSummary(),
+          dataHubContext,
+          userPreferences
         })
       });
       
-      const data = await response.json();
+      const result = await response.json();
       
-      // Extract SQL from agent response
-      if (data.sql || data.generatedSQL) {
-        const generatedSQL = data.sql || data.generatedSQL;
-        setSqlPreview(format(generatedSQL, { language: 'sql' }));
-        setConfidence(data.confidence || 0.85);
-      } else if (data.conversationalResponse) {
-        // Parse SQL from conversational response if present
-        const sqlMatch = data.conversationalResponse.match(/```sql\n([\s\S]+?)\n```/);
-        if (sqlMatch) {
-          setSqlPreview(format(sqlMatch[1], { language: 'sql' }));
-          setConfidence(0.75);
-        }
-      }
+      // Create data product preview
+      const dataProduct: DataProduct = {
+        id: `dp-${Date.now()}`,
+        name: result.productName || `${intent} Data Product`,
+        description: result.description || `Data product for: ${intent}`,
+        icebergTables: tables.map((t: any) => t.fullName),
+        trinoQuery: format(result.trinoQuery || result.sql, {
+          language: 'trino',
+          tabWidth: 2,
+          keywordCase: 'upper'
+        }),
+        governance: {
+          piiMasking: result.governance?.piiRequired || false,
+          accessLevel: result.governance?.accessLevel || 'public',
+          dataClassification: result.governance?.classifications || []
+        },
+        consumers: result.suggestedConsumers || [],
+        refreshSchedule: result.refreshSchedule,
+        owner: 'data-team',
+        businessContext: intent
+      };
+      
+      setProductPreview(dataProduct);
+      setSqlPreview(dataProduct.trinoQuery);
+      setTrinoHandoffReady(true);
+      setConfidence(result.confidence || 0.8);
+      setIsExpanded(true);
     } catch (error) {
-      console.error('Failed to generate SQL:', error);
+      console.error('Failed to generate data product:', error);
     } finally {
       setIsGenerating(false);
     }
-  }, [mode, dataContext]);
+  }, [mode, dataCatalogService, dataHubContext, userPreferences]);
 
-  // Debounced SQL generation
+  // Debounced data product generation
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (mode === 'natural' && query.length > 3) {
-        generateSQL(query);
+      if (mode === 'intent' && query.length > 3) {
+        generateDataProduct(query);
       }
     }, 500);
     
     return () => clearTimeout(timer);
-  }, [query, mode, generateSQL]);
+  }, [query, mode, generateDataProduct]);
 
-  // Execute query
+  // Execute query or create data product
   const executeQuery = async () => {
-    const sqlToExecute = mode === 'sql' ? query : sqlPreview;
+    if (productPreview) {
+      // Create data product
+      onProductCreate(productPreview);
+      return;
+    }
+    
+    const sqlToExecute = sqlPreview || query;
     
     if (!sqlToExecute.trim()) return;
     
     setIsExecuting(true);
     
     try {
-      // Mock execution - replace with actual API call
-      const response = await fetch('/api/query/execute', {
+      // Preview execution via Trino (mock for now)
+      const response = await fetch('/api/trino/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sql: sqlToExecute,
-          context: dataContext,
-          estimateCost: true
+          trinoQuery: sqlToExecute,
+          icebergTables: discoveredTables.map(t => t.fullName),
+          governanceRules: appliedRules,
+          context: dataContext
         })
       });
       
@@ -200,7 +285,8 @@ export function UnifiedQueryBar({
           timestamp: new Date().toISOString()
         },
         sql: sqlToExecute,
-        naturalLanguage: mode === 'natural' ? query : undefined,
+        naturalLanguage: mode === 'intent' ? query : undefined,
+        dataProduct: productPreview,
         // Preview mode metadata
         samplingRate: 0.1, // 10% sample
         estimatedCost: 4.25, // Full query cost estimate
@@ -301,10 +387,11 @@ export function UnifiedQueryBar({
   };
 
   return (
-    <Card className={cn(
-      "relative transition-all duration-300 border-border bg-card/50 backdrop-blur-sm",
-      isExpanded ? "h-[400px]" : "h-[48px]"
-    )}>
+    <>
+      <Card className={cn(
+        "relative transition-all duration-300 border-border bg-card/50 backdrop-blur-sm",
+        isExpanded ? "h-[400px]" : "h-[48px]"
+      )}>
       <div className="flex items-center h-[48px] px-4 gap-2">
         {/* Mode indicator */}
         <Badge variant="outline" className={cn("gap-1", getModeBadgeColor())}>
@@ -318,9 +405,10 @@ export function UnifiedQueryBar({
             type="text"
             value={query}
             onChange={(e) => handleInputChange(e.target.value)}
-            placeholder={mode === 'sql' 
-              ? "Write SQL query..." 
-              : "Ask a question about your data..."
+            placeholder={
+              mode === 'discovery' ? "Explore available data: /discover customers, /tables iceberg" :
+              mode === 'product' ? "Create data product: customer churn analysis" :
+              "What data product do you need? e.g. customer churn analysis"
             }
             className="w-full h-8 px-3 bg-transparent border-0 outline-none text-sm text-foreground placeholder:text-muted-foreground"
             onFocus={() => setIsExpanded(true)}
@@ -351,8 +439,45 @@ export function UnifiedQueryBar({
 
         {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* Data Product Status */}
+          {productPreview && (
+            <Badge variant="secondary" className="text-xs gap-1">
+              <Hash className="h-3 w-3" />
+              {discoveredTables.length} tables
+            </Badge>
+          )}
+          
+          {/* Trino Handoff Button */}
+          {trinoHandoffReady && (
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => window.open('https://trino.company.com:8080', '_blank')}
+              className="gap-1"
+            >
+              <Code className="h-3 w-3" />
+              Open in Trino
+            </Button>
+          )}
+          
+          {/* Governance Status */}
+          <Button
+            size="sm"
+            variant={appliedRules.length > 0 ? "default" : "outline"}
+            onClick={() => setShowRules(!showRules)}
+            className="gap-1"
+          >
+            <Sparkles className="h-3 w-3" />
+            Governance
+            {appliedRules.length > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {appliedRules.length}
+              </Badge>
+            )}
+          </Button>
+          
           {/* Confidence indicator */}
-          {confidence !== null && mode === 'natural' && (
+          {confidence !== null && mode === 'intent' && (
             <Badge variant="outline" className="text-xs">
               {Math.round(confidence * 100)}% confidence
             </Badge>
@@ -378,7 +503,7 @@ export function UnifiedQueryBar({
             ) : (
               <Play className="h-3 w-3" />
             )}
-            Run
+            {productPreview ? 'Create Product' : 'Preview'}
           </Button>
 
           {/* Expand/Collapse */}
@@ -474,13 +599,63 @@ export function UnifiedQueryBar({
                   /recent - Recent queries
                 </button>
                 <button className="w-full text-left px-2 py-1 text-sm hover:bg-muted rounded">
-                  /products - Browse data products
+                  /trino - Open Trino interface
+                </button>
+                <button className="w-full text-left px-2 py-1 text-sm hover:bg-muted rounded">
+                  /airflow - View ETL pipelines
+                </button>
+                <button className="w-full text-left px-2 py-1 text-sm hover:bg-muted rounded">
+                  /datahub - Browse metadata catalog
                 </button>
               </div>
             </div>
           )}
         </div>
       )}
-    </Card>
+      </Card>
+
+      {/* DataHub Context Display */}
+      {dataHubContext.hasContext && (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {dataHubContext.piiFields.length > 0 && (
+            <Badge variant="outline" className="text-xs bg-red-50 border-red-200">
+              🔒 {dataHubContext.piiFields.length} PII fields detected
+            </Badge>
+          )}
+          {dataHubContext.qualityScore < 80 && (
+            <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">
+              ⚠️ Quality Score: {dataHubContext.qualityScore}%
+            </Badge>
+          )}
+          {dataHubContext.classification && (
+            <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200">
+              📊 {dataHubContext.classification}
+            </Badge>
+          )}
+          {dataHubContext.domain && (
+            <Badge variant="outline" className="text-xs">
+              Domain: {dataHubContext.domain}
+            </Badge>
+          )}
+        </div>
+      )}
+      
+      {/* Rules Panel Modal */}
+      {showRules && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="relative max-w-4xl w-full max-h-[80vh] overflow-auto">
+            <RulesPanel
+              dataHubContext={dataHubContext}
+              onApplyRules={(rules) => {
+                setAppliedRules(rules);
+                setShowRules(false);
+                // TODO: Apply rules to query
+              }}
+              onClose={() => setShowRules(false)}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }

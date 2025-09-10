@@ -9,15 +9,16 @@ import {
   Database,
   Activity,
   Home,
-  Link as LinkIcon,
   ChevronDown,
-  Upload,
-  Clock,
-  Plus,
-  Shield
+  Shield,
+  Terminal,
+  Package,
+  Zap,
+  Settings
 } from 'lucide-react';
 import { NexusOneLogo } from '@/components/ui/logo';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { ToolStatusBar } from '@/components/layout/ToolStatusBar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,28 +27,64 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
+interface NavItem {
+  href: string;
+  label: string;
+  icon: any;
+  hasDropdown?: boolean;
+  isEmphasized?: boolean;
+  dropdownItems?: Array<{
+    href: string;
+    label: string;
+    icon: any;
+    description: string;
+  }>;
+}
+
 export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   
-  const navItems = [
-    { href: '/', label: 'Home', icon: Home },
+  const navItems: NavItem[] = [
     { 
-      href: '/ingest', 
-      label: 'Ingest', 
+      href: '/', 
+      label: 'Home', 
+      icon: Home,
+    },
+    { 
+      href: '/operations', 
+      label: 'Operations', 
+      icon: Activity,
+      isEmphasized: true, // Most important - what's broken?
+    },
+    { 
+      href: '/develop', 
+      label: 'Develop', 
+      icon: GitBranch,
+      hasDropdown: true,
+      dropdownItems: [
+        { href: '/develop/pipelines', label: 'Create Pipeline', icon: GitBranch, description: 'Build new data pipelines' },
+        { href: '/develop/queries', label: 'Query Development', icon: Terminal, description: 'SQL editor with MCP intelligence' },
+        { href: '/develop/data-products', label: 'Data Products', icon: Package, description: 'Guided product creation wizard' },
+        { href: '/develop/integrations', label: 'Integrations', icon: Zap, description: 'Connection management and MCP setup' },
+      ]
+    },
+    { 
+      href: '/catalog', 
+      label: 'Catalog', 
       icon: Database,
       hasDropdown: true,
       dropdownItems: [
-        { href: '/ingest?view=new', label: 'New Ingestion', icon: Plus, description: 'Create a new data ingestion' },
-        { href: '/ingest?view=jobs', label: 'Active Jobs', icon: Database, description: 'Monitor running ingestion jobs' },
-        { href: '/ingest?view=history', label: 'History', icon: Clock, description: 'View completed ingestions' },
+        { href: '/catalog', label: 'Browse Catalog', icon: Database, description: 'Find datasets and schemas' },
+        { href: '/catalog?view=lineage', label: 'Lineage', icon: GitBranch, description: 'Data dependencies' },
+        { href: '/catalog?view=quality', label: 'Quality', icon: Shield, description: 'Data quality metrics' },
       ]
     },
-    { href: '/query', label: 'Query', icon: Search },
-    { href: '/pipelines', label: 'Pipelines', icon: GitBranch },
-    { href: '/monitor', label: 'Monitor', icon: Activity },
-    { href: '/quality', label: 'Quality', icon: Shield },
-    { href: '/connect', label: 'Connect', icon: LinkIcon },
+    { 
+      href: '/configure', 
+      label: 'Configure', 
+      icon: Settings,
+    },
   ];
   
   return (
@@ -72,11 +109,18 @@ export function Navigation() {
                         "flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors hover:text-primary rounded-md",
                         isActive 
                           ? "text-primary bg-muted" 
-                          : "text-muted-foreground"
+                          : "text-muted-foreground",
+                        item.isEmphasized && "relative"
                       )}
                     >
                       <Icon className="h-4 w-4" />
                       {item.label}
+                      {item.isEmphasized && (
+                        <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-yellow-500"></span>
+                        </span>
+                      )}
                       <ChevronDown className="h-3 w-3" />
                     </button>
                   </DropdownMenuTrigger>
@@ -125,9 +169,7 @@ export function Navigation() {
         </nav>
         
         <div className="ml-auto flex items-center gap-4">
-          <div className="text-xs text-muted-foreground">
-            Orchestration Active
-          </div>
+          <ToolStatusBar />
           <ThemeToggle />
         </div>
       </div>

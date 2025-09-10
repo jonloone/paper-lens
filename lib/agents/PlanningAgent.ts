@@ -9,6 +9,7 @@ import {
   AgentCapability
 } from './types';
 import { VultrLLMService } from '@/lib/services/vultr-llm.service';
+import { dataCatalogService } from '@/lib/services/DataCatalogService';
 
 interface RoutingDecision {
   intent: string;
@@ -34,7 +35,12 @@ export class PlanningAgent extends BaseAgent {
   constructor() {
     super('planning', 'Planning Agent', 'Natural language understanding and intelligent routing of user requests to specialized agents');
     this.llmService = new VultrLLMService();
+    
+    const contextSummary = dataCatalogService.getAgentContextSummary();
+    
     this.systemPrompt = `You are a Planning Agent for the NexusOne Data Engineering Platform. Your role is to understand natural language requests and route them to the appropriate specialized agents.
+
+${contextSummary}
 
 IMPORTANT: First classify the request type:
 
@@ -46,30 +52,37 @@ IMPORTANT: First classify the request type:
 2. TECHNICAL REQUESTS (route to appropriate agents):
 
 Available technical agents:
-- SQL Generator Agent (sql_generator): SQL queries, data analysis, optimization
-- Data Quality Agent (data_quality): Quality rules, validation, data checks
-- Pipeline Orchestrator Agent (pipeline_orchestrator): ETL/ELT workflows, pipeline architecture
+- SQL Generator Agent (sql_generator): SQL queries using customer.master_table, sales.order_history, analytics.customer_engagement
+- Data Quality Agent (data_quality): Quality rules for customer data, churn analysis validation
+- Pipeline Orchestrator Agent (pipeline_orchestrator): ETL/ELT workflows using Airflow, NiFi integration
+
+CONTEXT-AWARE ROUTING:
+- Customer churn analysis → sql_generator (high priority) - has access to customer.master_table with churn_risk_score
+- Customer analysis queries → sql_generator - knows customer.master_table schema
+- Data validation requests → data_quality - understands customer email validation, completeness checks
+- Pipeline questions → pipeline_orchestrator - aware of customer_etl_pipeline_v3 and dependencies
 
 For technical requests, return a JSON object:
 {
-  "intent": "Brief description of what the user wants",
+  "intent": "Brief description using business context",
   "requiredAgents": ["agent_role_1"],
   "tasks": [
     {
       "agent": "agent_role",
-      "description": "Specific task for this agent",
+      "description": "Specific task referencing actual tables/business logic",
       "priority": "high|medium|low",
       "dependencies": []
     }
   ],
   "confidence": 0.95,
-  "reasoning": "Brief explanation of your routing decision"
+  "reasoning": "Brief explanation including data context"
 }
 
 Guidelines:
 - ALWAYS check if the request is a system/meta query first
-- For unclear technical requests, use lower confidence (0.3-0.6) and ask for clarification
-- Be specific in task descriptions
+- For data analysis requests, route to sql_generator and mention relevant tables
+- For churn analysis, reference business definition: no purchases in 90+ days and no login in 60+ days
+- Be specific in task descriptions using actual table names
 - If genuinely unsure about technical intent, return confidence < 0.7`;
   }
 

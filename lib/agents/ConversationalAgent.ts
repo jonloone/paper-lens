@@ -7,6 +7,7 @@ import {
   AgentCapability
 } from './types';
 import { VultrLLMService } from '@/lib/services/vultr-llm.service';
+import { dataCatalogService } from '@/lib/services/DataCatalogService';
 
 interface ConversationInput {
   userQuery: string;
@@ -25,32 +26,43 @@ export class ConversationalAgent extends BaseAgent {
   constructor() {
     super('conversational', 'Conversational Agent', 'Generates natural, helpful responses for user interactions with data engineering tasks');
     this.llmService = new VultrLLMService();
+    const contextSummary = dataCatalogService.getAgentContextSummary();
+    
     this.systemPrompt = `You are a professional AI assistant for the NexusOne Data Engineering Platform. Your role is to provide clear, professional responses to users who need help with data engineering tasks.
 
+${contextSummary}
+
 Your capabilities include:
-- SQL query generation and optimization
-- Data quality assessment and rule creation  
-- Data pipeline design and monitoring
-- General data engineering guidance and best practices
+- SQL query generation using actual available tables and schemas
+- Data quality assessment based on real data catalog information
+- Data pipeline design leveraging connected systems (Trino, DataHub, Airflow, Kafka, NiFi)
+- Business analysis using domain-specific knowledge
 
 Communication Guidelines:
 1. Maintain a professional, helpful tone
 2. Provide specific, actionable guidance with clear explanations
-3. Use technical examples when they add value
-4. Acknowledge what you understand about the user's request
-5. Ask specific clarifying questions when the intent is unclear
+3. Use actual table names, column names, and business context when relevant
+4. Reference available data sources and their schemas
+5. Ask specific clarifying questions when needed, but leverage existing data knowledge
 6. Keep responses focused and structured
 7. Never use emojis or casual language
 8. Be direct and concise while remaining helpful
 
+Data-Driven Responses:
+- When asked about customer analysis, reference customer.master_table, sales.order_history, analytics.customer_engagement
+- For churn analysis, use the business definition: customers with no purchases in 90+ days and no login in 60+ days
+- Always mention actual column names like customer_id, customer_email, churn_risk_score
+- Provide SQL examples using real schemas when applicable
+- Reference connected systems (Trino for queries, DataHub for metadata, Airflow for pipelines)
+
 Intent Recognition:
 - System/Meta queries: "is this working", "test", "hello", "help" - Acknowledge system status and offer assistance
-- SQL queries: Provide query examples, optimization advice, explain concepts
-- Data Quality: Explain validation approaches, quality dimensions, remediation strategies
-- Pipelines: Discuss architecture patterns, monitoring strategies, best practices
-- Unclear requests: Ask specific clarifying questions to understand the requirement
+- SQL queries: Generate queries using actual table schemas and business logic
+- Data Quality: Reference real quality metrics and validation approaches
+- Pipelines: Discuss actual pipeline architectures and connected systems
+- Analysis requests: Provide domain-specific guidance using available data
 
-When the user's intent is unclear or could have multiple interpretations, ask targeted questions to understand their specific needs rather than making assumptions.`;
+When users request analysis, immediately leverage available data context rather than asking basic questions about table availability.`;
   }
 
   protected defineCapabilities(): AgentCapability[] {
@@ -140,7 +152,23 @@ When the user's intent is unclear or could have multiple interpretations, ask ta
     
     let prompt = `User query: "${userQuery}"`;
     
-    // Only include routing context if it seems relevant and not obviously wrong
+    // Add data catalog context for analysis requests
+    if (lowerQuery.includes('churn') || lowerQuery.includes('customer') || lowerQuery.includes('analysis')) {
+      const relevantTables = dataCatalogService.getTablesForAnalysis(userQuery);
+      if (relevantTables.length > 0) {
+        prompt += `\n\nRelevant tables available: ${relevantTables.map(t => t.fullName).join(', ')}`;
+        
+        // Add specific context for churn analysis
+        if (lowerQuery.includes('churn')) {
+          const churnSuggestions = dataCatalogService.getQuerySuggestions('churn');
+          if (churnSuggestions.length > 0) {
+            prompt += `\n\nChurn analysis context: Use tables ${churnSuggestions[0].tables.join(', ')} with business definition: ${dataCatalogService.getBusinessContext().churnDefinition}`;
+          }
+        }
+      }
+    }
+    
+    // Include routing context if relevant
     if (routingDecision && routingDecision.confidence > 0.7) {
       prompt += `\n\nRouting analysis suggests this relates to: ${routingDecision.intent}`;
       if (routingDecision.requiredAgents) {
@@ -150,14 +178,14 @@ When the user's intent is unclear or could have multiple interpretations, ask ta
       prompt += `\n\nNote: The routing analysis has low confidence (${routingDecision.confidence}). The user's intent may not be clear.`;
     }
     
-    prompt += `\n\nProvide a professional, helpful response that addresses their request. If the intent is unclear or the routing seems incorrect, ask specific clarifying questions to understand what they need help with.`;
+    prompt += `\n\nProvide a professional, helpful response that addresses their request. Use actual table names and column names from our data catalog when relevant. If this is an analysis request, provide specific SQL examples or guidance using the available schemas.`;
 
     try {
       const response = await this.llmService.analyze({
         systemPrompt: this.systemPrompt,
         userPrompt: prompt,
         temperature: 0.3, // Lower temperature for more consistent professional responses
-        maxTokens: 300
+        maxTokens: 500
       });
 
       return response.trim();
