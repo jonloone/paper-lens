@@ -81,6 +81,7 @@ import {
   Calculator,
   ChevronsUpDown,
   Check,
+  CheckSquare,
   ChevronDown,
   ChevronUp,
   Circle,
@@ -279,7 +280,7 @@ const Logo = ({ name, className }: { name: string; className?: string }) => {
     'Stripe': <CreditCard className={cn("h-8 w-8 text-purple-600", className)} />,
     'Zendesk': <MessageCircle className={cn("h-8 w-8 text-green-600", className)} />,
     'Slack': <Hash className={cn("h-8 w-8 text-purple-500", className)} />,
-    'Jira': <CheckSquare className={cn("h-8 w-8 text-blue-600", className)} />,
+    'Jira': <CheckCircle className={cn("h-8 w-8 text-blue-600", className)} />,
     
     // Platform Capabilities
     'MLflow': <Microscope className={cn("h-8 w-8 text-blue-600", className)} />,
