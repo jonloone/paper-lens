@@ -14,7 +14,10 @@ import {
   Terminal,
   Package,
   Zap,
-  Settings
+  Settings,
+  LineChart,
+  AlertTriangle,
+  Server
 } from 'lucide-react';
 import { NexusOneLogo } from '@/components/ui/logo';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -52,38 +55,40 @@ export function Navigation() {
       icon: Home,
     },
     { 
-      href: '/operations', 
-      label: 'Operations', 
+      href: '/monitor', 
+      label: 'Monitor', 
       icon: Activity,
-      isEmphasized: true, // Most important - what's broken?
-    },
-    { 
-      href: '/develop', 
-      label: 'Develop', 
-      icon: GitBranch,
+      isEmphasized: true, // Most important - what's happening now?
       hasDropdown: true,
       dropdownItems: [
-        { href: '/develop/pipelines', label: 'Create Pipeline', icon: GitBranch, description: 'Build new data pipelines' },
-        { href: '/develop/queries', label: 'Query Development', icon: Terminal, description: 'SQL editor with MCP intelligence' },
-        { href: '/develop/data-products', label: 'Data Products', icon: Package, description: 'Guided product creation wizard' },
-        { href: '/develop/integrations', label: 'Integrations', icon: Zap, description: 'Connection management and MCP setup' },
+        { href: '/monitor', label: 'System Health', icon: Activity, description: 'System health and alerts' },
+        { href: '/monitor?view=performance', label: 'Performance', icon: LineChart, description: 'Pipeline performance and issues' },
+        { href: '/monitor?view=incidents', label: 'Incidents', icon: AlertTriangle, description: 'Cross-system incident correlation' },
+        { href: '/monitor?view=troubleshoot', label: 'Troubleshoot', icon: Search, description: 'Operational troubleshooting' },
       ]
     },
     { 
-      href: '/catalog', 
-      label: 'Catalog', 
-      icon: Database,
+      href: '/build', 
+      label: 'Build', 
+      icon: GitBranch,
       hasDropdown: true,
       dropdownItems: [
-        { href: '/catalog', label: 'Browse Catalog', icon: Database, description: 'Find datasets and schemas' },
-        { href: '/catalog?view=lineage', label: 'Lineage', icon: GitBranch, description: 'Data dependencies' },
-        { href: '/catalog?view=quality', label: 'Quality', icon: Shield, description: 'Data quality metrics' },
+        { href: '/build', label: 'Pipeline Templates', icon: GitBranch, description: 'Pipeline templates and wizards' },
+        { href: '/build?mode=patterns', label: 'Data Products', icon: Package, description: 'Data product patterns' },
+        { href: '/build?mode=deploy', label: 'Deployment', icon: Zap, description: 'Deployment workflows' },
       ]
     },
     { 
       href: '/configure', 
       label: 'Configure', 
       icon: Settings,
+      hasDropdown: true,
+      dropdownItems: [
+        { href: '/configure', label: 'Connected Systems', icon: Database, description: 'Connected systems and tools' },
+        { href: '/configure?view=infrastructure', label: 'Infrastructure', icon: Server, description: 'Infrastructure configuration' },
+        { href: '/configure?view=security', label: 'Security', icon: Shield, description: 'Security and access management' },
+        { href: '/configure?view=platform', label: 'Platform Settings', icon: Settings, description: 'Platform settings and scaling' },
+      ]
     },
   ];
   
