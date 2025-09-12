@@ -50,11 +50,6 @@ export function Navigation() {
   
   const navItems: NavItem[] = [
     { 
-      href: '/', 
-      label: 'Home', 
-      icon: Home,
-    },
-    { 
       href: '/monitor', 
       label: 'Monitor', 
       icon: Activity,
