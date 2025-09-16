@@ -17,7 +17,20 @@ import {
   Settings,
   LineChart,
   AlertTriangle,
-  Server
+  Server,
+  Link as LinkIcon,
+  Wrench,
+  BarChart3,
+  ShoppingCart,
+  Globe,
+  Layers,
+  Play,
+  Users,
+  Key,
+  Cable,
+  Gauge,
+  Hammer,
+  Share2
 } from 'lucide-react';
 import { NexusOneLogo } from '@/components/ui/logo';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -50,41 +63,57 @@ export function Navigation() {
   
   const navItems: NavItem[] = [
     { 
-      href: '/monitor', 
-      label: 'Monitor', 
-      icon: Activity,
-      isEmphasized: true, // Most important - what's happening now?
+      href: '/connections', 
+      label: 'Connections & Sources', 
+      icon: Cable,
       hasDropdown: true,
+      isEmphasized: false,
       dropdownItems: [
-        { href: '/monitor', label: 'System Health', icon: Activity, description: 'System health and alerts' },
-        { href: '/monitor?view=performance', label: 'Performance', icon: LineChart, description: 'Pipeline performance and issues' },
-        { href: '/monitor?view=incidents', label: 'Incidents', icon: AlertTriangle, description: 'Cross-system incident correlation' },
-        { href: '/monitor?view=troubleshoot', label: 'Troubleshoot', icon: Search, description: 'Operational troubleshooting' },
+        { href: '/connections', label: 'Connection Health', icon: Activity, description: 'Monitor data source reliability' },
+        { href: '/connections?tab=sources', label: 'Available Sources', icon: Database, description: 'Browse and configure sources' },
+        { href: '/connections?tab=setup', label: 'Setup Wizard', icon: Settings, description: 'Connect new data sources' },
+        { href: '/connections?tab=troubleshoot', label: 'Troubleshooting', icon: AlertTriangle, description: 'Resolve connection issues' }
       ]
     },
     { 
-      href: '/build', 
-      label: 'Build', 
-      icon: GitBranch,
+      href: '/quality', 
+      label: 'Quality & Monitoring', 
+      icon: Gauge,
       hasDropdown: true,
+      isEmphasized: true, // Core daily workflow
       dropdownItems: [
-        { href: '/build', label: 'Pipeline Templates', icon: GitBranch, description: 'Pipeline templates and wizards' },
-        { href: '/build?mode=patterns', label: 'Data Products', icon: Package, description: 'Data product patterns' },
-        { href: '/build?mode=deploy', label: 'Deployment', icon: Zap, description: 'Deployment workflows' },
+        { href: '/quality', label: 'Health Dashboard', icon: Activity, description: 'Real-time system health' },
+        { href: '/quality?tab=alerts', label: 'Active Alerts', icon: AlertTriangle, description: 'Prioritized issues' },
+        { href: '/quality?tab=metrics', label: 'Quality Metrics', icon: BarChart3, description: 'Data quality scores' },
+        { href: '/quality?tab=performance', label: 'Performance', icon: Zap, description: 'Pipeline performance tracking' }
       ]
     },
-    { 
-      href: '/configure', 
-      label: 'Configure', 
-      icon: Settings,
+    {
+      href: '/build',
+      label: 'Build & Deploy',
+      icon: Hammer,
       hasDropdown: true,
+      isEmphasized: false,
       dropdownItems: [
-        { href: '/configure', label: 'Connected Systems', icon: Database, description: 'Connected systems and tools' },
-        { href: '/configure?view=infrastructure', label: 'Infrastructure', icon: Server, description: 'Infrastructure configuration' },
-        { href: '/configure?view=security', label: 'Security', icon: Shield, description: 'Security and access management' },
-        { href: '/configure?view=platform', label: 'Platform Settings', icon: Settings, description: 'Platform settings and scaling' },
+        { href: '/build', label: 'Pipeline Studio', icon: Wrench, description: 'Create data pipelines' },
+        { href: '/build?tab=query', label: 'Query Builder', icon: Database, description: 'SQL development workspace' },
+        { href: '/build?tab=templates', label: 'Templates', icon: Layers, description: 'Reusable patterns' },
+        { href: '/build?tab=deploy', label: 'Deployment', icon: Play, description: 'Deploy to production' }
       ]
     },
+    {
+      href: '/govern',
+      label: 'Govern & Share',
+      icon: Share2,
+      hasDropdown: true,
+      isEmphasized: false,
+      dropdownItems: [
+        { href: '/govern', label: 'Data Products', icon: Package, description: 'Product catalog' },
+        { href: '/govern?tab=access', label: 'Access Control', icon: Shield, description: 'Manage permissions' },
+        { href: '/govern?tab=compliance', label: 'Compliance', icon: Key, description: 'Governance policies' },
+        { href: '/govern?tab=share', label: 'Marketplace', icon: Users, description: 'Share data products' }
+      ]
+    }
   ];
   
   return (
