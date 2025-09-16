@@ -70,8 +70,7 @@ export function Navigation() {
       isEmphasized: false,
       dropdownItems: [
         { href: '/connections', label: 'Connection Health', icon: Activity, description: 'Monitor data source reliability' },
-        { href: '/connections?tab=sources', label: 'Available Sources', icon: Database, description: 'Browse and configure sources' },
-        { href: '/connections?tab=setup', label: 'Setup Wizard', icon: Settings, description: 'Connect new data sources' },
+        { href: '/connections?tab=add', label: 'Add New Connection', icon: Settings, description: 'Connect new data sources' },
         { href: '/connections?tab=troubleshoot', label: 'Troubleshooting', icon: AlertTriangle, description: 'Resolve connection issues' }
       ]
     },

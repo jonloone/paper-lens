@@ -237,10 +237,9 @@ export default function ConnectionsPage() {
       </Card>
 
       <Tabs defaultValue={activeTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="health">Connection Health</TabsTrigger>
-          <TabsTrigger value="sources">Available Sources</TabsTrigger>
-          <TabsTrigger value="setup">Setup Wizard</TabsTrigger>
+          <TabsTrigger value="add">Add New Connection</TabsTrigger>
           <TabsTrigger value="troubleshoot">Troubleshooting</TabsTrigger>
         </TabsList>
 
@@ -321,54 +320,7 @@ export default function ConnectionsPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="sources" className="space-y-4">
-          {/* Available Sources Browser */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Browse Available Data Sources</CardTitle>
-              <CardDescription>
-                Discover and connect to available data sources in your environment
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Source categories */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                    <CardContent className="pt-6">
-                      <Database className="w-8 h-8 mb-2" />
-                      <p className="font-medium">Databases</p>
-                      <p className="text-sm text-muted-foreground">12 available</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                    <CardContent className="pt-6">
-                      <Zap className="w-8 h-8 mb-2" />
-                      <p className="font-medium">APIs</p>
-                      <p className="text-sm text-muted-foreground">8 available</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                    <CardContent className="pt-6">
-                      <Server className="w-8 h-8 mb-2" />
-                      <p className="font-medium">File Systems</p>
-                      <p className="text-sm text-muted-foreground">4 available</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="cursor-pointer hover:bg-muted/50 transition-colors">
-                    <CardContent className="pt-6">
-                      <Activity className="w-8 h-8 mb-2" />
-                      <p className="font-medium">Streams</p>
-                      <p className="text-sm text-muted-foreground">3 available</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="setup" className="space-y-4">
+        <TabsContent value="add" className="space-y-4">
           {/* Connection Wizard with AI Analysis */}
           <ConnectionAnalysisPanel 
             sources={[
