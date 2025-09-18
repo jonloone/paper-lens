@@ -75,11 +75,17 @@ export function Navigation() {
       ]
     },
     { 
-      href: '/monitor', 
-      label: 'Monitor', 
-      icon: Activity,
-      hasDropdown: false,
-      isEmphasized: true // Core daily workflow
+      href: '/quality', 
+      label: 'Quality & Monitoring', 
+      icon: Gauge,
+      hasDropdown: true,
+      isEmphasized: false, // Remove pulsing indicator
+      dropdownItems: [
+        { href: '/quality', label: 'Health Dashboard', icon: Activity, description: 'Real-time system health' },
+        { href: '/quality?tab=alerts', label: 'Active Alerts', icon: AlertTriangle, description: 'Prioritized issues' },
+        { href: '/quality?tab=metrics', label: 'Quality Metrics', icon: BarChart3, description: 'Data quality scores' },
+        { href: '/quality?tab=performance', label: 'Performance', icon: Zap, description: 'Pipeline performance tracking' }
+      ]
     },
     {
       href: '/build',
@@ -89,7 +95,7 @@ export function Navigation() {
       isEmphasized: false,
       dropdownItems: [
         { href: '/build', label: 'Pipeline Studio', icon: Wrench, description: 'Create data pipelines' },
-        { href: '/build?tab=query', label: 'Query Builder', icon: Database, description: 'SQL development workspace' },
+        { href: '/query', label: 'Query Library', icon: Database, description: 'Manage and organize SQL queries' },
         { href: '/build?tab=templates', label: 'Templates', icon: Layers, description: 'Reusable patterns' },
         { href: '/build?tab=deploy', label: 'Deployment', icon: Play, description: 'Deploy to production' }
       ]
