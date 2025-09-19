@@ -1,0 +1,375 @@
+'use client';
+
+import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
+import { Button } from '@/components/ui/button';
+import { StudioMode } from '@/components/studio/ProfessionalStudio';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import {
+  Eye,
+  Code,
+  Split,
+  RotateCcw,
+  ArrowLeft,
+  Play,
+  Save,
+  Settings,
+  GitBranch,
+  MoreVertical
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+
+// Dynamic import to avoid SSR issues with ReactFlow
+const ProfessionalStudio = dynamic(
+  () => import('@/components/studio/ProfessionalStudio'),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading Pipeline Studio...</p>
+        </div>
+      </div>
+    )
+  }
+);
+
+// Code Editor Component (placeholder - would be replaced with Monaco or similar)
+const CodeEditor = ({ pipelineName, selectedNode }: { pipelineName: string, selectedNode: string | null }) => {
+  const [code, setCode] = useState(getPipelineCode(pipelineName, selectedNode));
+  
+  return (
+    <div className="h-full flex flex-col bg-slate-900 text-slate-100">
+      {/* Code Editor Header */}
+      <div className="px-4 py-2 bg-slate-800 border-b border-slate-700 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Code className="h-4 w-4" />
+          <span className="text-sm font-medium">
+            {selectedNode ? `Node: ${selectedNode}` : `Pipeline: ${pipelineName}`}
+          </span>
+          {selectedNode && (
+            <Badge variant="secondary" className="text-xs">
+              Selected
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-slate-300 hover:text-white">
+            <Settings className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Code Content */}
+      <div className="flex-1 p-4 font-mono text-sm">
+        <pre className="whitespace-pre-wrap">
+          <code>{code}</code>
+        </pre>
+      </div>
+      
+      {/* Status Bar */}
+      <div className="px-4 py-2 bg-slate-800 border-t border-slate-700 flex items-center justify-between text-xs text-slate-400">
+        <div>Python | UTF-8 | Line 1, Col 1</div>
+        <div>✓ Syntax Valid</div>
+      </div>
+    </div>
+  );
+};
+
+// Sample code generator based on context
+function getPipelineCode(pipelineName: string, selectedNode: string | null): string {
+  if (selectedNode) {
+    return `# ${selectedNode} Node
+# Auto-generated transformation code
+
+import pandas as pd
+from nexusone.transforms import Transform
+
+class ${selectedNode}Transform(Transform):
+    
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Transform logic for ${selectedNode}
+        """
+        # TODO: Implement transformation logic
+        result = data.copy()
+        
+        # Example transformations:
+        # result['new_column'] = result['existing_column'].apply(lambda x: x * 2)
+        # result = result.filter(['column1', 'column2'])
+        # result = result.dropna()
+        
+        return result
+        
+    def validate(self, data: pd.DataFrame) -> bool:
+        """
+        Validate input data
+        """
+        required_columns = ['id', 'timestamp']
+        return all(col in data.columns for col in required_columns)
+`;
+  }
+  
+  return `# ${pipelineName} Pipeline
+# NexusOne Pipeline Configuration
+
+from nexusone.pipeline import Pipeline
+from nexusone.sources import DatabaseSource, APISource
+from nexusone.transforms import *
+from nexusone.destinations import DataWarehouse, S3
+
+# Pipeline Definition
+pipeline = Pipeline(
+    name="${pipelineName}",
+    description="Auto-generated pipeline",
+    schedule="@daily"
+)
+
+# Data Sources
+source = DatabaseSource(
+    connection="postgres://warehouse",
+    query="""
+        SELECT id, name, created_at, updated_at
+        FROM customers 
+        WHERE updated_at >= '{start_date}'
+    """
+)
+
+# Transformations
+clean_data = CleanTransform(
+    remove_nulls=['id', 'name'],
+    trim_strings=['name']
+)
+
+enrich_data = EnrichTransform(
+    joins=[
+        {
+            'source': 'reference.customer_segments',
+            'on': 'customer_id',
+            'how': 'left'
+        }
+    ]
+)
+
+validate_data = ValidateTransform(
+    rules=[
+        {'column': 'id', 'type': 'not_null'},
+        {'column': 'name', 'type': 'string', 'min_length': 2}
+    ]
+)
+
+# Destination
+destination = DataWarehouse(
+    table="dim.customers",
+    mode="upsert",
+    key_columns=['id']
+)
+
+# Build Pipeline
+pipeline.add_source(source)
+pipeline.add_transform(clean_data)
+pipeline.add_transform(enrich_data) 
+pipeline.add_transform(validate_data)
+pipeline.add_destination(destination)
+
+# Export
+if __name__ == "__main__":
+    pipeline.run()
+`;
+}
+
+type ViewMode = 'visual' | 'split' | 'code' | 'flip';
+
+export default function PipelineDevelopmentPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [viewMode, setViewMode] = useState<ViewMode>('split');
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [isUnsaved, setIsUnsaved] = useState(false);
+  
+  // Pipeline context from URL
+  const pipelineName = searchParams.get('pipeline') || 'new_pipeline';
+  const templateName = searchParams.get('template');
+  const mode = searchParams.get('mode') || 'edit';
+  const initialView = searchParams.get('view') as ViewMode || 'split';
+  
+  useEffect(() => {
+    setViewMode(initialView);
+  }, [initialView]);
+  
+  const handleViewModeChange = (newMode: ViewMode) => {
+    setViewMode(newMode);
+    // Update URL without navigation
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', newMode);
+    window.history.replaceState({}, '', url);
+  };
+  
+  const handleNodeSelect = (nodeId: string | null) => {
+    setSelectedNode(nodeId);
+  };
+  
+  const getInitialStudioMode = (): StudioMode => {
+    switch (mode) {
+      case 'debug': return 'operate';
+      case 'create': return 'build';
+      case 'edit': return 'build';
+      default: return 'build';
+    }
+  };
+  
+  const ViewModeSelector = () => (
+    <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+      {[
+        { key: 'visual', label: 'Visual', icon: Eye },
+        { key: 'split', label: 'Split', icon: Split },
+        { key: 'code', label: 'Code', icon: Code },
+        { key: 'flip', label: 'Flip', icon: RotateCcw },
+      ].map(({ key, label, icon: Icon }) => (
+        <Button
+          key={key}
+          variant={viewMode === key ? 'default' : 'ghost'}
+          size="sm"
+          onClick={() => handleViewModeChange(key as ViewMode)}
+          className="h-8"
+        >
+          <Icon className="h-4 w-4 mr-1" />
+          {label}
+        </Button>
+      ))}
+    </div>
+  );
+  
+  const renderStudioView = () => (
+    <ProfessionalStudio
+      initialMode={getInitialStudioMode()}
+      pipelineId={pipelineName}
+      pipelineName={pipelineName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+      onNodeSelect={handleNodeSelect}
+      onModeChange={(newMode) => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('mode', newMode);
+        window.history.replaceState({}, '', url);
+      }}
+    />
+  );
+  
+  const renderCodeView = () => (
+    <CodeEditor 
+      pipelineName={pipelineName}
+      selectedNode={selectedNode}
+    />
+  );
+  
+  const renderSplitView = (ratio: [number, number] = [60, 40]) => (
+    <div className="flex h-full">
+      <div style={{ width: `${ratio[0]}%` }} className="border-r">
+        {renderStudioView()}
+      </div>
+      <div style={{ width: `${ratio[1]}%` }}>
+        {renderCodeView()}
+      </div>
+    </div>
+  );
+  
+  const renderMainContent = () => {
+    switch (viewMode) {
+      case 'visual':
+        return renderStudioView();
+      case 'code':
+        return renderCodeView();
+      case 'split':
+        return renderSplitView([60, 40]);
+      case 'flip':
+        return renderSplitView([40, 60]);
+      default:
+        return renderSplitView();
+    }
+  };
+  
+  return (
+    <div className="h-[calc(100vh-3.5rem)] flex flex-col">
+      {/* Header */}
+      <div className="border-b bg-background px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push('/develop')}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Develop
+          </Button>
+          
+          <Separator orientation="vertical" className="h-6" />
+          
+          <div className="flex items-center gap-2">
+            <GitBranch className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium">
+              {pipelineName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </span>
+            {templateName && (
+              <Badge variant="secondary" className="text-xs">
+                from {templateName}
+              </Badge>
+            )}
+            {isUnsaved && (
+              <Badge variant="outline" className="text-xs">
+                Unsaved
+              </Badge>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <ViewModeSelector />
+          
+          <Separator orientation="vertical" className="h-6" />
+          
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" className="gap-2">
+              <Play className="h-4 w-4" />
+              Test Run
+            </Button>
+            
+            <Button size="sm" className="gap-2">
+              <Save className="h-4 w-4" />
+              Save Pipeline
+            </Button>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>Export Pipeline</DropdownMenuItem>
+                <DropdownMenuItem>Clone Pipeline</DropdownMenuItem>
+                <DropdownMenuItem>View History</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Pipeline Settings</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+      
+      {/* Main Content */}
+      <div className="flex-1">
+        {renderMainContent()}
+      </div>
+    </div>
+  );
+}

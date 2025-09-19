@@ -1,0 +1,91 @@
+/* Elevation System - Card elevations with consistent shadows */
+.elevation-0 {
+  box-shadow: none;
+  background: hsl(var(--background));
+}
+
+.elevation-1 {
+  background: hsl(var(--card));
+  box-shadow: 
+    0 1px 3px 0 rgb(0 0 0 / 0.1),
+    0 1px 2px -1px rgb(0 0 0 / 0.1),
+    0 0 0 1px hsl(var(--border) / 0.5);
+}
+
+.elevation-2 {
+  background: hsl(var(--card));
+  box-shadow: 
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1),
+    0 0 0 1px hsl(var(--border) / 0.4);
+}
+
+.elevation-3 {
+  background: hsl(var(--card));
+  box-shadow: 
+    0 10px 15px -3px rgb(0 0 0 / 0.1),
+    0 4px 6px -4px rgb(0 0 0 / 0.1),
+    0 0 0 1px hsl(var(--border) / 0.3);
+}
+
+.elevation-4 {
+  background: hsl(var(--card));
+  box-shadow: 
+    0 20px 25px -5px rgb(0 0 0 / 0.1),
+    0 8px 10px -6px rgb(0 0 0 / 0.1),
+    0 0 0 1px hsl(var(--border) / 0.2);
+}
+
+/* Dark mode elevation enhancements */
+.dark .elevation-1 {
+  box-shadow: 
+    0 1px 3px 0 rgb(0 0 0 / 0.4),
+    0 1px 2px -1px rgb(0 0 0 / 0.3),
+    0 0 0 1px hsl(var(--border) / 0.6),
+    0 0 12px -4px hsl(var(--primary) / 0.05);
+}
+
+.dark .elevation-2 {
+  box-shadow: 
+    0 4px 6px -1px rgb(0 0 0 / 0.5),
+    0 2px 4px -2px rgb(0 0 0 / 0.4),
+    0 0 0 1px hsl(var(--border) / 0.5),
+    0 0 16px -8px hsl(var(--primary) / 0.08);
+}
+
+.dark .elevation-3 {
+  box-shadow: 
+    0 10px 15px -3px rgb(0 0 0 / 0.6),
+    0 4px 6px -4px rgb(0 0 0 / 0.5),
+    0 0 0 1px hsl(var(--border) / 0.4),
+    0 0 24px -12px hsl(var(--primary) / 0.1);
+}
+
+.dark .elevation-4 {
+  box-shadow: 
+    0 20px 25px -5px rgb(0 0 0 / 0.7),
+    0 8px 10px -6px rgb(0 0 0 / 0.6),
+    0 0 0 1px hsl(var(--border) / 0.3),
+    0 0 32px -16px hsl(var(--primary) / 0.15);
+}
+
+/* Subtle interactive states without animations */
+.elevation-interactive {
+  transition: opacity 150ms ease;
+}
+
+.elevation-interactive:hover {
+  opacity: 0.95;
+}
+
+.elevation-interactive:active {
+  opacity: 0.9;
+}
+
+/* Focus ring for elevated elements */
+.elevation-focus:focus-visible {
+  outline: none;
+  ring: 2px solid hsl(var(--primary));
+  ring-offset: 2px;
+  ring-offset-color: hsl(var(--background));
+}

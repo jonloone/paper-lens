@@ -1,0 +1,543 @@
+'use client';
+
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Bot,
+  Settings,
+  Activity,
+  Users,
+  Shield,
+  Zap,
+  Database,
+  GitBranch,
+  Search,
+  Link,
+  PlayCircle,
+  PauseCircle,
+  StopCircle,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  ExternalLink,
+  Terminal,
+  FileText,
+  Server,
+  Code,
+  Eye,
+  Edit,
+  Trash2,
+  Plus
+} from 'lucide-react';
+
+interface MCPAgent {
+  id: string;
+  name: string;
+  type: 'crew' | 'standalone';
+  status: 'active' | 'paused' | 'stopped' | 'error';
+  description: string;
+  tools: string[];
+  lastActivity: string;
+  tasksCompleted: number;
+  errorRate: number;
+}
+
+interface CrewConfiguration {
+  id: string;
+  name: string;
+  agents: string[];
+  status: 'active' | 'inactive';
+  description: string;
+  successRate: number;
+  averageTime: string;
+  lastRun: string;
+}
+
+interface AgentTask {
+  id: string;
+  agentId: string;
+  agentName: string;
+  task: string;
+  status: 'running' | 'completed' | 'failed' | 'queued';
+  startTime: string;
+  endTime?: string;
+  result?: string;
+  error?: string;
+}
+
+export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState('agents');
+  const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+
+  // Mock data for MCP agents
+  const mcpAgents: MCPAgent[] = [
+    {
+      id: 'data-fusion-engineer',
+      name: 'Data Fusion Engineer',
+      type: 'standalone',
+      status: 'active',
+      description: 'Combines, integrates, and harmonizes data from multiple sources',
+      tools: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Database'],
+      lastActivity: '2 minutes ago',
+      tasksCompleted: 47,
+      errorRate: 0.02
+    },
+    {
+      id: 'geospatial-viz-engineer',
+      name: 'Geospatial Viz Engineer',
+      type: 'standalone',
+      status: 'active',
+      description: 'Expert assistance with map-based visualizations and geospatial data',
+      tools: ['Read', 'Write', 'WebFetch', 'Bash'],
+      lastActivity: '15 minutes ago',
+      tasksCompleted: 23,
+      errorRate: 0.01
+    },
+    {
+      id: 'backend-api-architect',
+      name: 'Backend API Architect',
+      type: 'standalone',
+      status: 'active',
+      description: 'Designs and implements backend services for frontend integration',
+      tools: ['Read', 'Write', 'Edit', 'Bash', 'WebFetch'],
+      lastActivity: '5 minutes ago',
+      tasksCompleted: 31,
+      errorRate: 0.03
+    },
+    {
+      id: 'statistical-audit-reviewer',
+      name: 'Statistical Audit Reviewer',
+      type: 'standalone',
+      status: 'paused',
+      description: 'Critical review of analytics platforms and ML models',
+      tools: ['Read', 'Edit', 'Bash', 'WebFetch'],
+      lastActivity: '1 hour ago',
+      tasksCompleted: 12,
+      errorRate: 0.00
+    }
+  ];
+
+  // Mock data for CrewAI configurations
+  const crewConfigurations: CrewConfiguration[] = [
+    {
+      id: 'data-pipeline-crew',
+      name: 'Data Pipeline Crew',
+      agents: ['data-fusion-engineer', 'backend-api-architect'],
+      status: 'active',
+      description: 'End-to-end data pipeline creation and optimization',
+      successRate: 0.95,
+      averageTime: '24 minutes',
+      lastRun: '1 hour ago'
+    },
+    {
+      id: 'ml-validation-crew',
+      name: 'ML Validation Crew',
+      agents: ['statistical-audit-reviewer', 'data-fusion-engineer'],
+      status: 'active',
+      description: 'Statistical validation and production readiness assessment',
+      successRate: 0.98,
+      averageTime: '18 minutes',
+      lastRun: '3 hours ago'
+    }
+  ];
+
+  // Mock data for current tasks
+  const currentTasks: AgentTask[] = [
+    {
+      id: 'task-1',
+      agentId: 'data-fusion-engineer',
+      agentName: 'Data Fusion Engineer',
+      task: 'Merge customer data from CRM with transaction data from MySQL',
+      status: 'running',
+      startTime: '2023-12-08T14:30:00Z'
+    },
+    {
+      id: 'task-2',
+      agentId: 'backend-api-architect',
+      agentName: 'Backend API Architect',
+      task: 'Design authentication endpoints for new user management system',
+      status: 'completed',
+      startTime: '2023-12-08T13:45:00Z',
+      endTime: '2023-12-08T14:25:00Z',
+      result: 'Successfully implemented JWT-based authentication with refresh tokens'
+    },
+    {
+      id: 'task-3',
+      agentId: 'geospatial-viz-engineer',
+      agentName: 'Geospatial Viz Engineer',
+      task: 'Optimize rendering performance for 100K+ geospatial points',
+      status: 'failed',
+      startTime: '2023-12-08T12:00:00Z',
+      endTime: '2023-12-08T12:30:00Z',
+      error: 'WebGL context lost during large dataset processing'
+    }
+  ];
+
+  const formatTimestamp = (isoString: string) => {
+    const date = new Date(isoString);
+    const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active':
+      case 'running':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-blue-500" />;
+      case 'failed':
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'paused':
+        return <PauseCircle className="h-4 w-4 text-yellow-500" />;
+      case 'stopped':
+      case 'inactive':
+        return <StopCircle className="h-4 w-4 text-gray-500" />;
+      case 'queued':
+        return <Clock className="h-4 w-4 text-orange-500" />;
+      default:
+        return <AlertCircle className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+      active: 'default',
+      running: 'default',
+      completed: 'secondary',
+      failed: 'destructive',
+      error: 'destructive',
+      paused: 'outline',
+      stopped: 'outline',
+      inactive: 'outline',
+      queued: 'secondary'
+    };
+    
+    return <Badge variant={variants[status] || 'outline'}>{status}</Badge>;
+  };
+
+  return (
+    <div className="container mx-auto py-8 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl">MCP/Crew Admin</h1>
+          <p className="text-muted-foreground">
+            Manage Model Context Protocol agents and CrewAI orchestration
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            New Agent
+          </Button>
+        </div>
+      </div>
+
+      {/* System Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-green-600">{mcpAgents.filter(a => a.status === 'active').length}</div>
+            <p className="text-sm text-muted-foreground">Active Agents</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-blue-600">{currentTasks.filter(t => t.status === 'running').length}</div>
+            <p className="text-sm text-muted-foreground">Running Tasks</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-orange-600">{crewConfigurations.filter(c => c.status === 'active').length}</div>
+            <p className="text-sm text-muted-foreground">Active Crews</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold text-purple-600">96.5%</div>
+            <p className="text-sm text-muted-foreground">Success Rate</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="agents" className="flex items-center gap-2">
+            <Bot className="h-4 w-4" />
+            MCP Agents
+          </TabsTrigger>
+          <TabsTrigger value="crews" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Crew Configs
+          </TabsTrigger>
+          <TabsTrigger value="tasks" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Current Tasks
+          </TabsTrigger>
+          <TabsTrigger value="logs" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            System Logs
+          </TabsTrigger>
+        </TabsList>
+
+        {/* MCP Agents Tab */}
+        <TabsContent value="agents" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5" />
+                Model Context Protocol Agents
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {mcpAgents.map((agent) => (
+                  <Card key={agent.id} className={`cursor-pointer transition-all hover:shadow-lg ${selectedAgent === agent.id ? 'ring-2 ring-primary' : ''}`} onClick={() => setSelectedAgent(agent.id)}>
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">{agent.name}</h3>
+                            <Badge variant="outline" className="text-xs">
+                              {agent.type}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(agent.status)}
+                            {getStatusBadge(agent.status)}
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{agent.description}</p>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Tasks Completed:</span>
+                            <span className="font-medium">{agent.tasksCompleted}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Error Rate:</span>
+                            <span className="font-medium">{(agent.errorRate * 100).toFixed(1)}%</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Last Activity:</span>
+                            <span className="font-medium">{agent.lastActivity}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="text-xs text-muted-foreground">Available Tools:</div>
+                          <div className="flex flex-wrap gap-1">
+                            {agent.tools.map((tool) => (
+                              <Badge key={tool} variant="secondary" className="text-xs">{tool}</Badge>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 pt-2">
+                          <Button size="sm" variant="outline">
+                            <Eye className="h-3 w-3 mr-1" />
+                            Monitor
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Settings className="h-3 w-3 mr-1" />
+                            Configure
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Terminal className="h-3 w-3 mr-1" />
+                            Logs
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Crew Configurations Tab */}
+        <TabsContent value="crews" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                CrewAI Configurations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {crewConfigurations.map((crew) => (
+                  <Card key={crew.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-medium">{crew.name}</h3>
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(crew.status)}
+                            {getStatusBadge(crew.status)}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" variant="outline">
+                            <PlayCircle className="h-3 w-3 mr-1" />
+                            Run
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <Edit className="h-3 w-3 mr-1" />
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">{crew.description}</p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <div className="text-muted-foreground">Agents:</div>
+                          <div className="font-medium">{crew.agents.length}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Success Rate:</div>
+                          <div className="font-medium">{(crew.successRate * 100).toFixed(1)}%</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Avg Time:</div>
+                          <div className="font-medium">{crew.averageTime}</div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Last Run:</div>
+                          <div className="font-medium">{crew.lastRun}</div>
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <div className="text-xs text-muted-foreground mb-1">Assigned Agents:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {crew.agents.map((agentId) => {
+                            const agent = mcpAgents.find(a => a.id === agentId);
+                            return agent ? (
+                              <Badge key={agentId} variant="outline" className="text-xs">{agent.name}</Badge>
+                            ) : null;
+                          })}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Current Tasks Tab */}
+        <TabsContent value="tasks" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Agent Task Monitor
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {currentTasks.map((task) => (
+                  <div key={task.id} className="p-4 border rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(task.status)}
+                            {getStatusBadge(task.status)}
+                          </div>
+                          <span className="text-sm text-muted-foreground">by {task.agentName}</span>
+                        </div>
+                        <div className="font-medium">{task.task}</div>
+                        <div className="text-sm text-muted-foreground">
+                          Started: {formatTimestamp(task.startTime)}
+                          {task.endTime && ` • Completed: ${formatTimestamp(task.endTime)}`}
+                        </div>
+                        {task.result && (
+                          <div className="text-sm p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 rounded">
+                            <strong>Result:</strong> {task.result}
+                          </div>
+                        )}
+                        {task.error && (
+                          <div className="text-sm p-2 bg-red-50 dark:bg-red-950/20 border border-red-200 rounded">
+                            <strong>Error:</strong> {task.error}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-3 w-3 mr-1" />
+                          Details
+                        </Button>
+                        {task.status === 'running' && (
+                          <Button size="sm" variant="outline">
+                            <StopCircle className="h-3 w-3 mr-1" />
+                            Stop
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* System Logs Tab */}
+        <TabsContent value="logs" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                System Logs & Debugging
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Button size="sm" variant="outline">
+                    <Terminal className="h-4 w-4 mr-2" />
+                    Agent Console
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <Server className="h-4 w-4 mr-2" />
+                    MCP Server Status
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <Code className="h-4 w-4 mr-2" />
+                    Debug Mode
+                  </Button>
+                </div>
+                <div className="p-4 bg-black text-green-400 font-mono text-sm rounded-lg">
+                  <div>[2023-12-08 14:30:15] INFO: MCP Server started on port 3000</div>
+                  <div>[2023-12-08 14:30:16] INFO: Agent 'data-fusion-engineer' registered successfully</div>
+                  <div>[2023-12-08 14:30:17] INFO: Agent 'geospatial-viz-engineer' registered successfully</div>
+                  <div>[2023-12-08 14:30:18] INFO: CrewAI orchestrator initialized</div>
+                  <div>[2023-12-08 14:32:45] INFO: Task 'task-1' assigned to agent 'data-fusion-engineer'</div>
+                  <div>[2023-12-08 14:32:46] INFO: Agent 'data-fusion-engineer' started task execution</div>
+                  <div>[2023-12-08 14:33:12] WARN: Agent 'geospatial-viz-engineer' encountered WebGL context loss</div>
+                  <div>[2023-12-08 14:35:01] INFO: Task 'task-2' completed successfully by 'backend-api-architect'</div>
+                  <div className="text-yellow-400">[2023-12-08 14:35:02] ► Agent 'data-fusion-engineer' is currently processing...</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
