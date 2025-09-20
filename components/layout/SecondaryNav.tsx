@@ -31,6 +31,16 @@ import {
   Share2,
   CheckCircle,
   XCircle,
+  Search,
+  TrendingUp,
+  Zap,
+  Target,
+  Brain,
+  Sparkles,
+  Filter,
+  Clock,
+  PlusCircle,
+  Cog,
 } from "lucide-react"
 
 interface NavItem {
@@ -51,65 +61,51 @@ interface SecondaryNavConfig {
 }
 
 const secondaryNavConfig: SecondaryNavConfig = {
-  '/connections': {
-    title: 'Connections',
-    description: 'Data sources & integrations',
+  '/': {
+    title: 'Overview',
+    description: 'Dashboard & work queue',
     items: [
-      { id: 'overview', label: 'Overview', href: '/connections', icon: LayoutDashboard },
-      { id: 'sources', label: 'Data Sources', href: '/connections/sources', icon: Database },
-      { id: 'health', label: 'Connection Health', href: '/connections/health', icon: Activity },
-      { id: 'add', label: 'Add Connection', href: '/connections/add', icon: Cable },
-      { id: 'troubleshoot', label: 'Troubleshooting', href: '/connections/troubleshoot', icon: AlertTriangle },
-      { id: 'settings', label: 'Settings', href: '/connections/settings', icon: Settings },
-    ]
-  },
-  '/monitor': {
-    title: 'Monitor',
-    description: 'System health & performance',
-    items: [
-      { id: 'overview', label: 'System Overview', href: '/monitor', icon: LayoutDashboard },
-      { id: 'pipelines', label: 'Pipeline Monitor', href: '/monitor/pipelines', icon: GitBranch, badge: '2', badgeVariant: 'destructive' },
-      { id: 'incidents', label: 'Active Incidents', href: '/monitor/incidents', icon: AlertTriangle, badge: '3', badgeVariant: 'secondary' },
-      { id: 'performance', label: 'Performance', href: '/monitor/performance', icon: BarChart3 },
-      { id: 'alerts', label: 'Alert Rules', href: '/monitor/alerts', icon: Bell },
-      { id: 'logs', label: 'System Logs', href: '/monitor/logs', icon: FileText },
-      { id: 'health', label: 'Health Checks', href: '/monitor/health', icon: CheckCircle },
+      { id: 'overview', label: 'System Health', href: '/', icon: LayoutDashboard },
+      { id: 'work-queue', label: 'My Work Queue', href: '/work-queue', icon: Clock },
+      { id: 'team-activity', label: 'Team Activity', href: '/team-activity', icon: Users },
+      { id: 'quick-actions', label: 'Quick Launch', href: '/quick-actions', icon: Zap },
     ]
   },
   '/build': {
     title: 'Build',
-    description: 'Create & develop pipelines',
+    description: 'Pipeline creation & patterns',
     items: [
-      { id: 'studio', label: 'Pipeline Studio', href: '/build', icon: Wrench },
-      { id: 'queries', label: 'Query Library', href: '/build/queries', icon: Database },
-      { id: 'templates', label: 'Templates', href: '/build/templates', icon: Layers },
-      { id: 'deploy', label: 'Deployment', href: '/build/deploy', icon: Play },
-      { id: 'test', label: 'Testing', href: '/build/test', icon: CheckCircle },
-      { id: 'version', label: 'Version Control', href: '/build/version', icon: GitBranch },
+      { id: 'create', label: 'Pipeline Creation', href: '/build', icon: PlusCircle, badge: 'MVP', badgeVariant: 'default' },
+      { id: 'patterns', label: 'Pattern Library', href: '/build/patterns', icon: Brain, badge: 'MVP', badgeVariant: 'default' },
+      { id: 'data-products', label: 'Data Product Definition', href: '/build/data-products', icon: Package },
+      { id: 'templates', label: 'Template Management', href: '/build/templates', icon: Layers },
     ]
   },
   '/products': {
     title: 'Products',
-    description: 'Data product management',
+    description: 'Data marketplace & insights',
     items: [
-      { id: 'catalog', label: 'Product Catalog', href: '/products', icon: Package },
-      { id: 'create', label: 'Create Product', href: '/products/create', icon: Hammer },
-      { id: 'quality', label: 'Quality Standards', href: '/products/quality', icon: Shield },
-      { id: 'access', label: 'Access Control', href: '/products/access', icon: Key },
-      { id: 'usage', label: 'Usage Analytics', href: '/products/usage', icon: BarChart3 },
-      { id: 'marketplace', label: 'Marketplace', href: '/products/marketplace', icon: Globe },
+      { id: 'marketplace', label: 'Data Marketplace', href: '/products', icon: Globe },
+      { id: 'quality', label: 'Quality Analytics', href: '/products/quality', icon: BarChart3 },
+      { id: 'usage', label: 'Usage Insights', href: '/products/usage', icon: TrendingUp },
     ]
   },
-  '/govern': {
-    title: 'Govern',
-    description: 'Governance & compliance',
+  '/investigate': {
+    title: 'Investigate',
+    description: 'Issues & performance analysis',
     items: [
-      { id: 'overview', label: 'Overview', href: '/govern', icon: Shield },
-      { id: 'policies', label: 'Policies', href: '/govern/policies', icon: FileText },
-      { id: 'compliance', label: 'Compliance', href: '/govern/compliance', icon: CheckCircle },
-      { id: 'access', label: 'Access Control', href: '/govern/access', icon: Key },
-      { id: 'audit', label: 'Audit Logs', href: '/govern/audit', icon: FileText },
-      { id: 'share', label: 'Sharing Rules', href: '/govern/share', icon: Share2 },
+      { id: 'overview', label: 'Active Issues', href: '/investigate', icon: AlertTriangle },
+      { id: 'performance', label: 'Performance Analysis', href: '/investigate/performance', icon: BarChart3 },
+      { id: 'correlation', label: 'System Correlation', href: '/investigate/correlation', icon: Target },
+    ]
+  },
+  '/platform': {
+    title: 'Platform',
+    description: 'Configuration & management',
+    items: [
+      { id: 'connections', label: 'Data Source Connections', href: '/platform/connections', icon: Database },
+      { id: 'users', label: 'User Management', href: '/platform/users', icon: Users },
+      { id: 'settings', label: 'System Settings', href: '/platform/settings', icon: Settings },
     ]
   }
 }

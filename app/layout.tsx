@@ -43,10 +43,7 @@ export default function RootLayout({
       <body className="font-sans" suppressHydrationWarning>
         <Providers>
           <div className="min-h-screen bg-background">
-            <Navigation />
-            <main className="flex-1">
-              {children}
-            </main>
+            {children}
           </div>
         </Providers>
       </body>

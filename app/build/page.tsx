@@ -1,720 +1,480 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Hammer, Database, Wrench, Layers, Play,
-  CheckCircle, XCircle, AlertCircle, Clock,
-  Brain, Bot, Sparkles, ArrowRight, RefreshCw,
-  Code, FileCode, GitBranch, Terminal, Zap,
-  DollarSign, Shield, AlertTriangle, Package,
-  Settings, Eye, Download, Upload, Copy
+import { cn } from '@/lib/utils';
+import {
+  Layers, Brain, Sparkles, Clock, Search, Filter, 
+  ArrowRight, ChevronRight, Database, FileText, 
+  GitBranch, Zap, Target, Users, TrendingUp,
+  Plus, Play, Settings, Bot, CheckCircle,
+  AlertCircle, Calendar, Hash
 } from 'lucide-react';
-import { crewAIService } from '@/lib/services/CrewAIService';
 
-// Types for the three-column workflow
-interface ProjectRequirements {
-  name: string;
-  description: string;
-  businessPurpose: string;
-  dataSources: string[];
-  expectedVolume: string;
-  freshnessRequirements: string;
-  targetAudience: string;
-  performanceNeeds: string;
-  qualityThresholds: string;
-  successCriteria: string;
-}
-
-interface ArchitectureOption {
+// Types for pattern-driven creation
+interface PipelinePattern {
   id: string;
   name: string;
   description: string;
-  pros: string[];
-  cons: string[];
-  estimatedCost: string;
+  category: 'ingestion' | 'transformation' | 'quality' | 'ml' | 'analytics';
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
   estimatedTime: string;
-  recommendationScore: number;
+  usageCount: number;
+  lastUsed?: string;
+  tags: string[];
+  confidence: number;
+  sourceType?: string;
+  targetType?: string;
+}
+
+interface RecommendedPattern {
+  pattern: PipelinePattern;
   reasoning: string;
+  relevanceScore: number;
+  organizationalFit: string;
 }
 
-interface GeneratedCode {
-  type: 'dbt' | 'airflow' | 'sql' | 'api';
-  name: string;
-  code: string;
-  language: string;
-  validated: boolean;
-}
+// Mock data for MVP demonstration
+const availablePatterns: PipelinePattern[] = [
+  {
+    id: 'pattern-1',
+    name: 'CDC to Warehouse',
+    description: 'Change Data Capture from transactional databases to data warehouse with real-time processing',
+    category: 'ingestion',
+    difficulty: 'intermediate',
+    estimatedTime: '45 minutes',
+    usageCount: 47,
+    lastUsed: '2 days ago',
+    tags: ['real-time', 'cdc', 'warehouse', 'kafka'],
+    confidence: 94,
+    sourceType: 'PostgreSQL',
+    targetType: 'Snowflake'
+  },
+  {
+    id: 'pattern-2',
+    name: 'ML Feature Pipeline',
+    description: 'End-to-end feature engineering pipeline with automated quality checks and versioning',
+    category: 'ml',
+    difficulty: 'advanced',
+    estimatedTime: '2 hours',
+    usageCount: 23,
+    lastUsed: '1 week ago',
+    tags: ['ml', 'features', 'quality', 'versioning'],
+    confidence: 87,
+    sourceType: 'Data Lake',
+    targetType: 'Feature Store'
+  },
+  {
+    id: 'pattern-3',
+    name: 'API Data Ingestion',
+    description: 'Robust API data ingestion with retry logic, rate limiting, and incremental loading',
+    category: 'ingestion',
+    difficulty: 'beginner',
+    estimatedTime: '30 minutes',
+    usageCount: 156,
+    lastUsed: 'Yesterday',
+    tags: ['api', 'incremental', 'retry', 'rate-limit'],
+    confidence: 98,
+    sourceType: 'REST API',
+    targetType: 'Data Lake'
+  },
+  {
+    id: 'pattern-4',
+    name: 'Customer 360 Analytics',
+    description: 'Customer data unification and analytics pipeline with PII handling and GDPR compliance',
+    category: 'analytics',
+    difficulty: 'intermediate',
+    estimatedTime: '1.5 hours',
+    usageCount: 31,
+    lastUsed: '3 days ago',
+    tags: ['customer-360', 'pii', 'gdpr', 'analytics'],
+    confidence: 91,
+    sourceType: 'Multiple Sources',
+    targetType: 'Analytics DB'
+  }
+];
 
-export default function BuildDeployPage() {
-  const searchParams = useSearchParams();
-  const activeTab = searchParams?.get('tab') || 'studio';
-  
-  // State for three-column workflow
-  const [currentStep, setCurrentStep] = useState(1);
-  const [requirements, setRequirements] = useState<Partial<ProjectRequirements>>({});
-  const [selectedArchitecture, setSelectedArchitecture] = useState<ArchitectureOption | null>(null);
-  const [generatedCode, setGeneratedCode] = useState<GeneratedCode[]>([]);
-  const [validationResults, setValidationResults] = useState<any>(null);
+const recentProjects = [
+  { name: 'Customer Analytics Pipeline', status: 'active', lastModified: '2 hours ago' },
+  { name: 'Real-time Order Processing', status: 'testing', lastModified: '1 day ago' },
+  { name: 'Marketing Attribution Model', status: 'completed', lastModified: '3 days ago' }
+];
+
+export default function BuildPage() {
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [projectDescription, setProjectDescription] = useState('');
+  const [aiRecommendations, setAiRecommendations] = useState<RecommendedPattern[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  
-  // Mock architecture options
-  const [architectureOptions] = useState<ArchitectureOption[]>([
-    {
-      id: 'opt-1',
-      name: 'Batch ELT Pipeline',
-      description: 'Traditional batch processing with dbt transformations',
-      pros: ['Proven reliability', 'Cost effective', 'Easy maintenance'],
-      cons: ['Higher latency', 'Not real-time capable'],
-      estimatedCost: '$500/month',
-      estimatedTime: '2 weeks',
-      recommendationScore: 85,
-      reasoning: 'Best fit for your daily reporting requirements with moderate data volume'
-    },
-    {
-      id: 'opt-2',
-      name: 'Stream Processing',
-      description: 'Real-time processing with Kafka and Spark Streaming',
-      pros: ['Real-time insights', 'Scalable', 'Low latency'],
-      cons: ['Higher complexity', 'More expensive', 'Requires expertise'],
-      estimatedCost: '$2000/month',
-      estimatedTime: '4 weeks',
-      recommendationScore: 65,
-      reasoning: 'Consider if real-time requirements become critical'
-    },
-    {
-      id: 'opt-3',
-      name: 'Hybrid Lambda Architecture',
-      description: 'Combines batch and stream processing for flexibility',
-      pros: ['Best of both worlds', 'Flexible', 'Future-proof'],
-      cons: ['Most complex', 'Highest cost', 'Maintenance overhead'],
-      estimatedCost: '$3000/month',
-      estimatedTime: '6 weeks',
-      recommendationScore: 70,
-      reasoning: 'Recommended if you need both historical and real-time views'
-    }
-  ]);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
 
-  const handleRequirementChange = (field: keyof ProjectRequirements, value: string) => {
-    setRequirements(prev => ({ ...prev, [field]: value }));
-  };
+  const categories = [
+    { id: 'all', label: 'All Patterns', count: availablePatterns.length },
+    { id: 'ingestion', label: 'Data Ingestion', count: availablePatterns.filter(p => p.category === 'ingestion').length },
+    { id: 'transformation', label: 'Transformation', count: availablePatterns.filter(p => p.category === 'transformation').length },
+    { id: 'analytics', label: 'Analytics', count: availablePatterns.filter(p => p.category === 'analytics').length },
+    { id: 'ml', label: 'ML/AI', count: availablePatterns.filter(p => p.category === 'ml').length },
+    { id: 'quality', label: 'Quality', count: availablePatterns.filter(p => p.category === 'quality').length }
+  ];
 
-  const validateRequirements = async () => {
+  const filteredPatterns = availablePatterns.filter(pattern => {
+    const matchesSearch = pattern.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         pattern.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         pattern.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesCategory = selectedCategory === 'all' || pattern.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleAIAnalysis = async () => {
+    if (!projectDescription.trim()) return;
+    
     setIsAnalyzing(true);
-    // Simulate AI validation
+    setShowAIAssistant(true);
+    
+    // Simulate AI analysis
     setTimeout(() => {
+      const recommendations: RecommendedPattern[] = [
+        {
+          pattern: availablePatterns[0],
+          reasoning: 'Based on your description of real-time customer data processing, this CDC pattern provides the low-latency foundation you need.',
+          relevanceScore: 96,
+          organizationalFit: 'Matches 3 similar projects completed by your team'
+        },
+        {
+          pattern: availablePatterns[3],
+          reasoning: 'Customer 360 analytics pattern includes the PII handling and compliance features mentioned in your requirements.',
+          relevanceScore: 88,
+          organizationalFit: 'Leverages existing customer data infrastructure'
+        }
+      ];
+      
+      setAiRecommendations(recommendations);
       setIsAnalyzing(false);
-      setCurrentStep(2);
     }, 2000);
   };
 
-  const selectArchitecture = (option: ArchitectureOption) => {
-    setSelectedArchitecture(option);
-    generateImplementation(option);
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'beginner': return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950/20';
+      case 'intermediate': return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20';
+      case 'advanced': return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20';
+      default: return 'text-muted-foreground';
+    }
   };
 
-  const generateImplementation = async (architecture: ArchitectureOption) => {
-    // Simulate code generation
-    const mockCode: GeneratedCode[] = [
-      {
-        type: 'dbt',
-        name: 'models/staging/stg_customers.sql',
-        code: `-- Staging model for customer data
-WITH source AS (
-    SELECT * FROM {{ source('raw', 'customers') }}
-),
-
-renamed AS (
-    SELECT
-        id AS customer_id,
-        email,
-        name,
-        created_at,
-        updated_at
-    FROM source
-)
-
-SELECT * FROM renamed`,
-        language: 'sql',
-        validated: true
-      },
-      {
-        type: 'airflow',
-        name: 'dags/customer_pipeline.py',
-        code: `from airflow import DAG
-from airflow.operators.bash import BashOperator
-from datetime import datetime, timedelta
-
-default_args = {
-    'owner': 'data-team',
-    'retries': 2,
-    'retry_delay': timedelta(minutes=5)
-}
-
-with DAG(
-    'customer_pipeline',
-    default_args=default_args,
-    schedule_interval='@daily',
-    start_date=datetime(2024, 1, 1),
-    catchup=False
-) as dag:
-    
-    extract = BashOperator(
-        task_id='extract_data',
-        bash_command='python /opt/airflow/scripts/extract.py'
-    )
-    
-    transform = BashOperator(
-        task_id='run_dbt',
-        bash_command='dbt run --models staging'
-    )
-    
-    extract >> transform`,
-        language: 'python',
-        validated: true
-      }
-    ];
-    
-    setGeneratedCode(mockCode);
-    setCurrentStep(3);
-  };
-
-  const runTests = async () => {
-    setIsAnalyzing(true);
-    // Simulate testing
-    setTimeout(() => {
-      setValidationResults({
-        passed: 8,
-        failed: 1,
-        warnings: 2,
-        coverage: 87
-      });
-      setIsAnalyzing(false);
-    }, 3000);
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'ingestion': return <Database className="h-4 w-4" />;
+      case 'transformation': return <GitBranch className="h-4 w-4" />;
+      case 'analytics': return <TrendingUp className="h-4 w-4" />;
+      case 'ml': return <Brain className="h-4 w-4" />;
+      case 'quality': return <CheckCircle className="h-4 w-4" />;
+      default: return <Layers className="h-4 w-4" />;
+    }
   };
 
   return (
-    <div className="container mx-auto py-6">
-      {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Hammer className="w-8 h-8" />
-          Build & Deploy
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Create data products efficiently using proven patterns
-        </p>
-      </div>
-
-      <Tabs defaultValue={activeTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="studio">Pipeline Studio</TabsTrigger>
-          <TabsTrigger value="query">Query Builder</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-          <TabsTrigger value="deploy">Deployment</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="studio" className="space-y-6">
-          {/* Progress Indicator */}
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className={`flex items-center gap-2 ${currentStep >= 1 ? 'text-primary' : 'text-muted-foreground'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                      currentStep >= 1 ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'
-                    }`}>
-                      1
-                    </div>
-                    <span className="text-sm font-medium">Requirements</span>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                  <div className={`flex items-center gap-2 ${currentStep >= 2 ? 'text-primary' : 'text-muted-foreground'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                      currentStep >= 2 ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'
-                    }`}>
-                      2
-                    </div>
-                    <span className="text-sm font-medium">Architecture</span>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                  <div className={`flex items-center gap-2 ${currentStep >= 3 ? 'text-primary' : 'text-muted-foreground'}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-                      currentStep >= 3 ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'
-                    }`}>
-                      3
-                    </div>
-                    <span className="text-sm font-medium">Implementation</span>
-                  </div>
-                </div>
-                <Badge variant="outline">
-                  Step {currentStep} of 3
-                </Badge>
-              </div>
-              <Progress value={currentStep * 33.33} className="h-2" />
-            </CardContent>
-          </Card>
-
-          {/* Three-Column Progressive Workflow */}
-          <div className="grid grid-cols-12 gap-6">
-            {/* Column 1: Intent & Requirements (30%) */}
-            <div className="col-span-12 lg:col-span-4">
-              <Card className={currentStep === 1 ? 'ring-2 ring-primary' : ''}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileCode className="w-5 h-5" />
-                    Intent & Requirements
-                  </CardTitle>
-                  <CardDescription>
-                    Define what you want to build
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[600px] pr-4">
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="name">Project Name</Label>
-                        <Input
-                          id="name"
-                          placeholder="e.g., Customer Analytics Pipeline"
-                          value={requirements.name || ''}
-                          onChange={(e) => handleRequirementChange('name', e.target.value)}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          placeholder="What does this pipeline do?"
-                          value={requirements.description || ''}
-                          onChange={(e) => handleRequirementChange('description', e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="purpose">Business Purpose</Label>
-                        <Textarea
-                          id="purpose"
-                          placeholder="Why is this needed? What problem does it solve?"
-                          value={requirements.businessPurpose || ''}
-                          onChange={(e) => handleRequirementChange('businessPurpose', e.target.value)}
-                        />
-                      </div>
-
-                      <Separator />
-
-                      <div>
-                        <Label htmlFor="sources">Data Sources</Label>
-                        <Input
-                          id="sources"
-                          placeholder="e.g., Salesforce, PostgreSQL, S3"
-                          value={requirements.dataSources?.join(', ') || ''}
-                          onChange={(e) => handleRequirementChange('dataSources', e.target.value.split(', '))}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="volume">Expected Volume</Label>
-                        <Input
-                          id="volume"
-                          placeholder="e.g., 1M records/day"
-                          value={requirements.expectedVolume || ''}
-                          onChange={(e) => handleRequirementChange('expectedVolume', e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="freshness">Freshness Requirements</Label>
-                        <Input
-                          id="freshness"
-                          placeholder="e.g., Real-time, Hourly, Daily"
-                          value={requirements.freshnessRequirements || ''}
-                          onChange={(e) => handleRequirementChange('freshnessRequirements', e.target.value)}
-                        />
-                      </div>
-
-                      <Separator />
-
-                      <div>
-                        <Label htmlFor="audience">Target Audience</Label>
-                        <Input
-                          id="audience"
-                          placeholder="Who will use this data?"
-                          value={requirements.targetAudience || ''}
-                          onChange={(e) => handleRequirementChange('targetAudience', e.target.value)}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="performance">Performance Needs</Label>
-                        <Input
-                          id="performance"
-                          placeholder="e.g., <5s query response"
-                          value={requirements.performanceNeeds || ''}
-                          onChange={(e) => handleRequirementChange('performanceNeeds', e.target.value)}
-                        />
-                      </div>
-
-                      <div className="pt-4">
-                        {currentStep === 1 && (
-                          <>
-                            <Alert className="mb-4">
-                              <Brain className="w-4 h-4" />
-                              <AlertDescription>
-                                AI will validate completeness and suggest improvements
-                              </AlertDescription>
-                            </Alert>
-                            <Button 
-                              className="w-full"
-                              onClick={validateRequirements}
-                              disabled={!requirements.name || !requirements.description || isAnalyzing}
-                            >
-                              {isAnalyzing ? (
-                                <>
-                                  <Bot className="w-4 h-4 mr-2 animate-pulse" />
-                                  Validating Requirements...
-                                </>
-                              ) : (
-                                <>
-                                  <ArrowRight className="w-4 h-4 mr-2" />
-                                  Validate & Continue
-                                </>
-                              )}
-                            </Button>
-                          </>
-                        )}
-                        
-                        {currentStep > 1 && (
-                          <Alert>
-                            <CheckCircle className="w-4 h-4 text-green-500" />
-                            <AlertDescription>
-                              Requirements validated and complete
-                            </AlertDescription>
-                          </Alert>
-                        )}
-                      </div>
-                    </div>
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Column 2: Architecture & Design (40%) */}
-            <div className="col-span-12 lg:col-span-5">
-              <Card className={currentStep === 2 ? 'ring-2 ring-primary' : ''}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Layers className="w-5 h-5" />
-                    Architecture & Design
-                  </CardTitle>
-                  <CardDescription>
-                    Choose the best technical approach
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[600px] pr-4">
-                    {currentStep < 2 ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <Layers className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>Complete requirements first</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <Alert>
-                          <Sparkles className="w-4 h-4" />
-                          <AlertDescription>
-                            <strong>AI Analysis Complete:</strong> Evaluated 3 architecture options based on your requirements
-                          </AlertDescription>
-                        </Alert>
-
-                        {architectureOptions.map((option) => (
-                          <Card 
-                            key={option.id}
-                            className={`cursor-pointer transition-all ${
-                              selectedArchitecture?.id === option.id ? 'ring-2 ring-primary' : 'hover:shadow-md'
-                            }`}
-                            onClick={() => selectArchitecture(option)}
-                          >
-                            <CardHeader>
-                              <div className="flex items-start justify-between">
-                                <div>
-                                  <CardTitle className="text-base">{option.name}</CardTitle>
-                                  <CardDescription>{option.description}</CardDescription>
-                                </div>
-                                <Badge variant={option.recommendationScore > 80 ? 'default' : 'secondary'}>
-                                  {option.recommendationScore}% Match
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <p className="text-sm font-medium text-green-600 mb-1">Pros</p>
-                                  <ul className="text-xs space-y-1">
-                                    {option.pros.map((pro, idx) => (
-                                      <li key={idx} className="flex items-start gap-1">
-                                        <CheckCircle className="w-3 h-3 text-green-500 mt-0.5" />
-                                        {pro}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-red-600 mb-1">Cons</p>
-                                  <ul className="text-xs space-y-1">
-                                    {option.cons.map((con, idx) => (
-                                      <li key={idx} className="flex items-start gap-1">
-                                        <XCircle className="w-3 h-3 text-red-500 mt-0.5" />
-                                        {con}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-                              
-                              <Separator />
-                              
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
-                                  <DollarSign className="w-4 h-4 text-muted-foreground" />
-                                  <span>{option.estimatedCost}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Clock className="w-4 h-4 text-muted-foreground" />
-                                  <span>{option.estimatedTime}</span>
-                                </div>
-                              </div>
-                              
-                              <Alert>
-                                <Bot className="w-3 h-3" />
-                                <AlertDescription className="text-xs">
-                                  <strong>AI Reasoning:</strong> {option.reasoning}
-                                </AlertDescription>
-                              </Alert>
-                            </CardContent>
-                          </Card>
-                        ))}
-
-                        {selectedArchitecture && (
-                          <Button className="w-full" onClick={() => setCurrentStep(3)}>
-                            <ArrowRight className="w-4 h-4 mr-2" />
-                            Generate Implementation
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Column 3: Implementation & Testing (30%) */}
-            <div className="col-span-12 lg:col-span-3">
-              <Card className={currentStep === 3 ? 'ring-2 ring-primary' : ''}>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Code className="w-5 h-5" />
-                    Implementation
-                  </CardTitle>
-                  <CardDescription>
-                    Generated code and testing
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ScrollArea className="h-[600px] pr-4">
-                    {currentStep < 3 ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <Code className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>Select architecture first</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <Alert>
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <AlertDescription>
-                            Generated {generatedCode.length} configuration files
-                          </AlertDescription>
-                        </Alert>
-
-                        {generatedCode.map((code, idx) => (
-                          <Card key={idx}>
-                            <CardHeader className="pb-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <FileCode className="w-4 h-4" />
-                                  <span className="text-sm font-medium">{code.name}</span>
-                                </div>
-                                <Badge variant="outline" className="text-xs">
-                                  {code.type}
-                                </Badge>
-                              </div>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="bg-muted rounded p-2 text-xs font-mono overflow-x-auto">
-                                <pre className="whitespace-pre">
-                                  {code.code.split('\n').slice(0, 10).join('\n')}
-                                  {code.code.split('\n').length > 10 && '\n...'}
-                                </pre>
-                              </div>
-                              <div className="flex gap-2 mt-2">
-                                <Button size="sm" variant="outline" className="flex-1">
-                                  <Eye className="w-3 h-3 mr-1" />
-                                  View
-                                </Button>
-                                <Button size="sm" variant="outline" className="flex-1">
-                                  <Copy className="w-3 h-3 mr-1" />
-                                  Copy
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-
-                        <Separator />
-
-                        {/* Testing Section */}
-                        <div className="space-y-3">
-                          <h4 className="text-sm font-medium">Testing & Validation</h4>
-                          
-                          {!validationResults ? (
-                            <Button 
-                              className="w-full"
-                              onClick={runTests}
-                              disabled={isAnalyzing}
-                            >
-                              {isAnalyzing ? (
-                                <>
-                                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                                  Running Tests...
-                                </>
-                              ) : (
-                                <>
-                                  <Play className="w-4 h-4 mr-2" />
-                                  Run Tests
-                                </>
-                              )}
-                            </Button>
-                          ) : (
-                            <Card>
-                              <CardContent className="pt-4">
-                                <div className="space-y-2">
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-green-600">Passed</span>
-                                    <span className="font-medium">{validationResults.passed}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-red-600">Failed</span>
-                                    <span className="font-medium">{validationResults.failed}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span className="text-yellow-600">Warnings</span>
-                                    <span className="font-medium">{validationResults.warnings}</span>
-                                  </div>
-                                  <Separator />
-                                  <div className="flex justify-between text-sm">
-                                    <span>Coverage</span>
-                                    <span className="font-medium">{validationResults.coverage}%</span>
-                                  </div>
-                                  <Progress value={validationResults.coverage} className="h-2" />
-                                </div>
-                              </CardContent>
-                            </Card>
-                          )}
-
-                          {validationResults && (
-                            <>
-                              <Alert>
-                                <Shield className="w-4 h-4" />
-                                <AlertDescription>
-                                  Security scan: No vulnerabilities detected
-                                </AlertDescription>
-                              </Alert>
-
-                              <div className="space-y-2">
-                                <Button className="w-full">
-                                  <Play className="w-4 h-4 mr-2" />
-                                  Deploy to Staging
-                                </Button>
-                                <Button variant="outline" className="w-full">
-                                  <Download className="w-4 h-4 mr-2" />
-                                  Download Files
-                                </Button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </ScrollArea>
-                </CardContent>
-              </Card>
-            </div>
+    <div className="container mx-auto p-6">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-light tracking-tight">
+              Pipeline Creation
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Build data pipelines 10x faster with AI-powered patterns
+            </p>
           </div>
-        </TabsContent>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => router.push('/build/patterns')}
+            >
+              <Layers className="h-4 w-4 mr-2" />
+              Browse Patterns
+            </Button>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Start Fresh
+            </Button>
+          </div>
+        </div>
 
-        <TabsContent value="query" className="space-y-4">
+        {/* AI-Powered Creation */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Bot className="h-5 w-5 text-primary" />
+              AI-Powered Pipeline Creation
+              <Badge variant="default" className="ml-2">MVP</Badge>
+            </CardTitle>
+            <CardDescription>
+              Describe your data pipeline requirements and get intelligent pattern recommendations
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="description">Project Description</Label>
+              <Textarea
+                id="description"
+                placeholder="Example: I need to build a real-time pipeline that processes customer events from our web app, enriches them with profile data, and feeds them to our analytics dashboard for immediate insights..."
+                value={projectDescription}
+                onChange={(e) => setProjectDescription(e.target.value)}
+                className="mt-2 min-h-[100px]"
+              />
+            </div>
+            
+            <Button 
+              onClick={handleAIAnalysis}
+              disabled={!projectDescription.trim() || isAnalyzing}
+              className="w-full"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                  Analyzing Requirements...
+                </>
+              ) : (
+                <>
+                  <Brain className="h-4 w-4 mr-2" />
+                  Get AI Recommendations
+                </>
+              )}
+            </Button>
+
+            {/* AI Recommendations */}
+            {showAIAssistant && (
+              <div className="border rounded-lg p-4 bg-background">
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <Target className="h-4 w-4 text-primary" />
+                  Recommended Patterns
+                </h4>
+                
+                {isAnalyzing ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center">
+                      <Sparkles className="h-8 w-8 animate-spin mx-auto mb-2 text-primary" />
+                      <p className="text-sm text-muted-foreground">
+                        Analyzing your requirements against organizational patterns...
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {aiRecommendations.map((rec, index) => (
+                      <div key={rec.pattern.id} className="border rounded-lg p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {rec.relevanceScore}% match
+                            </Badge>
+                            <span className="text-sm font-medium">{rec.pattern.name}</span>
+                          </div>
+                          <Button size="sm" variant="outline">
+                            Use Pattern
+                            <ArrowRight className="h-3 w-3 ml-1" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          {rec.reasoning}
+                        </p>
+                        <p className="text-xs text-primary">
+                          {rec.organizationalFit}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions and Recent Projects */}
+        <div className="grid grid-cols-3 gap-6">
+          {/* Pattern Categories */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Database className="w-5 h-5" />
-                Query Builder
+              <CardTitle className="text-base">Browse by Category</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {categories.map(category => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? "default" : "ghost"}
+                  className="w-full justify-between"
+                  onClick={() => setSelectedCategory(category.id)}
+                >
+                  <span className="flex items-center gap-2">
+                    {getCategoryIcon(category.id)}
+                    {category.label}
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    {category.count}
+                  </Badge>
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Recent Projects */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Recent Projects
               </CardTitle>
-              <CardDescription>
-                Natural language to SQL with optimization
-              </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Alert>
-                <Brain className="w-4 h-4" />
-                <AlertDescription>
-                  Describe what data you need in plain English, and AI will generate optimized SQL
-                </AlertDescription>
-              </Alert>
-              {/* Query builder interface will go here */}
+            <CardContent className="space-y-3">
+              {recentProjects.map((project, index) => (
+                <div key={index} className="flex items-center justify-between p-2 border rounded">
+                  <div>
+                    <p className="text-sm font-medium">{project.name}</p>
+                    <p className="text-xs text-muted-foreground">{project.lastModified}</p>
+                  </div>
+                  <Badge 
+                    variant={project.status === 'active' ? 'default' : 
+                             project.status === 'testing' ? 'secondary' : 'outline'}
+                    className="text-xs"
+                  >
+                    {project.status}
+                  </Badge>
+                </div>
+              ))}
+              <Button variant="outline" size="sm" className="w-full mt-2">
+                View All Projects
+              </Button>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="templates" className="space-y-4">
+          {/* Quick Start Templates */}
           <Card>
             <CardHeader>
-              <CardTitle>Pipeline Templates</CardTitle>
-              <CardDescription>
-                Reusable patterns for common use cases
-              </CardDescription>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Quick Start
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              {/* Templates gallery will go here */}
+            <CardContent className="space-y-2">
+              <Button variant="outline" className="w-full justify-start" size="sm">
+                <Database className="h-4 w-4 mr-2" />
+                Database to Warehouse
+              </Button>
+              <Button variant="outline" className="w-full justify-start" size="sm">
+                <FileText className="h-4 w-4 mr-2" />
+                File Processing
+              </Button>
+              <Button variant="outline" className="w-full justify-start" size="sm">
+                <Brain className="h-4 w-4 mr-2" />
+                ML Training Pipeline
+              </Button>
+              <Button variant="outline" className="w-full justify-start" size="sm">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Analytics Dashboard
+              </Button>
             </CardContent>
           </Card>
-        </TabsContent>
+        </div>
 
-        <TabsContent value="deploy" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deployment Management</CardTitle>
-              <CardDescription>
-                Deploy and manage your pipelines
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Deployment interface will go here */}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        {/* Pattern Library */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Layers className="h-5 w-5" />
+                Available Patterns
+              </span>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Search className="h-4 w-4 absolute left-2 top-2.5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search patterns..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-8 w-64"
+                  />
+                </div>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              {filteredPatterns.map(pattern => (
+                <Card key={pattern.id} className="cursor-pointer transition-shadow hover:shadow-md">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        {getCategoryIcon(pattern.category)}
+                        <CardTitle className="text-sm">{pattern.name}</CardTitle>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge className={cn("text-xs px-2", getDifficultyColor(pattern.difficulty))}>
+                          {pattern.difficulty}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {pattern.confidence}% fit
+                        </Badge>
+                      </div>
+                    </div>
+                    <CardDescription className="text-xs">
+                      {pattern.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {pattern.estimatedTime}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        Used {pattern.usageCount} times
+                      </span>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-1 mb-3">
+                      {pattern.tags.slice(0, 3).map(tag => (
+                        <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
+                          #{tag}
+                        </Badge>
+                      ))}
+                      {pattern.tags.length > 3 && (
+                        <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                          +{pattern.tags.length - 3}
+                        </Badge>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-muted-foreground">
+                        {pattern.sourceType} → {pattern.targetType}
+                      </div>
+                      <Button size="sm" variant="outline">
+                        Use Pattern
+                        <ArrowRight className="h-3 w-3 ml-1" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

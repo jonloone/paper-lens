@@ -4,28 +4,24 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  Database,
-  BarChart3,
+  LayoutDashboard,
+  Search,
   Hammer,
   Package,
   Settings,
   Users,
   Sun,
   Moon,
+  Cog,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 
 const coreNavigation = [
   {
-    title: "Connect",
-    href: "/connections",
-    icon: Database,
-  },
-  {
-    title: "Monitor", 
-    href: "/monitor",
-    icon: BarChart3,
+    title: "Overview",
+    href: "/",
+    icon: LayoutDashboard,
   },
   {
     title: "Build",
@@ -36,6 +32,16 @@ const coreNavigation = [
     title: "Products",
     href: "/products",
     icon: Package,
+  },
+  {
+    title: "Investigate",
+    href: "/investigate",
+    icon: Search,
+  },
+  {
+    title: "Platform",
+    href: "/platform",
+    icon: Cog,
   },
 ]
 
@@ -126,12 +132,12 @@ export function AppSidebar() {
           
           {/* Settings */}
           <Link
-            href="/settings"
+            href="/platform"
             className={cn(
               "h-14 w-14 flex flex-col items-center justify-center rounded-lg",
               "text-muted-foreground ",
               "transition-colors duration-200",
-              isActive("/settings") && "text-primary bg-primary/10 border border-primary/20"
+              isActive("/platform") && "text-primary bg-primary/10 border border-primary/20"
             )}
           >
             <Settings className="h-5 w-5 mb-1" />

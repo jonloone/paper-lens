@@ -11,6 +11,15 @@ const alertVariants = cva(
         default: "bg-background text-foreground",
         destructive:
           "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
+        // Semantic status variants optimized for dark mode
+        error:
+          "bg-status-error-bg border-status-error/30 text-status-error [&>svg]:text-status-error",
+        warning:
+          "bg-status-warning-bg border-status-warning/30 text-status-warning [&>svg]:text-status-warning",
+        success:
+          "bg-status-success-bg border-status-success/30 text-status-success [&>svg]:text-status-success",
+        info:
+          "bg-status-info-bg border-status-info/30 text-status-info [&>svg]:text-status-info",
       },
     },
     defaultVariants: {

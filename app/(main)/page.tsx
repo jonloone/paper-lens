@@ -257,8 +257,8 @@ export default function HomePage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-light tracking-tight dark:text-[#f0f6fc]">
-              Operations Command Center
+            <h1 className="text-3xl font-light tracking-tight">
+              NexusOne Overview
             </h1>
             <p className="text-sm dark:text-[#7d8590] mt-1">
               {mounted ? currentTime.toLocaleString('en-US', { 
@@ -593,20 +593,35 @@ export default function HomePage() {
           </Card>
         </div>
 
-        {/* AI-Powered Actions */}
+        {/* Quick Launch Actions */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Bot className="h-5 w-5" />
-              AI-Powered Actions
+              <Zap className="h-5 w-5" />
+              Quick Launch Actions
             </CardTitle>
-            <CardDescription>Contextual recommendations based on current system state</CardDescription>
+            <CardDescription>Start building with intelligent assistance</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
+              <Button 
+                className="justify-start h-auto py-4 px-4 bg-primary hover:bg-primary/90"
+                onClick={() => router.push('/build')}
+              >
+                <div className="flex items-start gap-3">
+                  <Layers className="h-6 w-6 mt-0.5" />
+                  <div className="text-left">
+                    <div className="font-medium text-sm">Create Pipeline</div>
+                    <div className="text-xs text-primary-foreground/80">
+                      AI-powered pattern creation
+                    </div>
+                  </div>
+                </div>
+              </Button>
+
               <Button 
                 variant="outline"
-                className="justify-start h-auto py-3 px-4"
+                className="justify-start h-auto py-4 px-4"
                 onClick={() => router.push('/investigate?ai=true')}
               >
                 <div className="flex items-start gap-3">
@@ -622,15 +637,15 @@ export default function HomePage() {
 
               <Button 
                 variant="outline"
-                className="justify-start h-auto py-3 px-4"
-                onClick={() => router.push('/optimize?ai=true')}
+                className="justify-start h-auto py-4 px-4"
+                onClick={() => router.push('/products')}
               >
                 <div className="flex items-start gap-3">
-                  <Zap className="h-5 w-5 mt-0.5 text-amber-600 dark:text-amber-400" />
+                  <Package className="h-5 w-5 mt-0.5 text-green-600 dark:text-green-400" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">Optimize Performance</div>
+                    <div className="font-medium text-sm">Browse Marketplace</div>
                     <div className="text-xs text-muted-foreground">
-                      Find bottlenecks & improvements
+                      Find reusable data products
                     </div>
                   </div>
                 </div>
@@ -638,15 +653,15 @@ export default function HomePage() {
 
               <Button 
                 variant="outline"
-                className="justify-start h-auto py-3 px-4"
-                onClick={() => router.push('/predict?ai=true')}
+                className="justify-start h-auto py-4 px-4"
+                onClick={() => router.push('/platform')}
               >
                 <div className="flex items-start gap-3">
-                  <Target className="h-5 w-5 mt-0.5 text-green-600 dark:text-green-400" />
+                  <Database className="h-5 w-5 mt-0.5 text-purple-500" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">Predictive Alerts</div>
+                    <div className="font-medium text-sm">Connect Sources</div>
                     <div className="text-xs text-muted-foreground">
-                      Prevent issues before they occur
+                      Configure data connections
                     </div>
                   </div>
                 </div>

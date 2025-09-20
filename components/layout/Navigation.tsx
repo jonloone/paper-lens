@@ -75,17 +75,9 @@ export function Navigation() {
       ]
     },
     { 
-      href: '/quality', 
-      label: 'Quality & Monitoring', 
-      icon: Gauge,
-      hasDropdown: true,
-      isEmphasized: false, // Remove pulsing indicator
-      dropdownItems: [
-        { href: '/quality', label: 'Health Dashboard', icon: Activity, description: 'Real-time system health' },
-        { href: '/quality?tab=alerts', label: 'Active Alerts', icon: AlertTriangle, description: 'Prioritized issues' },
-        { href: '/quality?tab=metrics', label: 'Quality Metrics', icon: BarChart3, description: 'Data quality scores' },
-        { href: '/quality?tab=performance', label: 'Performance', icon: Zap, description: 'Pipeline performance tracking' }
-      ]
+      href: '/monitor', 
+      label: 'Monitor', 
+      icon: Gauge
     },
     {
       href: '/build',
