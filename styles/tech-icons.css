@@ -1,0 +1,35 @@
+/* Tech Icons Styling */
+.tech-icon-wrapper {
+  @apply w-6 h-6 flex items-center justify-center;
+  @apply rounded bg-background/50;
+  @apply border border-border/50;
+  @apply transition-all duration-200;
+}
+
+.tech-icon-wrapper:hover {
+  @apply bg-accent/10 border-accent/30;
+  @apply scale-110;
+}
+
+.tech-icon-image {
+  @apply object-contain;
+  filter: contrast(1.1) saturate(1.2);
+}
+
+/* Dark mode adjustments */
+.dark .tech-icon-wrapper {
+  @apply bg-background/30;
+}
+
+.dark .tech-icon-image {
+  filter: contrast(0.9) saturate(0.9) brightness(1.1);
+}
+
+/* Inline icon for text */
+.tech-icon-inline {
+  @apply inline-flex w-5 h-5 mx-1 align-middle;
+}
+
+.tech-icon-inline img {
+  @apply object-contain;
+}

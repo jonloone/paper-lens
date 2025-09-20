@@ -82,6 +82,50 @@ export interface CrewInfo {
   metrics: CrewMetrics;
 }
 
+// ReAct-specific types
+export interface ReActStep {
+  type: 'thought' | 'action' | 'observation';
+  content: string;
+  timestamp: string;
+  confidence?: number;
+  tool_used?: string;
+}
+
+export interface ReActResponse {
+  success: boolean;
+  sql?: string;
+  reasoning_trace: ReActStep[];
+  validation?: {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+    suggestions: string[];
+  };
+  performance?: {
+    estimated_time_ms: number;
+    complexity_score: number;
+    recommendations: string[];
+  };
+  pattern: string;
+  timestamp: string;
+  arbitron_metrics?: ArbitronMetrics;
+}
+
+export interface ReActSQLRequest {
+  natural_language: string;
+  current_sql?: string;
+  target_databases?: string[];
+  dialect?: string;
+  context?: Record<string, any>;
+}
+
+export interface ReActOptimizationRequest {
+  sql: string;
+  context?: Record<string, any>;
+  performance_goal?: string;
+  data_size?: string;
+}
+
 export class CrewAIService {
   private baseUrl: string;
   private headers: HeadersInit;
@@ -409,6 +453,178 @@ export class CrewAIService {
     }
 
     return response.json();
+  }
+
+  // ReAct-specific methods
+  /**
+   * Generate SQL using ReAct pattern with iterative reasoning
+   */
+  async generateSQLWithReAct(request: ReActSQLRequest): Promise<ReActResponse> {
+    // Use enhanced proxy for ReAct functionality
+    const baseUrl = typeof window !== 'undefined' 
+      ? '/api/enhanced-proxy'
+      : 'http://137.220.61.218:8002';
+      
+    const response = await fetch(
+      `${baseUrl}/api/crews/react-sql/generate`,
+      {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify(request),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`ReAct SQL generation failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    // Track Arbitron usage if available
+    if (result.arbitron_metrics) {
+      this.trackArbitronUsage(result.arbitron_metrics);
+    }
+    
+    return result;
+  }
+
+  /**
+   * Optimize SQL query using ReAct pattern with iterative improvement
+   */
+  async optimizeQueryWithReAct(request: ReActOptimizationRequest): Promise<ReActResponse> {
+    // Use enhanced proxy for ReAct functionality
+    const baseUrl = typeof window !== 'undefined' 
+      ? '/api/enhanced-proxy'
+      : 'http://137.220.61.218:8002';
+      
+    const response = await fetch(
+      `${baseUrl}/api/crews/react-sql/optimize`,
+      {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify(request),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`ReAct SQL optimization failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    // Track Arbitron usage if available
+    if (result.arbitron_metrics) {
+      this.trackArbitronUsage(result.arbitron_metrics);
+    }
+    
+    return result;
+  }
+
+  /**
+   * Validate SQL using ReAct pattern with comprehensive analysis
+   */
+  async validateSQLWithReAct(params: {
+    sql: string;
+    context?: Record<string, any>;
+    dialect?: string;
+    validate_syntax?: boolean;
+    check_performance?: boolean;
+  }): Promise<ReActResponse> {
+    // Use enhanced proxy for ReAct functionality
+    const baseUrl = typeof window !== 'undefined' 
+      ? '/api/enhanced-proxy'
+      : 'http://137.220.61.218:8002';
+      
+    const response = await fetch(
+      `${baseUrl}/api/crews/react-sql/validate`,
+      {
+        method: 'POST',
+        headers: this.headers,
+        body: JSON.stringify(params),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`ReAct SQL validation failed: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    // Track Arbitron usage if available
+    if (result.arbitron_metrics) {
+      this.trackArbitronUsage(result.arbitron_metrics);
+    }
+    
+    return result;
+  }
+
+  /**
+   * Parse ReAct reasoning trace into structured steps
+   */
+  parseReasoningTrace(trace: string[]): ReActStep[] {
+    const steps: ReActStep[] = [];
+    let currentType: 'thought' | 'action' | 'observation' = 'thought';
+    
+    trace.forEach((step, index) => {
+      const lowerStep = step.toLowerCase();
+      
+      if (lowerStep.includes('thought:') || lowerStep.includes('thinking:')) {
+        currentType = 'thought';
+      } else if (lowerStep.includes('action:') || lowerStep.includes('using tool:')) {
+        currentType = 'action';
+      } else if (lowerStep.includes('observation:') || lowerStep.includes('result:')) {
+        currentType = 'observation';
+      }
+      
+      steps.push({
+        type: currentType,
+        content: step.replace(/^(thought:|action:|observation:)/i, '').trim(),
+        timestamp: new Date().toISOString(),
+        confidence: currentType === 'thought' ? Math.random() * 0.3 + 0.7 : undefined, // Mock confidence for thoughts
+      });
+    });
+    
+    return steps;
+  }
+
+  /**
+   * Get formatted reasoning summary from ReAct response
+   */
+  getReasoningSummary(response: ReActResponse): string {
+    if (!response.reasoning_trace || response.reasoning_trace.length === 0) {
+      return 'No reasoning trace available';
+    }
+
+    const thoughts = response.reasoning_trace.filter(step => step.type === 'thought');
+    const actions = response.reasoning_trace.filter(step => step.type === 'action');
+    
+    return `Applied ${thoughts.length} reasoning steps and ${actions.length} tool actions to generate solution with ${response.pattern} pattern.`;
+  }
+
+  /**
+   * Check if ReAct crew is available
+   */
+  async isReActAvailable(): Promise<boolean> {
+    try {
+      const baseUrl = typeof window !== 'undefined' 
+        ? '/api/enhanced-proxy'
+        : 'http://137.220.61.218:8002';
+        
+      const response = await fetch(`${baseUrl}/health`, {
+        method: 'GET',
+        headers: this.headers,
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const health = await response.json();
+      return health.crews_available?.includes('react-sql') || false;
+    } catch (error) {
+      console.warn('ReAct availability check failed:', error);
+      return false;
+    }
   }
 }
 
