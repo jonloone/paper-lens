@@ -117,13 +117,12 @@ export function SecondaryNav() {
   let primarySection = '/'
   const pathSegments = pathname.split('/')
 
-  if (pathSegments[1]) {
-    primarySection = '/' + pathSegments[1]
-  }
-
-  // Handle root path
-  if (pathname === '/') {
+  // Check if this is an Overview section page
+  const overviewPages = ['/work-queue', '/team-activity', '/quick-launch']
+  if (pathname === '/' || overviewPages.some(page => pathname.startsWith(page))) {
     primarySection = '/'
+  } else if (pathSegments[1]) {
+    primarySection = '/' + pathSegments[1]
   }
 
   const config = secondaryNavConfig[primarySection]
