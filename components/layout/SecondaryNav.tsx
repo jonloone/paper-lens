@@ -63,20 +63,20 @@ interface SecondaryNavConfig {
 const secondaryNavConfig: SecondaryNavConfig = {
   '/': {
     title: 'Overview',
-    description: 'Dashboard & work queue',
+    description: 'Mission control center',
     items: [
-      { id: 'overview', label: 'System Health', href: '/', icon: LayoutDashboard },
+      { id: 'system-health', label: 'System Health', href: '/', icon: LayoutDashboard },
       { id: 'work-queue', label: 'My Work Queue', href: '/work-queue', icon: Clock },
       { id: 'team-activity', label: 'Team Activity', href: '/team-activity', icon: Users },
-      { id: 'quick-actions', label: 'Quick Launch', href: '/quick-actions', icon: Zap },
+      { id: 'quick-launch', label: 'Quick Launch', href: '/quick-launch', icon: Zap },
     ]
   },
   '/build': {
     title: 'Build',
     description: 'Pipeline creation & patterns',
     items: [
-      { id: 'create', label: 'Pipeline Creation', href: '/build', icon: PlusCircle, badge: 'MVP', badgeVariant: 'default' },
-      { id: 'patterns', label: 'Pattern Library', href: '/build/patterns', icon: Brain, badge: 'MVP', badgeVariant: 'default' },
+      { id: 'create', label: 'Pipeline Creation', href: '/build', icon: PlusCircle },
+      { id: 'patterns', label: 'Pattern Library', href: '/build/patterns', icon: Brain },
       { id: 'data-products', label: 'Data Product Definition', href: '/build/data-products', icon: Package },
       { id: 'templates', label: 'Template Management', href: '/build/templates', icon: Layers },
     ]
@@ -112,20 +112,35 @@ const secondaryNavConfig: SecondaryNavConfig = {
 
 export function SecondaryNav() {
   const pathname = usePathname()
-  
+
   // Get the primary section from the pathname
-  const primarySection = '/' + pathname.split('/')[1]
+  let primarySection = '/'
+  const pathSegments = pathname.split('/')
+
+  if (pathSegments[1]) {
+    primarySection = '/' + pathSegments[1]
+  }
+
+  // Handle root path
+  if (pathname === '/') {
+    primarySection = '/'
+  }
+
   const config = secondaryNavConfig[primarySection]
-  
+
   if (!config) return null
   
   const isActive = (href: string) => {
-    if (href === primarySection) {
-      // For the overview page, exact match
+    // Exact match for root
+    if (href === '/') {
+      return pathname === '/'
+    }
+    // For section landing pages, exact match
+    if (href === '/build' || href === '/products' || href === '/investigate' || href === '/platform') {
       return pathname === href
     }
     // For sub-pages, check if pathname starts with href
-    return pathname.startsWith(href)
+    return pathname === href || pathname.startsWith(href + '/')
   }
   
   return (
