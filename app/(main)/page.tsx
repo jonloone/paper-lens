@@ -12,12 +12,21 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import {
   Activity, AlertCircle, AlertTriangle, ArrowRight, ArrowUp, ArrowDown,
-  Brain, CheckCircle, ChevronRight, Clock, Cpu, Database, 
-  DollarSign, Flame, GitBranch, HardDrive, Loader2, MemoryStick, 
+  Brain, CheckCircle, ChevronRight, Clock, Cpu, Database,
+  DollarSign, Flame, GitBranch, HardDrive, Loader2, MemoryStick,
   RefreshCw, Server, Shield, Sparkles, Target, TrendingDown,
   TrendingUp, Users, XCircle, Zap, Timer, Minus, Bot,
-  FileWarning, Package, Layers, Network
+  FileWarning, Package, Layers, Network, Play, Pause, BarChart3,
+  Eye, Settings, Wrench, CheckCircle2, LineChart, Calendar,
+  Grid3X3, Activity as Pulse
 } from 'lucide-react';
+
+// Import VisX visualization components
+import { QualityTrendsChart } from '@/components/visualizations/QualityTrendsChart';
+import { SchemaDriftTimeline } from '@/components/visualizations/SchemaDriftTimeline';
+import { DataCompletenessHeatmap } from '@/components/visualizations/DataCompletenessHeatmap';
+import { PipelineHealthChart } from '@/components/visualizations/PipelineHealthChart';
+import { mockVisualizationData } from '@/lib/mock-data/visualization-data';
 
 // Types for operational intelligence
 interface CriticalIssue {
@@ -29,6 +38,29 @@ interface CriticalIssue {
   duration: string;
   affectedPipelines: number;
   recommendation?: AIRecommendation;
+}
+
+// New Pipeline Types
+interface PipelineStatus {
+  id: string;
+  name: string;
+  domain: string;
+  status: 'running' | 'paused' | 'failed' | 'warning';
+  lastRun: string;
+  nextRun: string;
+  successRate: number;
+  avgDuration: string;
+  qualityScore: number;
+  recordsProcessed: string;
+}
+
+interface QualityMetric {
+  domain: string;
+  score: number;
+  trend: 'up' | 'down' | 'stable';
+  change: number;
+  issuesCount: number;
+  rulesCount: number;
 }
 
 interface AIRecommendation {
@@ -184,6 +216,151 @@ const teamQueue: TeamTask[] = [
   { type: 'approval', count: 2 }
 ];
 
+// Pipeline Operations Data
+const activePipelines: PipelineStatus[] = [
+  {
+    id: 'customer-360-etl',
+    name: 'Customer 360 ETL',
+    domain: 'Customer',
+    status: 'running',
+    lastRun: '2 hours ago',
+    nextRun: 'In 4 hours',
+    successRate: 98.5,
+    avgDuration: '12 min',
+    qualityScore: 94,
+    recordsProcessed: '2.3M'
+  },
+  {
+    id: 'revenue-attribution',
+    name: 'Revenue Attribution',
+    domain: 'Finance',
+    status: 'warning',
+    lastRun: '15 min ago',
+    nextRun: 'In 45 min',
+    successRate: 89.2,
+    avgDuration: '8 min',
+    qualityScore: 87,
+    recordsProcessed: '847K'
+  },
+  {
+    id: 'product-analytics',
+    name: 'Product Analytics Stream',
+    domain: 'Product',
+    status: 'running',
+    lastRun: '1 min ago',
+    nextRun: 'Continuous',
+    successRate: 99.1,
+    avgDuration: '3 sec',
+    qualityScore: 96,
+    recordsProcessed: '1.2M/hr'
+  },
+  {
+    id: 'marketing-attribution',
+    name: 'Marketing Attribution',
+    domain: 'Marketing',
+    status: 'paused',
+    lastRun: '1 day ago',
+    nextRun: 'Manual',
+    successRate: 92.3,
+    avgDuration: '15 min',
+    qualityScore: 91,
+    recordsProcessed: '654K'
+  },
+  {
+    id: 'ops-monitoring',
+    name: 'Operations Monitoring',
+    domain: 'Operations',
+    status: 'failed',
+    lastRun: '30 min ago',
+    nextRun: 'Retry in 15 min',
+    successRate: 95.7,
+    avgDuration: '5 min',
+    qualityScore: 78,
+    recordsProcessed: '0'
+  }
+];
+
+// Quality Intelligence Data
+const qualityMetrics: QualityMetric[] = [
+  {
+    domain: 'Customer',
+    score: 94.2,
+    trend: 'up',
+    change: 2.1,
+    issuesCount: 2,
+    rulesCount: 15
+  },
+  {
+    domain: 'Finance',
+    score: 91.7,
+    trend: 'down',
+    change: -1.3,
+    issuesCount: 4,
+    rulesCount: 12
+  },
+  {
+    domain: 'Product',
+    score: 96.8,
+    trend: 'stable',
+    change: 0.2,
+    issuesCount: 1,
+    rulesCount: 18
+  },
+  {
+    domain: 'Marketing',
+    score: 89.4,
+    trend: 'up',
+    change: 3.2,
+    issuesCount: 3,
+    rulesCount: 10
+  },
+  {
+    domain: 'Operations',
+    score: 87.1,
+    trend: 'down',
+    change: -4.1,
+    issuesCount: 6,
+    rulesCount: 14
+  }
+];
+
+// Active Issues and Opportunities
+const activeIssues = [
+  {
+    id: 'schema-drift-customer',
+    title: 'Schema drift in customer_events',
+    domain: 'Customer',
+    severity: 'high',
+    impact: '3 downstream pipelines affected',
+    action: 'Fix Schema Issues'
+  },
+  {
+    id: 'quality-rule-failing',
+    title: 'Completeness rule failing (revenue)',
+    domain: 'Finance',
+    severity: 'medium',
+    impact: 'Revenue reports may be incomplete',
+    action: 'Review Quality Rules'
+  }
+];
+
+const optimizationOpportunities = [
+  {
+    id: 'customer-etl-perf',
+    title: 'Customer ETL 40% slower than baseline',
+    domain: 'Customer',
+    impact: 'Potential cost savings: $340/month',
+    action: 'Optimize Pipeline'
+  },
+  {
+    id: 'unused-data-product',
+    title: 'Marketing segments unused for 30+ days',
+    domain: 'Marketing',
+    impact: 'Storage cost reduction: $180/month',
+    action: 'Archive or Sunset'
+  }
+];
+
 export default function HomePage() {
   const router = useRouter();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -211,6 +388,45 @@ export default function HomePage() {
       // Navigate to investigation with context
       router.push(`/investigate?issue=${issue.id}&ai=true`);
     }, 1500);
+  };
+
+  const navigateToWorkflow = (actionType: string, context?: any) => {
+    switch (actionType) {
+      case 'Fix Schema Issues':
+        router.push('/build?mode=schema-fix&domain=' + context?.domain);
+        break;
+      case 'Review Quality Rules':
+        router.push('/quality-dashboard?domain=' + context?.domain);
+        break;
+      case 'Optimize Pipeline':
+        router.push('/build?mode=optimize&pipeline=' + context?.id);
+        break;
+      case 'View Pipeline Details':
+        router.push('/quality-dashboard?pipeline=' + context?.id);
+        break;
+      default:
+        router.push('/build');
+    }
+  };
+
+  const getPipelineStatusColor = (status: string) => {
+    switch (status) {
+      case 'running': return 'text-green-600 dark:text-green-400';
+      case 'warning': return 'text-amber-600 dark:text-amber-400';
+      case 'failed': return 'text-destructive';
+      case 'paused': return 'text-muted-foreground';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const getPipelineStatusIcon = (status: string) => {
+    switch (status) {
+      case 'running': return <Play className="h-3 w-3 text-green-600 dark:text-green-400" />;
+      case 'warning': return <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />;
+      case 'failed': return <XCircle className="h-3 w-3 text-destructive" />;
+      case 'paused': return <Pause className="h-3 w-3 text-muted-foreground" />;
+      default: return <Clock className="h-3 w-3" />;
+    }
   };
 
   const getSeverityColor = (severity: string) => {
@@ -252,13 +468,13 @@ export default function HomePage() {
   const hasIssues = criticalIssues.length > 0;
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="space-y-6">
+    <div className="w-full px-8 lg:px-12 xl:px-16 py-6">
+      <div className="space-y-6 max-w-[1920px] mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-light tracking-tight">
-              NexusOne Overview
+              Data Operations Command Center
             </h1>
             <p className="text-sm dark:text-[#7d8590] mt-1">
               {mounted ? currentTime.toLocaleString('en-US', { 
@@ -285,310 +501,415 @@ export default function HomePage() {
           </Button>
         </div>
 
-        {/* Crisis Response Zone */}
-        {hasIssues && (
-          <Card className="border-destructive/50">
+        {/* Data Intelligence Visualization Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Quality Trends Over Time */}
+          <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <AlertCircle className="h-5 w-5 text-destructive animate-pulse" />
-                  Active Issues Requiring Attention
-                </span>
-                <Badge variant="destructive">{criticalIssues.length} issues</Badge>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <LineChart className="h-5 w-5 text-primary" />
+                Data Quality Trends
               </CardTitle>
+              <CardDescription>Quality scores across domains over the last 30 days</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {criticalIssues.map(issue => (
-                <div key={issue.id} className={cn(
-                  "border rounded-lg p-4",
-                  getSeverityColor(issue.severity)
-                )}>
-                  <div className="space-y-3">
-                    {/* Issue Header */}
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant={issue.severity === 'critical' ? 'destructive' : 'secondary'} className="font-semibold">
-                            {issue.severity.toUpperCase()}
-                          </Badge>
-                          <Badge variant="outline">{issue.system}</Badge>
-                          <span className="text-xs text-muted-foreground">
-                            Active for {issue.duration}
-                          </span>
-                        </div>
-                        <h3 className="font-medium mt-2">{issue.title}</h3>
-                        <p className="text-sm text-destructive-foreground mt-1 flex items-center gap-1">
-                          <Flame className="h-3 w-3" />
-                          {issue.businessImpact}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Affecting {issue.affectedPipelines} pipelines
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* AI Recommendation */}
-                    {issue.recommendation && (
-                      <div className="bg-muted rounded-lg p-3 border">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <Brain className="h-4 w-4 text-primary" />
-                            <span className="text-sm font-medium">AI Recommendation</span>
-                            <Badge variant="outline" className="text-xs">
-                              {issue.recommendation.confidence}% confidence
-                            </Badge>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            {issue.recommendation.successRate}% success rate
-                          </Badge>
-                        </div>
-                        
-                        <p className="text-sm font-medium mb-1">
-                          {issue.recommendation.action}
-                        </p>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {issue.recommendation.reasoning}
-                        </p>
-                        
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
-                            Est. {issue.recommendation.estimatedTime} to resolve
-                          </span>
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-xs"
-                              onClick={() => router.push(`/investigate?issue=${issue.id}`)}
-                            >
-                              Investigate Manually
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => handleAIRecommendation(issue)}
-                              disabled={aiProcessing}
-                            >
-                              {aiProcessing ? (
-                                <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                              ) : (
-                                <Zap className="h-3 w-3 mr-1" />
-                              )}
-                              Apply AI Solution
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+            <CardContent>
+              <div className="h-[300px]">
+                <QualityTrendsChart data={mockVisualizationData.qualityTrends} />
+              </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* System Health Grid */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Server className="h-5 w-5" />
-              Infrastructure Health
-            </CardTitle>
-            <CardDescription>Real-time status of critical systems</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-5 gap-4">
-              {systemHealthMetrics.map(metric => (
-                <div 
-                  key={metric.system}
-                  className={cn(
-                    "border rounded-lg p-3",
-                    metric.status === 'critical' && "border-destructive/50 bg-destructive/5",
-                    metric.status === 'degraded' && "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{metric.system}</span>
-                    <span className={cn("text-xs", getHealthColor(metric.status))}>
-                      {metric.status}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-2xl font-semibold">
-                        {metric.metrics.current}
-                        <span className="text-xs text-muted-foreground ml-1">
-                          {metric.metrics.unit}
-                        </span>
-                      </p>
-                    </div>
-                    <div className={cn(
-                      "flex items-center text-xs",
-                      metric.metrics.trend === 'up' && metric.status === 'critical' ? 'text-destructive' :
-                      metric.metrics.trend === 'up' ? 'text-green-600 dark:text-green-400' :
-                      metric.metrics.trend === 'down' ? 'text-amber-600 dark:text-amber-400' :
-                      'text-gray-500'
-                    )}>
-                      {getTrendIcon(metric.metrics.trend)}
-                    </div>
-                  </div>
-
-                  {metric.prediction && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" />
-                      {metric.prediction}
-                    </p>
-                  )}
-
-                  {metric.metrics.threshold && (
-                    <Progress 
-                      value={(metric.metrics.current / metric.metrics.threshold) * 100} 
-                      className="h-1 mt-2"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Operational Intelligence Dashboard */}
-        <div className="grid grid-cols-3 gap-6">
-          {/* Pipeline Health */}
+          {/* Schema Drift Timeline */}
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <GitBranch className="h-4 w-4" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-amber-600" />
+                Schema Changes
+              </CardTitle>
+              <CardDescription>Recent schema modifications and their impact</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <SchemaDriftTimeline data={mockVisualizationData.schemaDrift} />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Data Completeness & Pipeline Health Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Data Completeness Heatmap */}
+          <Card className="xl:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Grid3X3 className="h-5 w-5 text-green-600" />
+                Data Completeness Matrix
+              </CardTitle>
+              <CardDescription>Field completeness across datasets and domains</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <DataCompletenessHeatmap data={mockVisualizationData.completeness} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pipeline Health Metrics */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Pulse className="h-5 w-5 text-blue-600" />
                 Pipeline Health
               </CardTitle>
+              <CardDescription>Real-time processing metrics</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {pipelineHealth.map(metric => (
-                <div key={metric.label} className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{metric.label}</span>
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "text-sm font-medium",
-                      metric.status === 'warning' && "text-amber-600 dark:text-amber-400",
-                      metric.status === 'critical' && "text-destructive"
-                    )}>
-                      {metric.value}
-                    </span>
-                    {metric.change !== undefined && (
-                      <span className={cn(
-                        "text-xs flex items-center",
-                        metric.trend === 'up' && metric.status === 'warning' ? 'text-amber-600 dark:text-amber-400' :
-                        metric.trend === 'up' ? 'text-green-600 dark:text-green-400' :
-                        'text-destructive'
-                      )}>
-                        {metric.trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                        {Math.abs(metric.change)}
-                      </span>
-                    )}
+            <CardContent className="space-y-4">
+              {/* Throughput Chart */}
+              <div>
+                <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Throughput
+                </div>
+                <div className="h-[120px]">
+                  <PipelineHealthChart
+                    data={mockVisualizationData.pipelineHealth}
+                    metric="throughput"
+                  />
+                </div>
+              </div>
+
+              {/* Latency Chart */}
+              <div>
+                <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  Latency
+                </div>
+                <div className="h-[120px]">
+                  <PipelineHealthChart
+                    data={mockVisualizationData.pipelineHealth}
+                    metric="latency"
+                  />
+                </div>
+              </div>
+
+              {/* CDC Events Chart */}
+              <div>
+                <div className="text-sm font-medium mb-2 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  CDC Events
+                </div>
+                <div className="h-[120px]">
+                  <PipelineHealthChart
+                    data={mockVisualizationData.pipelineHealth}
+                    metric="cdc"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* System Health Command Strip */}
+        <div className="bg-card p-4 rounded-lg border">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              System Health Overview
+            </h2>
+            <div className="text-sm text-muted-foreground">
+              Last updated: {mounted ? new Date(Date.now() - 2 * 60 * 1000).toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
+              }) : '...'} ago
+            </div>
+          </div>
+
+          <div className="flex gap-6">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Pipelines</span>
+                <span className="text-xs text-muted-foreground">23 active, 2 need attention</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-amber-500 rounded-full"></div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Quality</span>
+                <span className="text-xs text-muted-foreground">92.1% avg, 3 rules failing</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Processing</span>
+                <span className="text-xs text-muted-foreground">2.3M records/hr, normal throughput</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Infrastructure</span>
+                <span className="text-xs text-muted-foreground">All systems operational</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Grid: Pipeline Operations + Quality Intelligence */}
+        <div className="grid grid-cols-12 gap-6">
+          {/* Left Column: Pipeline Operations */}
+          <div className="col-span-7">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <GitBranch className="h-5 w-5" />
+                    Pipeline Operations
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline">All Domains</Button>
+                    <Button size="sm" variant="outline">Issues Only</Button>
+                    <Button size="sm" variant="outline">High Usage</Button>
                   </div>
                 </div>
-              ))}
-              <Separator className="my-2" />
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full"
-                onClick={() => router.push('/pipelines')}
-              >
-                View All Pipelines
-                <ArrowRight className="h-3 w-3 ml-2" />
-              </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {activePipelines.map(pipeline => (
+                    <div
+                      key={pipeline.id}
+                      className="border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer"
+                      onClick={() => navigateToWorkflow('View Pipeline Details', pipeline)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {getPipelineStatusIcon(pipeline.status)}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{pipeline.name}</span>
+                              <Badge variant="outline" className="text-xs">{pipeline.domain}</Badge>
+                            </div>
+                            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                              <span>Last: {pipeline.lastRun}</span>
+                              <span>Next: {pipeline.nextRun}</span>
+                              <span>{pipeline.recordsProcessed} records</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-right">
+                          <div>
+                            <div className="text-sm font-medium">{pipeline.successRate}%</div>
+                            <div className="text-xs text-muted-foreground">Success</div>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">{pipeline.qualityScore}%</div>
+                            <div className="text-xs text-muted-foreground">Quality</div>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">{pipeline.avgDuration}</div>
+                            <div className="text-xs text-muted-foreground">Avg time</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => router.push('/quality-dashboard')}
+                  >
+                    View All Pipelines
+                    <ArrowRight className="h-3 w-3 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column: Quality Intelligence */}
+          <div className="col-span-5">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Data Quality Intelligence
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Quality Score Overview */}
+                  <div className="text-center p-4 bg-muted/30 rounded-lg">
+                    <div className="text-3xl font-bold mb-1">92.1%</div>
+                    <div className="text-sm text-muted-foreground">Overall Quality Score</div>
+                    <div className="flex items-center justify-center gap-1 mt-2">
+                      <TrendingDown className="h-3 w-3 text-amber-600" />
+                      <span className="text-xs text-amber-600">-0.8% from last week</span>
+                    </div>
+                  </div>
+
+                  {/* Domain Quality Breakdown */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Quality by Domain</h4>
+                    {qualityMetrics.map(metric => (
+                      <div key={metric.domain} className="flex items-center justify-between p-2 rounded border">
+                        <div>
+                          <div className="text-sm font-medium">{metric.domain}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {metric.issuesCount} issues • {metric.rulesCount} rules
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm font-medium">{metric.score}%</span>
+                            <div className={cn(
+                              "flex items-center text-xs",
+                              metric.trend === 'up' ? 'text-green-600' :
+                              metric.trend === 'down' ? 'text-amber-600' :
+                              'text-muted-foreground'
+                            )}>
+                              {getTrendIcon(metric.trend)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => router.push('/quality-dashboard')}
+                  >
+                    Quality Dashboard
+                    <Eye className="h-3 w-3 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* AI Recommendations */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Brain className="h-5 w-5" />
+                  AI Recommendations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <div className="text-sm font-medium mb-1">Optimize Customer ETL</div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Pipeline running 40% slower than baseline. Potential savings: $340/month.
+                    </div>
+                    <Button size="sm" variant="outline" className="h-6 text-xs">
+                      Apply Optimization
+                    </Button>
+                  </div>
+                  <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="text-sm font-medium mb-1">Update Quality Rules</div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      3 rules haven't been updated in 90+ days. Consider refresh.
+                    </div>
+                    <Button size="sm" variant="outline" className="h-6 text-xs">
+                      Review Rules
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Active Issues & Opportunities */}
+        <div className="grid grid-cols-2 gap-6">
+          {/* Issues Requiring Attention */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                Issues Requiring Attention
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {activeIssues.map(issue => (
+                  <div key={issue.id} className="border rounded-lg p-3">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge
+                            variant={issue.severity === 'high' ? 'destructive' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {issue.severity.toUpperCase()}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">{issue.domain}</Badge>
+                        </div>
+                        <div className="text-sm font-medium">{issue.title}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {issue.impact}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-xs"
+                        onClick={() => navigateToWorkflow(issue.action, issue)}
+                      >
+                        {issue.action}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Resource Metrics */}
+          {/* Optimization Opportunities */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Cpu className="h-4 w-4" />
-                Resource Utilization
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+                Optimization Opportunities
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {resourceMetrics.map(metric => (
-                <div key={metric.label} className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">{metric.label}</span>
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "text-sm font-medium",
-                      metric.status === 'warning' && "text-amber-600 dark:text-amber-400"
-                    )}>
-                      {metric.value}
-                    </span>
-                    {metric.change !== undefined && (
-                      <span className={cn(
-                        "text-xs flex items-center",
-                        (metric.label === 'Cost Today' && metric.trend === 'down') || 
-                        (metric.label !== 'Cost Today' && metric.trend === 'up') ? 'text-green-600 dark:text-green-400' : 
-                        'text-amber-600 dark:text-amber-400'
-                      )}>
-                        {metric.trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                        {Math.abs(metric.change)}%
-                      </span>
-                    )}
+            <CardContent>
+              <div className="space-y-3">
+                {optimizationOpportunities.map(opp => (
+                  <div key={opp.id} className="border rounded-lg p-3">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs">{opp.domain}</Badge>
+                        </div>
+                        <div className="text-sm font-medium">{opp.title}</div>
+                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                          {opp.impact}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-xs"
+                        onClick={() => navigateToWorkflow(opp.action, opp)}
+                      >
+                        {opp.action}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <Separator className="my-2" />
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full"
-                onClick={() => router.push('/monitor')}
-              >
-                Optimization Insights
-                <Sparkles className="h-3 w-3 ml-2" />
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Team Queue */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                Team Queue
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {teamQueue.map(task => (
-                <div key={task.type} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    {getTaskIcon(task.type)}
-                    <span className="text-sm text-muted-foreground capitalize">
-                      {task.type}s
-                    </span>
-                    {task.urgent && (
-                      <Badge variant="destructive" className="text-xs h-4">
-                        Urgent
-                      </Badge>
-                    )}
-                  </div>
-                  <span className={cn(
-                    "text-sm font-medium",
-                    task.urgent && "text-amber-600 dark:text-amber-400",
-                    task.count === 0 && "text-muted-foreground"
-                  )}>
-                    {task.count}
-                  </span>
-                </div>
-              ))}
-              <Separator className="my-2" />
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full"
-                onClick={() => router.push('/tasks')}
-              >
-                View All Tasks
-                <ArrowRight className="h-3 w-3 ml-2" />
-              </Button>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -598,70 +919,70 @@ export default function HomePage() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Zap className="h-5 w-5" />
-              Quick Launch Actions
+              Quick Actions
             </CardTitle>
-            <CardDescription>Start building with intelligent assistance</CardDescription>
+            <CardDescription>Start workflows with contextual assistance</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-4 gap-4">
-              <Button 
+              <Button
                 className="justify-start h-auto py-4 px-4 bg-primary hover:bg-primary/90"
                 onClick={() => router.push('/build')}
               >
                 <div className="flex items-start gap-3">
                   <Layers className="h-6 w-6 mt-0.5" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">Create Pipeline</div>
+                    <div className="font-medium text-sm">Build Data Product</div>
                     <div className="text-xs text-primary-foreground/80">
-                      AI-powered pattern creation
+                      Intent-driven creation
                     </div>
                   </div>
                 </div>
               </Button>
 
-              <Button 
+              <Button
                 variant="outline"
                 className="justify-start h-auto py-4 px-4"
-                onClick={() => router.push('/investigate?ai=true')}
+                onClick={() => router.push('/quality-dashboard')}
               >
                 <div className="flex items-start gap-3">
-                  <Brain className="h-5 w-5 mt-0.5 text-blue-500" />
+                  <CheckCircle2 className="h-5 w-5 mt-0.5 text-green-600 dark:text-green-400" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">Smart Investigation</div>
+                    <div className="font-medium text-sm">Quality Monitoring</div>
                     <div className="text-xs text-muted-foreground">
-                      AI-guided root cause analysis
+                      Real-time quality dashboards
                     </div>
                   </div>
                 </div>
               </Button>
 
-              <Button 
+              <Button
                 variant="outline"
                 className="justify-start h-auto py-4 px-4"
-                onClick={() => router.push('/products')}
+                onClick={() => router.push('/catalog')}
               >
                 <div className="flex items-start gap-3">
-                  <Package className="h-5 w-5 mt-0.5 text-green-600 dark:text-green-400" />
+                  <Database className="h-5 w-5 mt-0.5 text-blue-500" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">Browse Marketplace</div>
+                    <div className="font-medium text-sm">Browse Data Catalog</div>
                     <div className="text-xs text-muted-foreground">
-                      Find reusable data products
+                      Discover data assets
                     </div>
                   </div>
                 </div>
               </Button>
 
-              <Button 
+              <Button
                 variant="outline"
                 className="justify-start h-auto py-4 px-4"
-                onClick={() => router.push('/platform')}
+                onClick={() => router.push('/sources')}
               >
                 <div className="flex items-start gap-3">
-                  <Database className="h-5 w-5 mt-0.5 text-purple-500" />
+                  <Settings className="h-5 w-5 mt-0.5 text-purple-500" />
                   <div className="text-left">
-                    <div className="font-medium text-sm">Connect Sources</div>
+                    <div className="font-medium text-sm">Manage Sources</div>
                     <div className="text-xs text-muted-foreground">
-                      Configure data connections
+                      Configure connections
                     </div>
                   </div>
                 </div>
