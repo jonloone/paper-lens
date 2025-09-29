@@ -1,5 +1,375 @@
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=AR+One+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Annapurna+SIL:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Azeret+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
 @import '../styles/elevation.css';
+@import '../styles/design-system.css';
+@import './themes/win98.css';
+@import './themes/nexus-enhanced.css';
+@import '../styles/copilotkit-theme.css';
+@import url('/fonts/pixelarticons.css');
+
+/* Enhanced NexusOne Data Command Styles */
+
+/* Glassmorphism command palette */
+.nexus-command-palette {
+  background: rgba(10, 10, 10, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 20px !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.1),
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+  max-width: 880px !important;
+  max-height: 640px !important;
+}
+
+/* Enhanced command input with glowing focus */
+.nexus-command-palette input:focus {
+  box-shadow:
+    0 0 0 2px rgba(91, 110, 255, 0.5),
+    0 0 20px rgba(91, 110, 255, 0.2) !important;
+  border: none !important;
+  outline: none !important;
+}
+
+/* Smooth hover effects for command items */
+.nexus-command-palette [data-cmdk-item]:hover {
+  background: rgba(91, 110, 255, 0.05) !important;
+  border-left: 2px solid #5B6EFF;
+  transform: translateX(2px);
+  transition: all 0.2s ease;
+}
+
+/* Loading state with shimmer effect */
+.command-loading {
+  background: linear-gradient(
+    90deg,
+    rgba(91, 110, 255, 0.1) 0%,
+    rgba(0, 229, 200, 0.1) 50%,
+    rgba(91, 110, 255, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Gradient accent for active mode */
+.mode-active {
+  background: linear-gradient(135deg, #5B6EFF, #00E5C8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Pulsing quality indicators */
+.quality-indicator-excellent {
+  animation: pulse-green 2s infinite;
+}
+
+.quality-indicator-warning {
+  animation: pulse-yellow 2s infinite;
+}
+
+.quality-indicator-error {
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0);
+  }
+}
+
+@keyframes pulse-yellow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(234, 179, 8, 0);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0);
+  }
+}
+
+/* Micro-interactions for command groups */
+.nexus-command-palette [data-cmdk-group-heading] {
+  transition: all 0.2s ease;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.nexus-command-palette [data-cmdk-group]:hover [data-cmdk-group-heading] {
+  color: rgba(91, 110, 255, 0.8);
+  transform: translateX(2px);
+}
+
+/* Enhanced separator styling */
+.nexus-command-palette [data-cmdk-separator] {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  height: 1px;
+  margin: 8px 0;
+}
+
+/* Smooth scroll area styling */
+.nexus-command-palette [data-radix-scroll-area-viewport] {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(91, 110, 255, 0.3) transparent;
+}
+
+.nexus-command-palette [data-radix-scroll-area-viewport]::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nexus-command-palette [data-radix-scroll-area-viewport]::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nexus-command-palette [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb {
+  background: rgba(91, 110, 255, 0.3);
+  border-radius: 3px;
+}
+
+.nexus-command-palette [data-radix-scroll-area-viewport]::-webkit-scrollbar-thumb:hover {
+  background: rgba(91, 110, 255, 0.5);
+}
+
+/* Status indicator animations */
+.status-running {
+  animation: spin 1s linear infinite;
+}
+
+.status-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Badge enhancements */
+.nexus-command-palette .badge-enhanced {
+  background: rgba(91, 110, 255, 0.1);
+  border: 1px solid rgba(91, 110, 255, 0.2);
+  color: rgba(91, 110, 255, 0.9);
+  font-weight: 500;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+}
+
+.nexus-command-palette .badge-enhanced:hover {
+  background: rgba(91, 110, 255, 0.2);
+  border-color: rgba(91, 110, 255, 0.4);
+  transform: scale(1.05);
+}
+
+/* Enhanced button styles */
+.nexus-command-palette button {
+  transition: all 0.2s ease;
+}
+
+.nexus-command-palette button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(91, 110, 255, 0.2);
+}
+
+/* Typography enhancements */
+.nexus-command-palette .font-roobert {
+  font-family: 'Roobert', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Backdrop overlay enhancement */
+.nexus-command-palette::backdrop,
+.nexus-command-palette + div[data-radix-dialog-overlay] {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+/* Focus trap styling */
+.nexus-command-palette [data-cmdk-item][data-selected="true"] {
+  background: rgba(91, 110, 255, 0.1) !important;
+  border-left: 3px solid #5B6EFF;
+}
+
+/* Context bar styling */
+.command-context-bar {
+  background: linear-gradient(
+    90deg,
+    rgba(91, 110, 255, 0.05) 0%,
+    rgba(0, 229, 200, 0.05) 100%
+  );
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Mode selector enhancements */
+.command-mode-selector button {
+  position: relative;
+  overflow: hidden;
+}
+
+.command-mode-selector button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #5B6EFF, #00E5C8);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.command-mode-selector button.active::before {
+  opacity: 0.1;
+}
+
+/* Preview panel styling */
+.command-preview-panel {
+  background: rgba(0, 0, 0, 0.2);
+  border-left: 1px solid rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.command-preview-panel h3 {
+  background: linear-gradient(135deg, #5B6EFF, #00E5C8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+/* Enhanced empty state */
+.nexus-command-palette [data-cmdk-empty] {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+  padding: 2rem;
+  text-align: center;
+  background: rgba(91, 110, 255, 0.02);
+  border-radius: 8px;
+  margin: 1rem;
+  border: 1px dashed rgba(91, 110, 255, 0.2);
+}
+
+/* Textured Dot Grid Background */
+.dot-grid-background {
+  position: relative;
+  background: var(--background);
+}
+
+.dot-grid-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(91, 110, 255, 0.15) 1px, transparent 0);
+  background-size: 20px 20px;
+  background-position: 0 0;
+}
+
+.dot-grid-background::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E");
+}
+
+/* Dark mode adjustments for dot grid */
+.dark .dot-grid-background::before {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(91, 110, 255, 0.08) 1px, transparent 0);
+  opacity: 0.6;
+}
+
+.dark .dot-grid-background::after {
+  opacity: 0.02;
+}
+
+/* Design system specific styling */
+.design-system-background {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--background)) 0%,
+    hsl(var(--background)) 100%
+  );
+}
+
+.design-system-background::before {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(91, 110, 255, 0.08) 1px, transparent 0),
+    radial-gradient(circle at 10px 10px, rgba(0, 229, 200, 0.04) 1px, transparent 0);
+  background-size: 20px 20px, 40px 40px;
+  opacity: 0.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .nexus-command-palette {
+    max-width: 95vw !important;
+    max-height: 85vh !important;
+    border-radius: 16px !important;
+  }
+
+  .nexus-command-palette .grid-cols-3fr-2fr {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .command-preview-panel {
+    display: none;
+  }
+
+  .dot-grid-background::before {
+    background-size: 15px 15px;
+  }
+
+  .design-system-background::before {
+    background-size: 15px 15px, 30px 30px;
+  }
+}
 
 /* Custom Font Definitions */
 @font-face {
@@ -46,12 +416,8 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Apply Reckless font to all headlines with normal weight */
-h1, h2, h3, h4, h5, h6 {
-  font-family: 'Reckless', serif;
-  font-weight: 300;
-  letter-spacing: -0.01em;
-}
+/* Headlines are now styled per theme - see theme-specific headline styles section */
+/* Default headline styling handled by theme classes below */
 
 /* Apply Roobert font to body text */
 body, p, span, div, button, input, textarea, select {
@@ -68,6 +434,9 @@ body, p, span, div, button, input, textarea, select {
   width: 100%;
   max-width: 100vw;
   box-sizing: border-box;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .nav-logo { 
@@ -76,11 +445,39 @@ body, p, span, div, button, input, textarea, select {
   align-items: center;
 }
 
-.nav-links { 
-  grid-column: 2; 
+.nav-links {
+  grid-column: 2;
   display: flex;
   gap: 0.5rem;
   justify-content: center;
+}
+
+/* Enhanced nav link hover effects */
+.nav-links a:hover,
+.nav-links button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Active nav link glow effect for dark themes */
+.dark .nav-links [class*="text-primary"] {
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
+}
+
+.theme-one-dark-pro .nav-links [class*="text-onedark-blue"] {
+  box-shadow: 0 0 8px rgba(97, 175, 239, 0.2);
+}
+
+.theme-gruvbox .nav-links [class*="text-gruvbox-blue"] {
+  box-shadow: 0 0 8px rgba(131, 165, 152, 0.2);
+}
+
+.theme-dracula .nav-links [class*="text-dracula-cyan"] {
+  box-shadow: 0 0 8px rgba(139, 233, 253, 0.2);
+}
+
+.theme-solarized-light .nav-links [class*="text-solarized-blue"] {
+  box-shadow: 0 0 8px rgba(38, 139, 210, 0.2);
 }
 
 .nav-status { 
@@ -95,6 +492,29 @@ body, p, span, div, button, input, textarea, select {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+/* Sidebar scroll container styling */
+.sidebar-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+.sidebar-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll-container::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 3px;
+}
+
+.sidebar-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.5);
 }
 
 /* Responsive adjustments */
@@ -123,7 +543,8 @@ body, p, span, div, button, input, textarea, select {
 }
 
 @layer base {
-  :root {
+  :root,
+  .light {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -159,36 +580,36 @@ body, p, span, div, button, input, textarea, select {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  /* Dark Mode Semantic Tokens */
+  /* Dark Mode Semantic Tokens - Default Dark Theme */
   .dark {
     /* Background layers with proper elevation */
     --background: 224 71% 4%;        /* #0a0a0f - Deepest black with slight blue tint */
     --foreground: 210 40% 98%;
-    
+
     /* Card surfaces with elevation */
     --card: 222 47% 11%;             /* #161b22 - Slightly elevated surface */
     --card-foreground: 210 40% 98%;
-    
+
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    
+
     /* Interactive colors - Blue primary */
     --primary: 217 91% 60%;          /* #3b82f6 - Blue primary */
     --primary-foreground: 210 40% 98%;
-    
+
     --secondary: 217 33% 17%;        /* #1f2937 - Secondary with blue tint */
     --secondary-foreground: 210 40% 98%;
-    
+
     --muted: 217 33% 17%;
     --muted-foreground: 215 20.2% 65.1%;
-    
+
     --accent: 217 91% 60%;           /* Blue accent to match primary */
     --accent-foreground: 210 40% 98%;
-    
+
     /* Status colors */
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 210 40% 98%;
-    
+
     /* Borders and inputs */
     --border: 217 32% 17%;           /* Subtle borders with blue tint */
     --input: 217 32% 17%;
@@ -223,14 +644,14 @@ body, p, span, div, button, input, textarea, select {
     --hover-bg: 213 20% 18%;        /* Hover background */
     --active-bg: 213 20% 20%;       /* Active/pressed background */
     --focus-ring: 217 91% 60%;      /* Blue focus indicator */
-    
+
     /* Chart colors */
     --chart-1: 217 91% 60%;
     --chart-2: 160 50% 40%;
     --chart-3: 30 70% 45%;
     --chart-4: 280 55% 50%;
     --chart-5: 340 65% 45%;
-    
+
     /* Sidebar tokens */
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -241,6 +662,527 @@ body, p, span, div, button, input, textarea, select {
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217 91% 60%;
   }
+
+  /* Dracula Theme - Official Colors */
+  .dracula {
+    /* Dracula Official Color Palette */
+    --dracula-background: 231 15% 11%;      /* #191A21 - Darker background */
+    --dracula-background-lighter: 231 15% 14%; /* #21222C - Slightly lighter */
+    --dracula-current-line: 232 14% 31%;    /* #44475A - Current Line/Selection */
+    --dracula-foreground: 60 30% 96%;       /* #F8F8F2 - Foreground */
+    --dracula-comment: 225 27% 51%;         /* #6272A4 - Comment */
+    --dracula-cyan: 191 97% 77%;            /* #8BE9FD - Cyan */
+    --dracula-green: 135 94% 65%;           /* #50FA7B - Green */
+    --dracula-orange: 31 100% 71%;          /* #FFB86C - Orange */
+    --dracula-pink: 326 100% 74%;           /* #FF79C6 - Pink */
+    --dracula-purple: 265 89% 78%;          /* #BD93F9 - Purple */
+    --dracula-red: 0 100% 67%;              /* #FF5555 - Red */
+    --dracula-yellow: 65 92% 76%;           /* #F1FA8C - Yellow */
+    --dracula-selection: 232 14% 31%;       /* #44475A - Selection */
+
+    /* Theme color mappings */
+    --background: 231 15% 11%;              /* Darker official background */
+    --foreground: 60 30% 96%;               /* #F8F8F2 - Dracula Foreground */
+
+    --card: 231 15% 14%;                    /* Slightly lighter for cards */
+    --card-foreground: 60 30% 96%;
+
+    --popover: 231 15% 14%;
+    --popover-foreground: 60 30% 96%;
+
+    --primary: 265 89% 78%;                 /* #BD93F9 - Dracula Purple */
+    --primary-foreground: 231 15% 11%;
+
+    --secondary: 225 27% 51%;               /* #6272A4 - Dracula Comment */
+    --secondary-foreground: 60 30% 96%;
+
+    --muted: 232 14% 31%;
+    --muted-foreground: 225 27% 51%;
+
+    --accent: 191 97% 77%;                  /* #8BE9FD - Dracula Cyan */
+    --accent-foreground: 231 15% 11%;
+
+    --destructive: 0 100% 67%;              /* #FF5555 - Dracula Red */
+    --destructive-foreground: 60 30% 96%;
+
+    --border: 232 14% 31%;
+    --input: 232 14% 31%;
+    --ring: 265 89% 78%;
+
+    /* Dracula Extended Colors for Status */
+    --status-error: 0 100% 67%;      /* #FF5555 - Dracula Red */
+    --status-error-bg: 0 50% 20%;
+    --status-error-border: 0 100% 50%;
+    --status-warning: 31 100% 71%;   /* #FFB86C - Dracula Orange */
+    --status-warning-bg: 31 50% 20%;
+    --status-warning-border: 31 100% 50%;
+    --status-success: 135 94% 65%;   /* #50FA7B - Dracula Green */
+    --status-success-bg: 135 50% 15%;
+    --status-success-border: 135 94% 45%;
+    --status-info: 191 97% 77%;      /* #8BE9FD - Dracula Cyan */
+    --status-info-bg: 191 50% 15%;
+    --status-info-border: 191 97% 60%;
+
+    /* Text hierarchy */
+    --text-primary: 60 30% 96%;      /* #F8F8F2 - High emphasis */
+    --text-secondary: 191 97% 77%;   /* #8BE9FD - Medium emphasis */
+    --text-tertiary: 225 27% 51%;    /* #6272A4 - Low emphasis */
+    --text-placeholder: 225 27% 40%;
+
+    /* Code block colors */
+    --code-bg: 235 14% 15%;          /* Dracula Dark Background */
+    --code-text: 60 30% 96%;         /* Dracula Foreground */
+    --code-border: 232 14% 25%;
+
+    /* Interactive element states */
+    --hover-bg: 232 14% 35%;
+    --active-bg: 232 14% 40%;
+    --focus-ring: 265 89% 78%;
+
+    /* Chart colors using Dracula palette */
+    --chart-1: 326 100% 74%;         /* Pink */
+    --chart-2: 135 94% 65%;          /* Green */
+    --chart-3: 65 92% 76%;           /* Yellow */
+    --chart-4: 265 89% 78%;          /* Purple */
+    --chart-5: 191 97% 77%;          /* Cyan */
+
+    /* Sidebar using Dracula colors */
+    --sidebar-background: 235 14% 15%;
+    --sidebar-foreground: 60 30% 96%;
+    --sidebar-primary: 265 89% 78%;
+    --sidebar-primary-foreground: 231 15% 18%;
+    --sidebar-accent: 232 14% 25%;
+    --sidebar-accent-foreground: 60 30% 96%;
+    --sidebar-border: 232 14% 31%;
+    --sidebar-ring: 265 89% 78%;
+  }
+
+  /* Windows 98 Theme */
+  .win98 {
+    /* Core Windows 98 Colors (RGB format for HSL) */
+    --background: 0 0% 75%;           /* #c0c0c0 - Classic Win98 silver */
+    --foreground: 0 0% 0%;            /* #000000 - Black text */
+
+    --card: 0 0% 75%;                 /* #c0c0c0 */
+    --card-foreground: 0 0% 0%;       /* #000000 */
+
+    --popover: 0 0% 75%;              /* #c0c0c0 */
+    --popover-foreground: 0 0% 0%;    /* #000000 */
+
+    --primary: 224 65% 33%;           /* #0a246a - Win98 title bar blue */
+    --primary-foreground: 0 0% 100%;  /* #ffffff */
+
+    --secondary: 0 0% 87%;            /* #dfdfdf - Light silver */
+    --secondary-foreground: 0 0% 0%;  /* #000000 */
+
+    --muted: 0 0% 50%;                /* #808080 - Gray */
+    --muted-foreground: 0 0% 25%;     /* #404040 - Dark gray */
+
+    --accent: 180 100% 25%;           /* #008080 - Teal desktop color */
+    --accent-foreground: 0 0% 100%;   /* #ffffff */
+
+    --destructive: 0 100% 50%;        /* #ff0000 - Error red */
+    --destructive-foreground: 0 0% 100%; /* #ffffff */
+
+    --border: 0 0% 50%;               /* #808080 - Gray borders */
+    --input: 0 0% 100%;               /* #ffffff - White input backgrounds */
+    --ring: 224 65% 33%;              /* #0a246a - Focus ring blue */
+
+    --radius: 0rem;                   /* No rounded corners */
+
+    /* Status colors */
+    --status-error: 0 100% 50%;
+    --status-error-bg: 0 50% 95%;
+    --status-error-border: 0 100% 40%;
+    --status-warning: 39 100% 50%;
+    --status-warning-bg: 39 50% 95%;
+    --status-warning-border: 39 100% 40%;
+    --status-success: 120 100% 25%;
+    --status-success-bg: 120 50% 95%;
+    --status-success-border: 120 100% 20%;
+    --status-info: 224 65% 33%;
+    --status-info-bg: 224 30% 95%;
+    --status-info-border: 224 65% 25%;
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 75%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 224 65% 33%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 87%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 50%;
+    --sidebar-ring: 224 65% 33%;
+  }
+
+  /* Solarized Light Theme - Precision Colors */
+  .solarized-light {
+    /* Solarized Light Base Colors - Exact values from spec */
+    --background: 44 87% 94%;        /* #FDF6E3 - Base3 (warm paper background) */
+    --foreground: 195 23% 45%;       /* #657B83 - Base00 (primary content) */
+
+    --card: 44 52% 88%;              /* #EEE8D5 - Base2 (slightly elevated) */
+    --card-foreground: 195 23% 45%;  /* #657B83 - Base00 */
+
+    --popover: 44 52% 88%;           /* #EEE8D5 - Base2 */
+    --popover-foreground: 195 23% 45%;
+
+    --primary: 205 82% 49%;          /* #268BD2 - Blue (professional, trustworthy) */
+    --primary-foreground: 44 87% 94%; /* #FDF6E3 - Base3 */
+
+    --secondary: 180 13% 60%;        /* #93A1A1 - Base1 (subtle, neutral) */
+    --secondary-foreground: 195 23% 45%; /* #657B83 - Base00 */
+
+    --muted: 44 52% 88%;             /* #EEE8D5 - Base2 */
+    --muted-foreground: 194 25% 40%; /* #586E75 - Base01 (comments) */
+
+    --accent: 175 74% 40%;           /* #2AA198 - Cyan (friendly, approachable) */
+    --accent-foreground: 44 87% 94%; /* #FDF6E3 - Base3 */
+
+    --destructive: 1 79% 52%;        /* #DC322F - Red (clear danger) */
+    --destructive-foreground: 44 87% 94%;
+
+    --border: 180 13% 60%;           /* #93A1A1 - Base1 (subtle definition) */
+    --input: 44 52% 88%;             /* #EEE8D5 - Base2 (slightly recessed) */
+    --ring: 205 82% 49%;             /* #268BD2 - Blue (focus indication) */
+
+    /* Solarized Accent Colors - Exact values */
+    --solarized-yellow: 45 100% 35%; /* #B58900 */
+    --solarized-orange: 18 89% 44%;  /* #CB4B16 */
+    --solarized-red: 1 79% 52%;      /* #DC322F */
+    --solarized-magenta: 331 74% 52%; /* #D33682 */
+    --solarized-violet: 237 45% 60%; /* #6C71C4 */
+    --solarized-blue: 205 82% 49%;   /* #268BD2 */
+    --solarized-cyan: 175 74% 40%;   /* #2AA198 */
+    --solarized-green: 68 100% 30%;  /* #859900 */
+
+    /* Solarized Base Tones */
+    --solarized-base03: 193 100% 11%; /* #002B36 */
+    --solarized-base02: 192 90% 18%;  /* #073642 */
+    --solarized-base01: 194 25% 40%;  /* #586E75 */
+    --solarized-base00: 195 23% 45%;  /* #657B83 */
+    --solarized-base0: 186 13% 55%;   /* #839496 */
+    --solarized-base1: 180 13% 60%;   /* #93A1A1 */
+    --solarized-base2: 44 52% 88%;    /* #EEE8D5 */
+    --solarized-base3: 44 87% 94%;    /* #FDF6E3 */
+
+    /* Status Colors with Solarized Palette */
+    --status-error: 1 79% 52%;        /* #DC322F - Red */
+    --status-error-bg: 1 79% 95%;     /* Light red background */
+    --status-error-border: 1 79% 45%;
+    --status-warning: 45 100% 35%;    /* #B58900 - Yellow (not orange for better visibility) */
+    --status-warning-bg: 45 100% 95%; /* Light yellow background */
+    --status-warning-border: 45 100% 30%;
+    --status-success: 68 100% 30%;    /* #859900 - Green */
+    --status-success-bg: 68 100% 95%; /* Light green background */
+    --status-success-border: 68 100% 25%;
+    --status-info: 175 74% 40%;       /* #2AA198 - Cyan (friendlier than blue) */
+    --status-info-bg: 175 74% 95%;    /* Light cyan background */
+    --status-info-border: 175 74% 35%;
+
+    /* Text hierarchy for optimal readability */
+    --text-primary: 195 23% 45%;      /* #657B83 - Base00 (body text) */
+    --text-secondary: 194 25% 40%;    /* #586E75 - Base01 (secondary text) */
+    --text-tertiary: 180 13% 60%;     /* #93A1A1 - Base1 (deemphasized) */
+    --text-placeholder: 180 13% 70%;  /* Lighter base1 for placeholders */
+
+    /* Code block colors - maintain readability */
+    --code-bg: 44 87% 96%;            /* Slightly lighter than base3 */
+    --code-text: 195 23% 45%;         /* #657B83 - Base00 */
+    --code-border: 44 52% 88%;        /* #EEE8D5 - Base2 */
+
+    /* Interactive element states */
+    --hover-bg: 44 52% 85%;           /* Slightly darker than base2 */
+    --active-bg: 44 52% 82%;          /* More feedback on press */
+    --focus-ring: 205 82% 49%;        /* #268BD2 - Blue focus */
+
+    /* Chart colors using full Solarized palette */
+    --chart-1: 205 82% 49%;           /* Blue */
+    --chart-2: 68 100% 30%;           /* Green */
+    --chart-3: 45 100% 35%;           /* Yellow */
+    --chart-4: 331 74% 52%;           /* Magenta */
+    --chart-5: 175 74% 40%;           /* Cyan */
+
+    /* Sidebar with warm tones */
+    --sidebar-background: 44 52% 88%; /* #EEE8D5 - Base2 */
+    --sidebar-foreground: 195 23% 45%; /* #657B83 - Base00 */
+    --sidebar-primary: 205 82% 49%;   /* #268BD2 - Blue */
+    --sidebar-primary-foreground: 44 87% 94%;
+    --sidebar-accent: 44 52% 85%;     /* Slightly darker base2 */
+    --sidebar-accent-foreground: 195 23% 45%;
+    --sidebar-border: 180 13% 60%;    /* #93A1A1 - Base1 */
+    --sidebar-ring: 205 82% 49%;      /* #268BD2 - Blue */
+  }
+
+  /* One Dark Pro Theme - VS Code Inspired */
+  .one-dark-pro {
+    /* One Dark Pro Core Colors - Enhanced Contrast for WCAG */
+    --background: 220 13% 18%;        /* #282C34 - Main background */
+    --foreground: 219 14% 80%;        /* Brighter primary text for better contrast */
+
+    --card: 220 11% 24%;              /* Slightly lighter elevated surfaces */
+    --card-foreground: 219 14% 80%;
+
+    --popover: 220 11% 24%;
+    --popover-foreground: 219 14% 80%;
+
+    --primary: 286 60% 67%;           /* #C678DD - Purple (keywords) */
+    --primary-foreground: 220 13% 95%;  /* Near white for better contrast on purple */
+
+    --secondary: 221 13% 30%;         /* Slightly lighter for better visibility */
+    --secondary-foreground: 219 14% 80%;
+
+    --muted: 221 13% 32%;             /* Lighter muted backgrounds */
+    --muted-foreground: 219 10% 55%;  /* Much brighter comments for WCAG compliance */
+
+    --accent: 193 95% 68%;            /* #61DAFB - Blue (React blue) */
+    --accent-foreground: 220 13% 15%;  /* Darker for contrast on bright blue */
+
+    --destructive: 355 65% 65%;       /* #E06C75 - Red */
+    --destructive-foreground: 219 14% 95%;  /* Near white for contrast */
+
+    --border: 221 13% 35%;            /* More visible borders */
+    --input: 220 11% 24%;             /* Slightly lighter input backgrounds */
+    --ring: 286 60% 70%;              /* Brighter purple focus ring */
+
+    /* One Dark Pro Extended Colors - Enhanced Contrast */
+    --onedark-bg-darker: 216 13% 15%; /* #21252B - Darker background */
+    --onedark-bg-lighter: 220 11% 26%; /* Lighter for better separation */
+    --onedark-selection: 221 13% 32%; /* More visible selection */
+    --onedark-line-numbers: 221 14% 55%; /* Brighter line numbers */
+    --onedark-comment: 219 10% 55%;   /* WCAG compliant comment color */
+
+    /* Syntax Colors - Brightened for better contrast */
+    --onedark-red: 355 65% 68%;       /* Brighter red for errors */
+    --onedark-orange: 29 54% 65%;     /* Brighter orange for numbers */
+    --onedark-yellow: 39 67% 72%;     /* Brighter yellow for functions */
+    --onedark-green: 95 38% 65%;      /* Brighter green for strings */
+    --onedark-cyan: 187 47% 60%;      /* Brighter cyan for support */
+    --onedark-blue: 193 95% 70%;      /* Slightly brighter blue */
+    --onedark-purple: 286 60% 70%;    /* Brighter purple for keywords */
+    --onedark-pink: 296 64% 65%;      /* Brighter pink */
+
+    /* Status Colors */
+    --status-error: 355 65% 65%;
+    --status-error-bg: 355 65% 10%;
+    --status-error-border: 355 65% 45%;
+    --status-warning: 29 54% 61%;
+    --status-warning-bg: 29 54% 10%;
+    --status-warning-border: 29 54% 41%;
+    --status-success: 95 38% 62%;
+    --status-success-bg: 95 38% 10%;
+    --status-success-border: 95 38% 42%;
+    --status-info: 187 47% 55%;
+    --status-info-bg: 187 47% 10%;
+    --status-info-border: 187 47% 35%;
+
+    /* Text hierarchy - WCAG Compliant Contrast */
+    --text-primary: 219 14% 80%;      /* Brighter primary text */
+    --text-secondary: 219 10% 60%;    /* Much brighter secondary */
+    --text-tertiary: 221 14% 60%;     /* Brighter tertiary */
+    --text-placeholder: 219 10% 50%;  /* More visible placeholders */
+
+    /* Code block colors */
+    --code-bg: 216 13% 15%;           /* #21252B */
+    --code-text: 219 14% 80%;         /* Brighter code text */
+    --code-border: 221 13% 35%;       /* More visible borders */
+
+    /* Interactive states - Better visibility */
+    --hover-bg: 221 13% 32%;          /* More visible hover */
+    --active-bg: 221 13% 36%;         /* Clear active state */
+    --focus-ring: 286 60% 75%;        /* Brighter purple focus */
+
+    /* Chart colors */
+    --chart-1: 286 60% 67%;           /* Purple */
+    --chart-2: 95 38% 62%;            /* Green */
+    --chart-3: 39 67% 69%;            /* Yellow */
+    --chart-4: 355 65% 65%;           /* Red */
+    --chart-5: 187 47% 55%;           /* Cyan */
+
+    /* Sidebar - Enhanced contrast */
+    --sidebar-background: 216 13% 15%; /* #21252B */
+    --sidebar-foreground: 219 14% 80%;  /* Brighter sidebar text */
+    --sidebar-primary: 286 60% 70%;
+    --sidebar-primary-foreground: 220 13% 95%;
+    --sidebar-accent: 221 13% 32%;
+    --sidebar-accent-foreground: 219 14% 80%;
+    --sidebar-border: 221 13% 35%;
+    --sidebar-ring: 286 60% 75%;
+
+    /* Set smaller border radius for IDE feel */
+    --radius: 0.25rem;
+  }
+
+  /* ===== GRUVBOX THEME (Modern) ===== */
+.gruvbox {
+  --background: 48.4615 86.6667% 88.2353%;
+  --foreground: 20 5.2632% 22.3529%;
+  --card: 45.5556 67.5000% 84.3137%;
+  --card-foreground: 20 5.2632% 22.3529%;
+  --popover: 43.1579 58.7629% 80.9804%;
+  --popover-foreground: 20 5.2632% 22.3529%;
+  --primary: 23.7000 87.7193% 44.7059%;
+  --primary-foreground: 48.4615 86.6667% 88.2353%;
+  --secondary: 182.6866 32.6829% 40.1961%;
+  --secondary-foreground: 48.4615 86.6667% 88.2353%;
+  --muted: 40.3846 38.2353% 73.3333%;
+  --muted-foreground: 26.6667 9.6774% 36.4706%;
+  --accent: 26.9869 99.1342% 54.7059%;
+  --accent-foreground: 20 5.2632% 22.3529%;
+  --destructive: 2.4000 75.1073% 45.6863%;
+  --destructive-foreground: 48.4615 86.6667% 88.2353%;
+  --border: 40.3846 38.2353% 73.3333%;
+  --input: 43.1579 58.7629% 80.9804%;
+  --ring: 23.7000 87.7193% 44.7059%;
+  --chart-1: 23.7000 87.7193% 44.7059%;
+  --chart-2: 182.6866 32.6829% 40.1961%;
+  --chart-3: 59.5238 70.7865% 34.9020%;
+  --chart-4: 332.6582 33.6170% 53.9216%;
+  --chart-5: 122.2642 21.2851% 51.1765%;
+  --sidebar: 43.1579 58.7629% 80.9804%;
+  --sidebar-foreground: 21.8182 7.3826% 29.2157%;
+  --sidebar-primary: 23.7000 87.7193% 44.7059%;
+  --sidebar-primary-foreground: 48.4615 86.6667% 88.2353%;
+  --sidebar-accent: 26.9869 99.1342% 54.7059%;
+  --sidebar-accent-foreground: 20 5.2632% 22.3529%;
+  --sidebar-border: 40.3846 38.2353% 73.3333%;
+  --sidebar-ring: 23.7000 87.7193% 44.7059%;
+  --font-sans: AR One Sans, ui-sans-serif, sans-serif, system-ui;
+  --font-serif: Annapurna SIL, ui-serif, serif;
+  --font-mono: Azeret Mono, ui-monospace, monospace;
+  --radius: 0.5rem;
+  --shadow-2xs: 0px 4px 10px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 4px 10px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 4px 10px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0px 4px 10px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0px 4px 10px 0px hsl(0 0% 0% / 0.10), 0px 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 4px 10px 0px hsl(0 0% 0% / 0.10), 0px 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 4px 10px 0px hsl(0 0% 0% / 0.10), 0px 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0px 4px 10px 0px hsl(0 0% 0% / 0.25);
+  --tracking-normal: 0px;
+  --spacing: 0.25rem;
+}
+
+.gruvbox h1, .gruvbox h2, .gruvbox h3, .gruvbox h4, .gruvbox h5, .gruvbox h6 {
+  font-family: 'Annapurna SIL', serif;
+  font-weight: 600;
+}
+
+.gruvbox.dark h1, .gruvbox.dark h2, .gruvbox.dark h3, .gruvbox.dark h4, .gruvbox.dark h5, .gruvbox.dark h6 {
+  font-family: 'Annapurna SIL', serif;
+  font-weight: 600;
+}
+
+.gruvbox.dark {
+  --background: 195.0000 6.4516% 12.1569%;
+  --foreground: 43.1579 58.7629% 80.9804%;
+  --card: 0 0% 15.6863%;
+  --card-foreground: 43.1579 58.7629% 80.9804%;
+  --popover: 20.0000 3.0928% 19.0196%;
+  --popover-foreground: 43.1579 58.7629% 80.9804%;
+  --primary: 26.9869 99.1342% 54.7059%;
+  --primary-foreground: 0 0% 15.6863%;
+  --secondary: 157.0588 15.8879% 58.0392%;
+  --secondary-foreground: 0 0% 15.6863%;
+  --muted: 20 5.2632% 22.3529%;
+  --muted-foreground: 38.5714 24.1379% 65.8824%;
+  --accent: 23.7000 87.7193% 44.7059%;
+  --accent-foreground: 48.4615 86.6667% 88.2353%;
+  --destructive: 6.3317 96.1353% 59.4118%;
+  --destructive-foreground: 0 0% 15.6863%;
+  --border: 21.8182 7.3826% 29.2157%;
+  --input: 20 5.2632% 22.3529%;
+  --ring: 26.9869 99.1342% 54.7059%;
+  --chart-1: 26.9869 99.1342% 54.7059%;
+  --chart-2: 157.0588 15.8879% 58.0392%;
+  --chart-3: 61.2081 66.2222% 44.1176%;
+  --chart-4: 343.6364 46.6667% 67.6471%;
+  --chart-5: 104.1176 35.0515% 61.9608%;
+  --sidebar: 0 0% 15.6863%;
+  --sidebar-foreground: 35.0000 17.1429% 58.8235%;
+  --sidebar-primary: 26.9869 99.1342% 54.7059%;
+  --sidebar-primary-foreground: 0 0% 15.6863%;
+  --sidebar-accent: 23.7000 87.7193% 44.7059%;
+  --sidebar-accent-foreground: 48.4615 86.6667% 88.2353%;
+  --sidebar-border: 20 5.2632% 22.3529%;
+  --sidebar-ring: 26.9869 99.1342% 54.7059%;
+  --font-sans: AR One Sans, ui-sans-serif, sans-serif, system-ui;
+  --font-serif: Annapurna SIL, ui-serif, serif;
+  --font-mono: Azeret Mono, ui-monospace, monospace;
+  --radius: 0.5rem;
+  --shadow-2xs: 0px 4px 10px 0px hsl(0 0% 0% / 0.10);
+  --shadow-xs: 0px 4px 10px 0px hsl(0 0% 0% / 0.10);
+  --shadow-sm: 0px 4px 10px 0px hsl(0 0% 0% / 0.20), 0px 1px 2px -1px hsl(0 0% 0% / 0.20);
+  --shadow: 0px 4px 10px 0px hsl(0 0% 0% / 0.20), 0px 1px 2px -1px hsl(0 0% 0% / 0.20);
+  --shadow-md: 0px 4px 10px 0px hsl(0 0% 0% / 0.20), 0px 2px 4px -1px hsl(0 0% 0% / 0.20);
+  --shadow-lg: 0px 4px 10px 0px hsl(0 0% 0% / 0.20), 0px 4px 6px -1px hsl(0 0% 0% / 0.20);
+  --shadow-xl: 0px 4px 10px 0px hsl(0 0% 0% / 0.20), 0px 8px 10px -1px hsl(0 0% 0% / 0.20);
+  --shadow-2xl: 0px 4px 10px 0px hsl(0 0% 0% / 0.50);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-normal: var(--tracking-normal);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+}
+
+body {
+  letter-spacing: var(--tracking-normal);
+}
 }
 
 @layer base {
@@ -276,7 +1218,9 @@ body, p, span, div, button, input, textarea, select {
   }
   
   /* Enhanced dark mode gradient with GitHub-inspired tones */
-  .dark body {
+  .dark body,
+  .dracula body,
+  .one-dark-pro body {
     background: linear-gradient(
       135deg,
       hsl(213 27% 7%) 0%,       /* GitHub dark background */
@@ -289,7 +1233,22 @@ body, p, span, div, button, input, textarea, select {
       mix-blend-mode: soft-light;
     }
   }
-  
+
+  /* Solarized Light background gradient */
+  .solarized-light body {
+    background: linear-gradient(
+      135deg,
+      hsl(44 87% 94%) 0%,
+      hsl(44 50% 92%) 50%,
+      hsl(44 28% 90%) 100%
+    );
+
+    &::before {
+      opacity: 0.03;
+      mix-blend-mode: multiply;
+    }
+  }
+
   /* Ensure content is above the noise texture */
   #__next, main, .container {
     position: relative;
@@ -557,16 +1516,16 @@ body, p, span, div, button, input, textarea, select {
   /* Interactive element enhancements */
   .btn-gradient {
     @apply relative overflow-hidden transition-all duration-200;
-    background: linear-gradient(135deg, 
-      hsl(var(--primary)) 0%, 
-      hsl(var(--primary) / 0.9) 100%
+    background: linear-gradient(135deg,
+      hsl(var(--primary)),
+      hsl(var(--primary) / 0.9)
     );
   }
   
   .btn-gradient:hover {
-    background: linear-gradient(135deg, 
-      hsl(var(--primary) / 0.9) 0%, 
-      hsl(var(--primary)) 100%
+    background: linear-gradient(135deg,
+      hsl(var(--primary) / 0.9),
+      hsl(var(--primary))
     );
     box-shadow: 0 10px 25px -5px hsl(var(--primary) / 0.3);
   }
@@ -574,9 +1533,9 @@ body, p, span, div, button, input, textarea, select {
   /* Active state accent */
   .nav-active {
     @apply relative text-primary font-medium;
-    background: linear-gradient(135deg, 
-      hsl(var(--primary) / 0.1) 0%, 
-      hsl(var(--primary) / 0.05) 100%
+    background: linear-gradient(135deg,
+      hsl(var(--primary) / 0.1),
+      hsl(var(--primary) / 0.05)
     );
   }
   
@@ -587,9 +1546,9 @@ body, p, span, div, button, input, textarea, select {
   
   /* Dark mode button enhancements */
   .dark .btn-gradient {
-    background: linear-gradient(135deg, 
-      hsl(var(--primary) / 0.9) 0%, 
-      hsl(var(--primary) / 0.8) 100%
+    background: linear-gradient(135deg,
+      hsl(var(--primary) / 0.9),
+      hsl(var(--primary) / 0.8)
     );
     box-shadow: 
       0 2px 4px 0 rgb(0 0 0 / 0.3),
@@ -597,9 +1556,9 @@ body, p, span, div, button, input, textarea, select {
   }
   
   .dark .btn-gradient:hover {
-    background: linear-gradient(135deg, 
-      hsl(var(--primary)) 0%, 
-      hsl(var(--primary) / 0.9) 100%
+    background: linear-gradient(135deg,
+      hsl(var(--primary)),
+      hsl(var(--primary) / 0.9)
     );
     box-shadow: 
       0 4px 8px -2px rgb(0 0 0 / 0.4),
@@ -746,6 +1705,1317 @@ body, p, span, div, button, input, textarea, select {
   .row-alternating:nth-child(even) {
     background-color: hsl(240 5% 12% / 0.3);
   }
+
+  /* One Dark Pro Theme-Specific Component Styles */
+  .one-dark-pro {
+    /* Apply JetBrains Mono font to all text when this theme is active */
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-feature-settings: 'liga' 1, 'calt' 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* Ensure placeholder text meets WCAG AA standards */
+  .one-dark-pro ::placeholder {
+    color: hsl(var(--text-placeholder));
+    opacity: 1;
+  }
+
+  /* Ensure disabled elements are still readable */
+  .one-dark-pro [disabled],
+  .one-dark-pro .disabled {
+    opacity: 0.7;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Buttons with IDE aesthetic */
+  .one-dark-pro .btn,
+  .one-dark-pro button:not(.unstyled) {
+    @apply rounded-sm font-mono text-sm;
+    transition: all 150ms ease;
+  }
+
+  /* Cards with flat panel style - improved contrast */
+  .one-dark-pro [class*="card"] {
+    @apply rounded-sm shadow-none;
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--card));
+  }
+
+  /* Inputs with terminal style - better visibility */
+  .one-dark-pro input:not(.unstyled),
+  .one-dark-pro textarea:not(.unstyled),
+  .one-dark-pro select:not(.unstyled) {
+    @apply rounded-sm font-mono text-sm;
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--input));
+    color: hsl(var(--foreground));
+  }
+
+  .one-dark-pro input:focus:not(.unstyled),
+  .one-dark-pro textarea:focus:not(.unstyled),
+  .one-dark-pro select:focus:not(.unstyled) {
+    border-color: hsl(var(--onedark-blue));
+    outline: none;
+    box-shadow: 0 0 0 3px hsl(var(--onedark-blue) / 0.25);
+  }
+
+  /* Badges with syntax coloring */
+  .one-dark-pro .badge-success {
+    background-color: hsl(var(--onedark-green) / 0.2);
+    color: hsl(var(--onedark-green));
+    border-color: hsl(var(--onedark-green) / 0.3);
+  }
+
+  .one-dark-pro .badge-error {
+    background-color: hsl(var(--onedark-red) / 0.2);
+    color: hsl(var(--onedark-red));
+    border-color: hsl(var(--onedark-red) / 0.3);
+  }
+
+  .one-dark-pro .badge-warning {
+    background-color: hsl(var(--onedark-orange) / 0.2);
+    color: hsl(var(--onedark-orange));
+    border-color: hsl(var(--onedark-orange) / 0.3);
+  }
+
+  .one-dark-pro .badge-info {
+    background-color: hsl(var(--onedark-cyan) / 0.2);
+    color: hsl(var(--onedark-cyan));
+    border-color: hsl(var(--onedark-cyan) / 0.3);
+  }
+
+  /* Tables with data grid style */
+  .one-dark-pro table {
+    @apply font-mono text-sm;
+  }
+
+  .one-dark-pro th {
+    @apply font-mono text-xs font-medium;
+    color: hsl(var(--muted-foreground));  /* Use improved muted color */
+    border-color: hsl(var(--border));
+  }
+
+  .one-dark-pro td {
+    border-color: hsl(var(--border) / 0.5);
+    color: hsl(var(--foreground));
+  }
+
+  .one-dark-pro tr:hover {
+    background-color: hsl(var(--hover-bg) / 0.5);
+  }
+
+  /* Tabs with editor style */
+  .one-dark-pro [role="tablist"] {
+    @apply rounded-none border-b p-0;
+    border-color: hsl(var(--onedark-selection));
+    background-color: hsl(var(--onedark-bg-lighter));
+  }
+
+  .one-dark-pro [role="tab"] {
+    @apply rounded-none font-mono text-xs border-b-2;
+    border-color: transparent;
+  }
+
+  .one-dark-pro [role="tab"][data-state="active"] {
+    border-color: hsl(var(--onedark-blue));
+    background-color: hsl(var(--background));
+  }
+
+  /* Code blocks with syntax highlighting colors */
+  .one-dark-pro pre,
+  .one-dark-pro code {
+    @apply font-mono text-sm;
+    background-color: hsl(var(--onedark-bg-darker));
+    color: hsl(var(--foreground));
+  }
+
+  /* Dropdown menus with IDE style - improved contrast */
+  .one-dark-pro [role="menu"],
+  .one-dark-pro [data-radix-popper-content-wrapper] {
+    @apply rounded-sm;
+    border-color: hsl(var(--border));
+    background-color: hsl(var(--popover));
+  }
+
+  .one-dark-pro [role="menuitem"] {
+    @apply font-mono text-sm;
+    color: hsl(var(--popover-foreground));
+  }
+
+  .one-dark-pro [role="menuitem"]:hover {
+    background-color: hsl(var(--hover-bg));
+    color: hsl(var(--foreground));
+  }
+
+  /* Headlines use JetBrains Mono for full IDE aesthetic */
+  .one-dark-pro h1,
+  .one-dark-pro h2,
+  .one-dark-pro h3,
+  .one-dark-pro h4,
+  .one-dark-pro h5,
+  .one-dark-pro h6 {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  /* Smaller heading sizes for code editor feel */
+  .one-dark-pro h1 { @apply text-3xl; }
+  .one-dark-pro h2 { @apply text-2xl; }
+  .one-dark-pro h3 { @apply text-xl; }
+  .one-dark-pro h4 { @apply text-lg; }
+  .one-dark-pro h5 { @apply text-base; }
+  .one-dark-pro h6 { @apply text-sm; }
+}
+
+/* Theme-specific headline styles */
+
+/* Dracula Theme - IDE style with Fira fonts */
+.dracula {
+  /* Primary font is Fira Sans for UI, Fira Code for code */
+  font-family: 'Fira Sans', system-ui, sans-serif;
+}
+
+/* Dracula headlines use Exo 2 for modern, technological aesthetic */
+.dracula h1,
+.dracula h2,
+.dracula h3,
+.dracula h4,
+.dracula h5,
+.dracula h6 {
+  font-family: 'Exo 2', sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Dracula heading colors - vibrant syntax highlighting style */
+.dracula h1 {
+  @apply text-3xl;
+  color: hsl(var(--dracula-purple));
+}
+.dracula h2 {
+  @apply text-2xl;
+  color: hsl(var(--dracula-pink));
+}
+.dracula h3 {
+  @apply text-xl;
+  color: hsl(var(--dracula-cyan));
+}
+.dracula h4 {
+  @apply text-lg;
+  color: hsl(var(--dracula-green));
+}
+.dracula h5 {
+  @apply text-base;
+  color: hsl(var(--dracula-yellow));
+}
+.dracula h6 {
+  @apply text-sm;
+  color: hsl(var(--dracula-orange));
+}
+
+/* Dracula IDE component overrides */
+.dracula code,
+.dracula pre {
+  font-family: 'Fira Code', monospace;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+  background-color: hsl(var(--dracula-current-line));
+  color: hsl(var(--dracula-foreground));
+}
+
+.dracula .inline-code {
+  background-color: hsl(var(--dracula-current-line));
+  color: hsl(var(--dracula-cyan));
+  padding: 0.125rem 0.375rem;
+  border-radius: 0;
+  font-family: 'Fira Code', monospace;
+}
+
+/* Dracula buttons with IDE style */
+.dracula button {
+  font-family: 'Fira Sans', system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all 150ms ease;
+}
+
+/* Dracula inputs with terminal style */
+.dracula input,
+.dracula textarea,
+.dracula select {
+  font-family: 'Fira Code', monospace;
+  background-color: hsl(var(--dracula-current-line));
+  border-color: hsl(var(--dracula-comment));
+  color: hsl(var(--dracula-foreground));
+}
+
+.dracula input:focus,
+.dracula textarea:focus,
+.dracula select:focus {
+  border-color: hsl(var(--dracula-purple));
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(var(--dracula-purple) / 0.2);
+}
+
+/* Dracula cards and panels */
+.dracula [class*="card"] {
+  background-color: hsl(var(--card));
+  border-color: hsl(var(--dracula-current-line));
+}
+
+/* Dracula tables */
+.dracula table {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.875rem;
+}
+
+.dracula th {
+  font-family: 'Fira Sans', system-ui, sans-serif;
+  font-weight: 600;
+  color: hsl(var(--dracula-purple));
+  border-color: hsl(var(--dracula-current-line));
+}
+
+.dracula td {
+  border-color: hsl(var(--dracula-current-line) / 0.5);
+}
+
+.dracula tr:hover {
+  background-color: hsl(var(--dracula-current-line) / 0.3);
+}
+
+/* Dracula badges with syntax coloring */
+.dracula [class*="badge"] {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Dracula selection color */
+.dracula ::selection {
+  background-color: hsl(var(--dracula-current-line));
+  color: hsl(var(--dracula-cyan));
+}
+
+.dracula ::-moz-selection {
+  background-color: hsl(var(--dracula-current-line));
+  color: hsl(var(--dracula-cyan));
+}
+
+/* Dracula scrollbar styling */
+.dracula::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.dracula::-webkit-scrollbar-track {
+  background: hsl(var(--dracula-background-lighter));
+}
+
+.dracula::-webkit-scrollbar-thumb {
+  background: hsl(var(--dracula-comment));
+  border-radius: 0;
+}
+
+.dracula::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--dracula-purple));
+}
+
+/* Dracula dropdown menus */
+.dracula [role="menu"],
+.dracula [data-radix-popper-content-wrapper] {
+  background-color: hsl(var(--dracula-background-lighter));
+  border-color: hsl(var(--dracula-comment));
+}
+
+.dracula [role="menuitem"] {
+  font-family: 'Fira Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+}
+
+.dracula [role="menuitem"]:hover {
+  background-color: hsl(var(--dracula-purple) / 0.1);
+  color: hsl(var(--dracula-purple));
+}
+
+/* Sharp square corners for all Dracula components - modern tech aesthetic */
+.dracula * {
+  border-radius: 0 !important;
+}
+
+/* Dracula tabs */
+.dracula [role="tablist"] {
+  border-color: hsl(var(--dracula-selection));
+  background-color: hsl(var(--dracula-background-lighter));
+}
+
+.dracula [role="tab"] {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.875rem;
+  border-color: transparent;
+}
+
+.dracula [role="tab"][data-state="active"] {
+  border-color: hsl(var(--dracula-purple));
+  background-color: hsl(var(--background));
+  color: hsl(var(--dracula-purple));
+}
+
+/* Dracula focus states */
+.dracula *:focus-visible {
+  outline: 2px solid hsl(var(--dracula-purple));
+  outline-offset: 2px;
+}
+
+/* Placeholder text */
+.dracula ::placeholder {
+  color: hsl(var(--dracula-comment));
+  opacity: 0.7;
+}
+
+/* Disabled elements */
+.dracula [disabled],
+.dracula .disabled {
+  opacity: 0.5;
+  color: hsl(var(--dracula-comment));
+}
+
+/* Solarized Light - Clean sans-serif for readability */
+/* Solarized Light IDE Theme Typography */
+.solarized-light {
+  /* Primary font is IBM Plex Sans for clean, professional UI */
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+}
+
+/* Solarized headlines use IBM Plex Serif for elegant, readable headers */
+.solarized-light h1,
+.solarized-light h2,
+.solarized-light h3,
+.solarized-light h4,
+.solarized-light h5,
+.solarized-light h6 {
+  font-family: 'IBM Plex Serif', serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Solarized IDE heading colors - professional and readable */
+.solarized-light h1 {
+  @apply text-3xl;
+  color: hsl(205 82% 49%); /* Solarized Blue */
+}
+.solarized-light h2 {
+  @apply text-2xl;
+  color: hsl(175 74% 40%); /* Solarized Cyan */
+}
+.solarized-light h3 {
+  @apply text-xl;
+  color: hsl(195 23% 45%); /* Base00 */
+}
+.solarized-light h4 {
+  @apply text-lg;
+  color: hsl(237 45% 60%); /* Solarized Violet */
+}
+.solarized-light h5 {
+  @apply text-base;
+  color: hsl(195 23% 45%); /* Base00 */
+}
+.solarized-light h6 {
+  @apply text-sm;
+  color: hsl(194 25% 40%); /* Base01 */
+}
+
+/* Solarized IDE component overrides */
+.solarized-light code,
+.solarized-light pre {
+  font-family: 'IBM Plex Mono', monospace;
+  background-color: hsl(44 52% 88%); /* Base2 */
+  color: hsl(195 23% 45%); /* Base00 */
+}
+
+.solarized-light .inline-code {
+  background-color: hsl(44 52% 88%); /* Base2 */
+  color: hsl(175 74% 40%); /* Cyan */
+  padding: 0.125rem 0.375rem;
+  border-radius: 0;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Solarized buttons with IDE style */
+.solarized-light button {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  transition: all 150ms ease;
+}
+
+/* Solarized inputs with professional style */
+.solarized-light input,
+.solarized-light textarea,
+.solarized-light select {
+  font-family: 'IBM Plex Mono', monospace;
+  background-color: hsl(44 87% 94%); /* Base3 */
+  border-color: hsl(180 13% 60%); /* Base1 */
+  color: hsl(195 23% 45%); /* Base00 */
+}
+
+.solarized-light input:focus,
+.solarized-light textarea:focus,
+.solarized-light select:focus {
+  border-color: hsl(205 82% 49%); /* Blue */
+  outline: none;
+  box-shadow: 0 0 0 3px hsl(205 82% 49% / 0.2);
+}
+
+/* Solarized cards and panels */
+.solarized-light [class*="card"] {
+  background-color: hsl(44 52% 88%); /* Base2 */
+  border-color: hsl(180 13% 60%); /* Base1 */
+}
+
+/* Solarized tables */
+.solarized-light table {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.875rem;
+}
+
+.solarized-light th {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-weight: 600;
+  color: hsl(205 82% 49%); /* Blue */
+  border-color: hsl(180 13% 60%); /* Base1 */
+}
+
+.solarized-light td {
+  border-color: hsl(180 13% 60% / 0.5);
+}
+
+.solarized-light tr:hover {
+  background-color: hsl(44 52% 88% / 0.3); /* Base2 with opacity */
+}
+
+/* Solarized badges with syntax coloring */
+.solarized-light [class*="badge"] {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Solarized selection color */
+.solarized-light ::selection {
+  background-color: hsl(175 74% 40% / 0.3); /* Cyan with opacity */
+  color: hsl(195 23% 45%); /* Base00 */
+}
+
+.solarized-light ::-moz-selection {
+  background-color: hsl(175 74% 40% / 0.3);
+  color: hsl(195 23% 45%);
+}
+
+/* Solarized scrollbar styling */
+.solarized-light::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.solarized-light::-webkit-scrollbar-track {
+  background: hsl(44 87% 94%); /* Base3 */
+}
+
+.solarized-light::-webkit-scrollbar-thumb {
+  background: hsl(180 13% 60%); /* Base1 */
+  border-radius: 0;
+}
+
+.solarized-light::-webkit-scrollbar-thumb:hover {
+  background: hsl(205 82% 49%); /* Blue */
+}
+
+/* Solarized dropdown menus */
+.solarized-light [role="menu"],
+.solarized-light [data-radix-popper-content-wrapper] {
+  background-color: hsl(44 52% 88%); /* Base2 */
+  border-color: hsl(180 13% 60%); /* Base1 */
+}
+
+.solarized-light [role="menuitem"] {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+}
+
+.solarized-light [role="menuitem"]:hover {
+  background-color: hsl(205 82% 49% / 0.1); /* Blue with opacity */
+  color: hsl(205 82% 49%); /* Blue */
+}
+
+/* Sharp square corners for all Solarized components - clean IDE aesthetic */
+.solarized-light * {
+  border-radius: 0 !important;
+}
+
+  /* Nature Theme */
+  .nature {
+    /* Nature Light Colors - converted from OKLCH to HSL */
+    --background: 75 23% 96%;          /* Warm, nature-inspired light background */
+    --foreground: 30 15% 25%;          /* Dark forest green text */
+
+    --card: 145 21% 94%;               /* Light green card background */
+    --card-foreground: 30 15% 25%;
+
+    --popover: 145 21% 94%;
+    --popover-foreground: 30 15% 25%;
+
+    --primary: 144 35% 45%;            /* Deep forest green */
+    --primary-foreground: 75 23% 96%;
+
+    --secondary: 147 25% 88%;          /* Light sage green */
+    --secondary-foreground: 30 15% 25%;
+
+    --muted: 74 18% 92%;               /* Muted warm background */
+    --muted-foreground: 30 15% 50%;
+
+    --accent: 146 21% 85%;             /* Soft mint accent */
+    --accent-foreground: 30 15% 25%;
+
+    --destructive: 27 65% 50%;         /* Earth red for errors */
+    --destructive-foreground: 75 23% 96%;
+
+    --border: 145 21% 88%;
+    --input: 145 21% 94%;
+    --ring: 144 35% 45%;
+
+    /* Nature semantic colors */
+    --nature-forest: 144 35% 45%;      /* Deep forest green */
+    --nature-sage: 147 25% 78%;        /* Light sage */
+    --nature-mint: 146 21% 85%;        /* Mint accent */
+    --nature-earth: 27 65% 50%;        /* Earth brown */
+    --nature-moss: 142 30% 35%;        /* Moss green */
+    --nature-fern: 140 25% 65%;        /* Fern green */
+
+    /* Nature theme fonts */
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .nature.dark {
+    /* Nature Dark Colors - deep forest theme */
+    --background: 151 18% 20%;         /* Dark forest background */
+    --foreground: 73 15% 90%;          /* Light text */
+
+    --card: 143 15% 25%;               /* Darker forest card */
+    --card-foreground: 73 15% 90%;
+
+    --popover: 143 15% 25%;
+    --popover-foreground: 73 15% 90%;
+
+    --primary: 144 40% 60%;            /* Bright forest green */
+    --primary-foreground: 151 18% 15%;
+
+    --secondary: 143 15% 35%;          /* Dark sage */
+    --secondary-foreground: 73 15% 90%;
+
+    --muted: 147 15% 28%;              /* Muted dark green */
+    --muted-foreground: 73 15% 70%;
+
+    --accent: 144 35% 50%;             /* Forest accent */
+    --accent-foreground: 73 15% 90%;
+
+    --destructive: 27 65% 55%;         /* Lighter earth red */
+    --destructive-foreground: 73 15% 90%;
+
+    --border: 143 15% 30%;
+    --input: 143 15% 25%;
+    --ring: 144 40% 60%;
+
+    /* Nature theme fonts */
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  /* Amethyst Haze Theme */
+  .amethyst-haze {
+    /* Amethyst Haze Light Colors - converted from OKLCH to HSL */
+    --background: 301 12% 97%;         /* Light purple-tinted background */
+    --foreground: 287 15% 30%;         /* Dark purple text */
+
+    --card: 300 15% 92%;               /* Light amethyst card */
+    --card-foreground: 287 15% 30%;
+
+    --popover: 300 15% 92%;
+    --popover-foreground: 287 15% 30%;
+
+    --primary: 300 25% 55%;            /* Amethyst primary */
+    --primary-foreground: 301 12% 97%;
+
+    --secondary: 300 15% 85%;          /* Light amethyst secondary */
+    --secondary-foreground: 287 15% 30%;
+
+    --muted: 300 12% 90%;              /* Muted purple */
+    --muted-foreground: 287 15% 50%;
+
+    --accent: 0 35% 75%;               /* Pink-red accent */
+    --accent-foreground: 287 15% 30%;
+
+    --destructive: 23 55% 55%;         /* Warm red for errors */
+    --destructive-foreground: 301 12% 97%;
+
+    --border: 300 15% 88%;
+    --input: 300 15% 92%;
+    --ring: 300 25% 55%;
+
+    /* Amethyst semantic colors */
+    --amethyst-purple: 300 25% 55%;    /* Main amethyst */
+    --amethyst-lavender: 295 20% 75%;  /* Light lavender */
+    --amethyst-plum: 285 30% 45%;      /* Deep plum */
+    --amethyst-rose: 350 40% 70%;      /* Rose accent */
+    --amethyst-haze: 300 15% 85%;      /* Soft haze */
+    --amethyst-mist: 295 12% 90%;      /* Light mist */
+
+    /* Amethyst Haze theme fonts */
+    font-family: 'Geist', sans-serif;
+  }
+
+  .amethyst-haze.dark {
+    /* Amethyst Haze Dark Colors - deep cosmic theme */
+    --background: 293 15% 18%;         /* Dark cosmic background */
+    --foreground: 294 15% 88%;         /* Light purple text */
+
+    --card: 295 20% 23%;               /* Dark amethyst card */
+    --card-foreground: 294 15% 88%;
+
+    --popover: 295 20% 23%;
+    --popover-foreground: 294 15% 88%;
+
+    --primary: 302 25% 65%;            /* Bright amethyst */
+    --primary-foreground: 293 15% 15%;
+
+    --secondary: 295 20% 35%;          /* Dark purple secondary */
+    --secondary-foreground: 294 15% 88%;
+
+    --muted: 309 15% 25%;              /* Muted dark purple */
+    --muted-foreground: 294 15% 70%;
+
+    --accent: 309 15% 28%;             /* Dark purple accent */
+    --accent-foreground: 294 15% 88%;
+
+    --destructive: 21 60% 60%;         /* Lighter warm red */
+    --destructive-foreground: 294 15% 88%;
+
+    --border: 295 20% 28%;
+    --input: 295 20% 23%;
+    --ring: 302 25% 65%;
+
+    /* Amethyst Haze theme fonts */
+    font-family: 'Geist', sans-serif;
+  }
+
+/* ===== 98.css Theme ===== */
+.win98 {
+  /* Authentic Windows 98 Colors */
+  --background: 180 100% 25.0980%; /* Teal desktop */
+  --foreground: 0 0% 0%;
+  --card: 0 0% 75.2941%; /* Silver window */
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 75.2941%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 240 100% 25.0980%; /* Navy blue */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 50.1961%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 87.8431%;
+  --muted-foreground: 0 0% 25.0980%;
+  --accent: 0 0% 62.7451%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 100% 27.2549%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 50.1961%;
+  --input: 0 0% 100%;
+  --ring: 240 100% 25.0980%;
+  --chart-1: 240 100% 50%;
+  --chart-2: 120 100% 25.0980%;
+  --chart-3: 0 100% 50%;
+  --chart-4: 300 100% 25.0980%;
+  --chart-5: 60 100% 50%;
+  --sidebar: 240 100% 25.0980%; /* Navy taskbar */
+  --sidebar-foreground: 0 0% 100%; /* Always white text */
+  --sidebar-primary: 0 0% 75.2941%; /* Silver for active */
+  --sidebar-primary-foreground: 0 0% 0%; /* Black text on silver */
+  --sidebar-accent: 240 100% 31.3725%; /* Lighter blue for hover */
+  --sidebar-accent-foreground: 0 0% 100%; /* White text */
+  --sidebar-border: 0 0% 100%; /* White highlight */
+  --sidebar-ring: 0 0% 0%;
+  --font-sans: 'MS Sans Serif', sans-serif;
+  --font-serif: serif;
+  --font-mono: monospace;
+  --radius: 0rem;
+  --shadow-2xs: 2px 2px 2px 1px hsl(0 0% 0% / 0.10);
+  --shadow-xs: 2px 2px 2px 1px hsl(0 0% 0% / 0.10);
+  --shadow-sm: 2px 2px 2px 1px hsl(0 0% 0% / 0.20), 2px 1px 2px 0px hsl(0 0% 0% / 0.20);
+  --shadow: 2px 2px 2px 1px hsl(0 0% 0% / 0.20), 2px 1px 2px 0px hsl(0 0% 0% / 0.20);
+  --shadow-md: 2px 2px 2px 1px hsl(0 0% 0% / 0.20), 2px 2px 4px 0px hsl(0 0% 0% / 0.20);
+  --shadow-lg: 2px 2px 2px 1px hsl(0 0% 0% / 0.20), 2px 4px 6px 0px hsl(0 0% 0% / 0.20);
+  --shadow-xl: 2px 2px 2px 1px hsl(0 0% 0% / 0.20), 2px 8px 10px 0px hsl(0 0% 0% / 0.20);
+  --shadow-2xl: 2px 2px 2px 1px hsl(0 0% 0% / 0.50);
+  --tracking-normal: 0px;
+  --spacing: 0.25rem;
+
+  /* Typography - authentic MS Sans Serif */
+  font-family: 'MS Sans Serif', sans-serif;
+  letter-spacing: var(--tracking-normal);
+}
+
+.win98.dark {
+  /* Windows 98 Dark Mode (maintains classic look) */
+  --background: 180 100% 25.0980%; /* Keep teal */
+  --foreground: 0 0% 0%;
+  --card: 0 0% 75.2941%; /* Keep silver */
+  --card-foreground: 0 0% 0%;
+  --popover: 0 0% 75.2941%;
+  --popover-foreground: 0 0% 0%;
+  --primary: 240 100% 25.0980%; /* Navy blue */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 0% 50.1961%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 0 0% 87.8431%;
+  --muted-foreground: 0 0% 25.0980%;
+  --accent: 0 0% 62.7451%;
+  --accent-foreground: 0 0% 0%;
+  --destructive: 0 100% 27.2549%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 50.1961%;
+  --input: 0 0% 100%;
+  --ring: 240 100% 25.0980%;
+  --chart-1: 240 100% 50%;
+  --chart-2: 120 100% 25.0980%;
+  --chart-3: 0 100% 50%;
+  --chart-4: 300 100% 25.0980%;
+  --chart-5: 60 100% 50%;
+  --sidebar: 240 100% 25.0980%; /* Navy taskbar */
+  --sidebar-foreground: 0 0% 100%; /* Always white text */
+  --sidebar-primary: 0 0% 75.2941%; /* Silver for active */
+  --sidebar-primary-foreground: 0 0% 0%; /* Black text on silver */
+  --sidebar-accent: 240 100% 31.3725%; /* Lighter blue for hover */
+  --sidebar-accent-foreground: 0 0% 100%; /* White text */
+  --sidebar-border: 0 0% 100%; /* White highlight */
+  --sidebar-ring: 0 0% 0%;
+  --font-sans: 'MS Sans Serif', sans-serif;
+  --font-serif: serif;
+  --font-mono: monospace;
+  --radius: 0rem;
+  --shadow-2xs: 2px 2px 2px 1px hsl(0 0% 0% / 0.25);
+  --shadow-xs: 2px 2px 2px 1px hsl(0 0% 0% / 0.25);
+  --shadow-sm: 2px 2px 2px 1px hsl(0 0% 0% / 0.50), 2px 1px 2px 0px hsl(0 0% 0% / 0.50);
+  --shadow: 2px 2px 2px 1px hsl(0 0% 0% / 0.50), 2px 1px 2px 0px hsl(0 0% 0% / 0.50);
+  --shadow-md: 2px 2px 2px 1px hsl(0 0% 0% / 0.50), 2px 2px 4px 0px hsl(0 0% 0% / 0.50);
+  --shadow-lg: 2px 2px 2px 1px hsl(0 0% 0% / 0.50), 2px 4px 6px 0px hsl(0 0% 0% / 0.50);
+  --shadow-xl: 2px 2px 2px 1px hsl(0 0% 0% / 0.50), 2px 8px 10px 0px hsl(0 0% 0% / 0.50);
+  --shadow-2xl: 2px 2px 2px 1px hsl(0 0% 0% / 1.25);
+  --tracking-normal: 0px;
+  --spacing: 0.25rem;
+
+  /* Typography - authentic MS Sans Serif */
+  font-family: 'MS Sans Serif', sans-serif;
+  letter-spacing: var(--tracking-normal);
+}
+
+/* Windows 98 specific styling */
+
+/* Classic Windows 98 button styling */
+.win98 button, .win98.dark button {
+  border: 2px outset hsl(var(--card)) !important;
+  border-radius: 0 !important;
+  box-shadow: var(--shadow) !important;
+  font-family: 'MS Sans Serif', sans-serif !important;
+}
+
+.win98 button:hover, .win98.dark button:hover {
+  border: 2px outset hsl(var(--card)) !important;
+}
+
+.win98 button:active, .win98.dark button:active {
+  border: 2px inset hsl(var(--card)) !important;
+}
+
+/* Classic Windows 98 input styling */
+.win98 input, .win98 textarea, .win98 select,
+.win98.dark input, .win98.dark textarea, .win98.dark select {
+  border: 2px inset hsl(var(--border)) !important;
+  border-radius: 0 !important;
+  font-family: 'MS Sans Serif', sans-serif !important;
+}
+
+/* Classic Windows 98 card styling */
+.win98 .card, .win98.dark .card {
+  border: 2px outset hsl(var(--card)) !important;
+  border-radius: 0 !important;
+  box-shadow: var(--shadow) !important;
+}
+
+.win98 h1, .win98 h2, .win98 h3, .win98 h4, .win98 h5, .win98 h6,
+.win98.dark h1, .win98.dark h2, .win98.dark h3, .win98.dark h4, .win98.dark h5, .win98.dark h6 {
+  font-family: 'MS Sans Serif', sans-serif !important;
+  font-weight: bold;
+}
+
+/* Apply the same styling to both light and dark variants */
+.win98 *, .win98.dark * {
+  border-radius: 0 !important;
+}
+
+.win98 .border, .win98.dark .border {
+  border-style: solid !important;
+  border-width: 2px !important;
+}
+
+/* Windows 98 Utility Classes */
+.win98 .win98-flat,
+.win98.dark .win98-flat {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+.win98 .win98-panel,
+.win98.dark .win98-panel {
+  background: #c0c0c0 !important;
+  border-top: 2px solid #dfdfdf !important;
+  border-left: 2px solid #dfdfdf !important;
+  border-right: 2px solid #808080 !important;
+  border-bottom: 2px solid #808080 !important;
+  padding: 2px !important;
+}
+
+.win98 .win98-inset,
+.win98.dark .win98-inset {
+  border-top: 2px solid #808080 !important;
+  border-left: 2px solid #808080 !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  box-shadow: inset -1px -1px 0 #c0c0c0, inset 1px 1px 0 #000000 !important;
+}
+
+.win98 .win98-outset,
+.win98.dark .win98-outset {
+  border-top: 2px solid #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #dfdfdf !important;
+}
+
+/* Ensure all text in Windows 98 mode uses appropriate font */
+.win98 *:not(code):not(pre),
+.win98.dark *:not(code):not(pre) {
+  font-family: 'MS Sans Serif', 'Tahoma', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+/* Windows 98 Scrollbars */
+.win98 ::-webkit-scrollbar,
+.win98.dark ::-webkit-scrollbar {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.win98 ::-webkit-scrollbar-track,
+.win98.dark ::-webkit-scrollbar-track {
+  background: #c0c0c0 !important;
+  border: 1px solid #808080 !important;
+}
+
+.win98 ::-webkit-scrollbar-thumb,
+.win98.dark ::-webkit-scrollbar-thumb {
+  background: #c0c0c0 !important;
+  border-top: 2px solid #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+}
+
+.win98 ::-webkit-scrollbar-button,
+.win98.dark ::-webkit-scrollbar-button {
+  background: #c0c0c0 !important;
+  border-top: 2px solid #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+}
+
+/* Windows 98 Navigation & Core Styling */
+.win98 .win98-sidebar,
+.win98.dark .win98-sidebar {
+  background: #c0c0c0 !important; /* Classic Windows 98 grey */
+  color: black !important;
+  border-top: 2px solid #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+}
+
+/* Logo section in navy */
+.win98 .win98-logo-section,
+.win98.dark .win98-logo-section {
+  background: #000080 !important; /* Navy taskbar */
+  color: white !important;
+  border-top: 2px solid #1084d0 !important;
+  border-left: 2px solid #1084d0 !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  margin: -1px -1px 0 -1px !important;
+}
+
+.win98 .win98-logo-section *,
+.win98.dark .win98-logo-section * {
+  color: white !important;
+}
+
+/* Navigation items in grey sidebar */
+.win98 .win98-sidebar nav a,
+.win98.dark .win98-sidebar nav a {
+  color: #000000 !important;
+}
+
+/* Active/hover states for nav items */
+.win98 .win98-sidebar .text-primary,
+.win98.dark .win98-sidebar .text-primary,
+.win98 .win98-sidebar [class*="bg-primary"],
+.win98.dark .win98-sidebar [class*="bg-primary"] {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-top: 2px solid #808080 !important;
+  border-left: 2px solid #808080 !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  box-shadow: inset 1px 1px 0 #000000 !important;
+}
+
+.win98 .win98-secondary-nav,
+.win98.dark .win98-secondary-nav {
+  background: #ffffff !important; /* White inner window */
+  border-top: 2px solid #808080 !important;
+  border-left: 2px solid #808080 !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  box-shadow:
+    inset -1px -1px 0 #c0c0c0,
+    inset 1px 1px 0 #000000 !important;
+}
+
+.win98 .win98-secondary-nav *,
+.win98.dark .win98-secondary-nav * {
+  color: #000000 !important;
+}
+
+.win98 .win98-window,
+.win98.dark .win98-window {
+  background: #c0c0c0 !important;
+  border-top: 2px solid #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow:
+    inset -1px -1px 0 #808080,
+    inset 1px 1px 0 #dfdfdf !important;
+}
+
+.win98 .win98-titlebar,
+.win98.dark .win98-titlebar {
+  background: linear-gradient(to right, #000080, #1084d0) !important;
+  color: white !important;
+  padding: 3px 4px !important;
+  font-weight: bold !important;
+  font-size: 11px !important;
+  font-family: 'MS Sans Serif', 'Tahoma', sans-serif !important;
+  border-top: 1px solid #ffffff !important;
+  border-left: 1px solid #ffffff !important;
+  border-right: 1px solid #000000 !important;
+  border-bottom: 1px solid #000000 !important;
+}
+
+/* Windows 98 Button Styles */
+.win98 button:not(.win98-flat),
+.win98.dark button:not(.win98-flat) {
+  background: #c0c0c0 !important;
+  color: #000000 !important;
+  border-top: 2px solid #ffffff !important;
+  border-left: 2px solid #ffffff !important;
+  border-right: 2px solid #000000 !important;
+  border-bottom: 2px solid #000000 !important;
+  box-shadow: none !important;
+  padding: 4px 12px !important;
+  font-family: 'MS Sans Serif', 'Tahoma', sans-serif !important;
+  font-size: 11px !important;
+}
+
+.win98 button:not(.win98-flat):hover,
+.win98.dark button:not(.win98-flat):hover {
+  background: #c0c0c0 !important;
+}
+
+.win98 button:not(.win98-flat):active,
+.win98.dark button:not(.win98-flat):active {
+  border-top: 2px solid #000000 !important;
+  border-left: 2px solid #000000 !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  padding: 5px 11px 3px 13px !important;
+}
+
+/* Windows 98 Input Fields */
+.win98 input,
+.win98 textarea,
+.win98.dark input,
+.win98.dark textarea {
+  background: white !important;
+  color: black !important;
+  border-top: 2px solid #808080 !important;
+  border-left: 2px solid #808080 !important;
+  border-right: 2px solid #ffffff !important;
+  border-bottom: 2px solid #ffffff !important;
+  box-shadow: inset -1px -1px 0 #c0c0c0, inset 1px 1px 0 #000000 !important;
+  padding: 2px 4px !important;
+  font-family: 'MS Sans Serif', 'Tahoma', sans-serif !important;
+  font-size: 11px !important;
+}
+
+/* Nature Theme Typography */
+.nature h1, .nature h2, .nature h3, .nature h4, .nature h5, .nature h6,
+.nature-dark h1, .nature-dark h2, .nature-dark h3, .nature-dark h4, .nature-dark h5, .nature-dark h6 {
+  font-family: 'Merriweather', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.nature code, .nature pre, .nature .font-mono,
+.nature-dark code, .nature-dark pre, .nature-dark .font-mono {
+  font-family: 'Source Code Pro', monospace;
+}
+
+.nature .font-serif, .nature-dark .font-serif {
+  font-family: 'Merriweather', serif;
+}
+
+.nature .font-sans, .nature-dark .font-sans {
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Amethyst Haze Theme Typography */
+.amethyst-haze h1, .amethyst-haze h2, .amethyst-haze h3, .amethyst-haze h4, .amethyst-haze h5, .amethyst-haze h6,
+.amethyst-haze-dark h1, .amethyst-haze-dark h2, .amethyst-haze-dark h3, .amethyst-haze-dark h4, .amethyst-haze-dark h5, .amethyst-haze-dark h6 {
+  font-family: 'Lora', serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.amethyst-haze code, .amethyst-haze pre, .amethyst-haze .font-mono,
+.amethyst-haze-dark code, .amethyst-haze-dark pre, .amethyst-haze-dark .font-mono {
+  font-family: 'Fira Code', monospace;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+}
+
+.amethyst-haze .font-serif, .amethyst-haze-dark .font-serif {
+  font-family: 'Lora', serif;
+}
+
+.amethyst-haze .font-sans, .amethyst-haze-dark .font-sans {
+  font-family: 'Geist', sans-serif;
+}
+
+/* Light theme - Keep original Reckless */
+.light h1,
+.light h2,
+.light h3,
+.light h4,
+.light h5,
+.light h6 {
+  font-family: 'Reckless', serif;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+
+/* Dark theme - Keep original Reckless */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  font-family: 'Reckless', serif;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+
+/* Gruvbox Theme - Retro terminal typography with Fira Code */
+.gruvbox {
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+}
+
+/* Sharp corners for all Gruvbox components - true terminal style */
+.gruvbox * {
+  border-radius: 0 !important;
+}
+
+.gruvbox h1,
+.gruvbox h2,
+.gruvbox h3,
+.gruvbox h4,
+.gruvbox h5,
+.gruvbox h6 {
+  font-family: 'Fira Code', monospace;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: hsl(var(--gruvbox-fg0));
+}
+
+/* Gruvbox heading sizes for retro terminal feel */
+.gruvbox h1 {
+  @apply text-3xl;
+  color: hsl(var(--gruvbox-orange-bright));
+}
+.gruvbox h2 {
+  @apply text-2xl;
+  color: hsl(var(--gruvbox-yellow-bright));
+}
+.gruvbox h3 {
+  @apply text-xl;
+  color: hsl(var(--gruvbox-green-bright));
+}
+.gruvbox h4 {
+  @apply text-lg;
+  color: hsl(var(--gruvbox-aqua-bright));
+}
+.gruvbox h5 {
+  @apply text-base;
+  color: hsl(var(--gruvbox-fg0));
+}
+.gruvbox h6 {
+  @apply text-sm;
+  color: hsl(var(--gruvbox-fg1));
+}
+
+/* Gruvbox specific component overrides */
+.gruvbox code,
+.gruvbox pre {
+  font-family: 'Fira Code', monospace;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+  background-color: hsl(var(--gruvbox-bg0-hard));
+  color: hsl(var(--gruvbox-fg0));
+}
+
+.gruvbox .inline-code {
+  background-color: hsl(var(--gruvbox-bg2));
+  color: hsl(var(--gruvbox-orange-bright));
+  padding: 0.125rem 0.25rem;
+  border-radius: 0;
+}
+
+/* Gruvbox buttons with retro feel */
+.gruvbox button {
+  font-family: 'Fira Code', monospace;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border-radius: 0;
+}
+
+/* Sharp terminal-style cards and panels */
+.gruvbox .rounded-lg,
+.gruvbox .rounded-md,
+.gruvbox .rounded-sm,
+.gruvbox .rounded-xl,
+.gruvbox .rounded-2xl,
+.gruvbox .rounded-full {
+  border-radius: 0 !important;
+}
+
+/* Ensure all shadcn components have sharp corners */
+.gruvbox [class*="rounded"] {
+  border-radius: 0 !important;
+}
+
+/* Sharp edges for dropdown menus, popovers, etc */
+.gruvbox [role="menu"],
+.gruvbox [role="dialog"],
+.gruvbox [role="tooltip"],
+.gruvbox [data-radix-popper-content-wrapper] {
+  border-radius: 0 !important;
+}
+
+.gruvbox [data-radix-popper-content-wrapper] > * {
+  border-radius: 0 !important;
+}
+
+/* Gruvbox inputs with terminal style */
+.gruvbox input,
+.gruvbox textarea,
+.gruvbox select {
+  font-family: 'Fira Code', monospace;
+  background-color: hsl(var(--gruvbox-bg1));
+  border-color: hsl(var(--gruvbox-bg3));
+  border-radius: 0;
+  border-width: 2px;
+}
+
+.gruvbox input:focus,
+.gruvbox textarea:focus,
+.gruvbox select:focus {
+  border-color: hsl(var(--gruvbox-orange-bright));
+  box-shadow: none;
+  outline: 2px solid hsl(var(--gruvbox-orange-bright));
+  outline-offset: 0;
+}
+
+/* Terminal-style focus states */
+.gruvbox *:focus-visible {
+  border-radius: 0 !important;
+  outline: 2px solid hsl(var(--gruvbox-orange-bright));
+  outline-offset: 0;
+  box-shadow: none;
+}
+
+/* Gruvbox selection color */
+.gruvbox ::selection {
+  background-color: hsl(var(--gruvbox-bg3));
+  color: hsl(var(--gruvbox-fg0));
+}
+
+.gruvbox ::-moz-selection {
+  background-color: hsl(var(--gruvbox-bg3));
+  color: hsl(var(--gruvbox-fg0));
+}
+
+/* Terminal-style badges and alerts */
+.gruvbox [role="alert"],
+.gruvbox [class*="badge"] {
+  border-radius: 0 !important;
+  border-width: 1px;
+}
+
+/* Sharp corners for tabs */
+.gruvbox [role="tablist"],
+.gruvbox [role="tab"] {
+  border-radius: 0 !important;
+}
+
+/* Terminal-style avatars (make them square) */
+.gruvbox [class*="avatar"] {
+  border-radius: 0 !important;
+}
+
+/* Gruvbox scrollbar styling */
+.gruvbox::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.gruvbox::-webkit-scrollbar-track {
+  background: hsl(var(--gruvbox-bg1));
+}
+
+.gruvbox::-webkit-scrollbar-thumb {
+  background: hsl(var(--gruvbox-bg3));
+  border-radius: 0;
+}
+
+.gruvbox::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--gruvbox-bg4));
 }
 
 /* Deck.gl canvas styles */
@@ -849,6 +3119,131 @@ body, p, span, div, button, input, textarea, select {
     backdrop-filter: none;
     background: hsl(var(--card)) !important;
   }
+}
+
+/* ===== MODUS THEME (Modern OKLCH) ===== */
+.modus {
+  /* Base colors - WCAG AAA compliant light theme */
+  --background: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+  --foreground: 0 0% 0%; /* oklch(0 0 0) #000000 */
+
+  /* UI colors */
+  --card: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+  --card-foreground: 0 0% 0%; /* oklch(0 0 0) #000000 */
+  --popover: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+  --popover-foreground: 0 0% 0%; /* oklch(0 0 0) #000000 */
+
+  /* Interactive colors */
+  --primary: 223 100% 33%; /* oklch(0.3776 0.1879 264.0520) #0031a9 */
+  --primary-foreground: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+  --secondary: 0 0% 77%; /* oklch(0.7765 0 0) #c4c4c4 */
+  --secondary-foreground: 0 0% 0%; /* oklch(0 0 0) #000000 */
+  --accent: 228 77% 57%; /* oklch(0.5020 0.1674 264.0520) #354fcf */
+  --accent-foreground: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+  --destructive: 0 100% 33%; /* oklch(0.4510 0.1641 29.2339) #a60000 */
+  --destructive-foreground: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+
+  /* Utility colors */
+  --muted: 0 0% 94%; /* oklch(0.9412 0 0) #f0f0f0 */
+  --muted-foreground: 0 0% 35%; /* oklch(0.3693 0 0) #595959 */
+  --border: 0 0% 62%; /* oklch(0.6275 0 0) #9f9f9f */
+  --input: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+  --ring: 228 77% 57%; /* oklch(0.5020 0.1674 264.0520) #354fcf */
+
+  /* Sidebar colors */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 0 0% 0%;
+  --sidebar-primary: 223 100% 33%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 0 0% 77%;
+  --sidebar-accent-foreground: 0 0% 0%;
+  --sidebar-border: 0 0% 62%;
+  --sidebar-ring: 228 77% 57%;
+
+  /* Chart colors */
+  --chart-1: 90 100% 33%; /* oklch(0.5841 0.1769 142.4953) #4faa09 */
+  --chart-2: 219 100% 71%; /* oklch(0.6517 0.1234 264.0520) #7090ff */
+  --chart-3: 295 100% 81%; /* oklch(0.7294 0.2577 328.3634) #e07fff */
+  --chart-4: 53 100% 50%; /* oklch(0.8627 0.2110 109.7692) #ffcf00 */
+  --chart-5: 9 79% 67%; /* oklch(0.6784 0.1523 29.2339) #ef7969 */
+
+  /* Semantic colors */
+  --success: 120 100% 20%; /* oklch(0.4510 0.1769 142.4953) #006800 */
+  --warning: 45 100% 22%; /* oklch(0.4980 0.1235 109.7692) #6f5500 */
+  --info: 223 100% 33%; /* oklch(0.3776 0.1879 264.0520) #0031a9 */
+  --selection: 0 0% 74%; /* oklch(0.7373 0 0) #bcbcbc */
+  --hover: 199 100% 73%; /* oklch(0.8157 0.0734 264.0520) #94d4ff */
+
+  /* Typography */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius: 0.375rem;
+}
+
+.modus h1, .modus h2, .modus h3, .modus h4, .modus h5, .modus h6 {
+  font-family: 'Times New Roman', serif;
+  font-weight: 600;
+}
+
+.modus.dark {
+  /* Base colors - WCAG AAA compliant dark theme */
+  --background: 0 0% 0%; /* oklch(0 0 0) #000000 */
+  --foreground: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+
+  /* UI colors */
+  --card: 0 0% 12%; /* oklch(0.1176 0 0) #1e1e1e */
+  --card-foreground: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+  --popover: 0 0% 12%; /* oklch(0.1176 0 0) #1e1e1e */
+  --popover-foreground: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+
+  /* Interactive colors */
+  --primary: 203 100% 59%; /* oklch(0.7118 0.1234 264.0520) #2fafff */
+  --primary-foreground: 0 0% 0%; /* oklch(0 0 0) #000000 */
+  --secondary: 0 0% 33%; /* oklch(0.3294 0 0) #535353 */
+  --secondary-foreground: 0 0% 100%; /* oklch(1.0000 0 0) #ffffff */
+  --accent: 215 100% 74%; /* oklch(0.7216 0.1134 264.0520) #79a8ff */
+  --accent-foreground: 0 0% 0%; /* oklch(0 0 0) #000000 */
+  --destructive: 6 100% 67%; /* oklch(0.6588 0.1641 29.2339) #ff5f59 */
+  --destructive-foreground: 0 0% 0%; /* oklch(0 0 0) #000000 */
+
+  /* Utility colors */
+  --muted: 0 0% 12%; /* oklch(0.1176 0 0) #1e1e1e */
+  --muted-foreground: 0 0% 60%; /* oklch(0.5961 0 0) #989898 */
+  --border: 0 0% 39%; /* oklch(0.3922 0 0) #646464 */
+  --input: 0 0% 12%; /* oklch(0.1176 0 0) #1e1e1e */
+  --ring: 215 100% 74%; /* oklch(0.7216 0.1134 264.0520) #79a8ff */
+
+  /* Sidebar colors */
+  --sidebar: 0 0% 0%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 203 100% 59%;
+  --sidebar-primary-foreground: 0 0% 0%;
+  --sidebar-accent: 0 0% 33%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 0 0% 39%;
+  --sidebar-ring: 215 100% 74%;
+
+  /* Chart colors */
+  --chart-1: 90 100% 60%; /* oklch(0.7608 0.2577 142.4953) #4fd100 */
+  --chart-2: 203 100% 59%; /* oklch(0.7216 0.1134 264.0520) #2fafef */
+  --chart-3: 289 100% 80%; /* oklch(0.7490 0.1935 328.3634) #bf94fe */
+  --chart-4: 58 94% 49%; /* oklch(0.9020 0.2110 109.7692) #f1e00a */
+  --chart-5: 0 56% 45%; /* oklch(0.4706 0.1523 29.2339) #b52c2c */
+
+  /* Semantic colors */
+  --success: 120 100% 50%; /* oklch(0.7333 0.1769 142.4953) #44bc44 */
+  --warning: 52 100% 41%; /* oklch(0.7529 0.1235 109.7692) #d0bc00 */
+  --info: 203 100% 59%; /* oklch(0.7118 0.1234 264.0520) #2fafff */
+  --selection: 0 0% 36%; /* oklch(0.3608 0 0) #5c5c5c */
+  --hover: 199 100% 22%; /* oklch(0.3137 0.0734 264.0520) #004f70 */
+
+  /* Typography */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --radius: 0.375rem;
+}
+
+.modus.dark h1, .modus.dark h2, .modus.dark h3, .modus.dark h4, .modus.dark h5, .modus.dark h6 {
+  font-family: 'Times New Roman', serif;
+  font-weight: 600;
 }
 
 @layer base {

@@ -23,17 +23,17 @@
   --weight-body-semibold: 600;
   --weight-body-bold: 700;
 
-  /* Type Scale - Fluid Typography */
-  --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);      /* 12-14px */
-  --text-sm: clamp(0.875rem, 0.825rem + 0.25vw, 1rem);       /* 14-16px */
-  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);      /* 16-18px */
-  --text-lg: clamp(1.125rem, 1.05rem + 0.375vw, 1.25rem);    /* 18-20px */
-  --text-xl: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);        /* 20-24px */
-  --text-2xl: clamp(1.5rem, 1.35rem + 0.75vw, 1.875rem);     /* 24-30px */
-  --text-3xl: clamp(1.875rem, 1.65rem + 1.125vw, 2.25rem);   /* 30-36px */
-  --text-4xl: clamp(2.25rem, 1.95rem + 1.5vw, 3rem);         /* 36-48px */
-  --text-5xl: clamp(3rem, 2.5rem + 2.5vw, 3.75rem);          /* 48-60px */
-  --text-6xl: clamp(3.75rem, 3rem + 3.75vw, 4.5rem);         /* 60-72px */
+  /* Type Scale - Perfect Fourth (1.333) ratio */
+  --text-xs: 0.75rem;       /* 12px */
+  --text-sm: 0.875rem;      /* 14px */
+  --text-base: 1rem;        /* 16px (base) */
+  --text-lg: 1.313rem;      /* 21px (16 × 1.333) */
+  --text-xl: 1.75rem;       /* 28px (21 × 1.333) */
+  --text-2xl: 2.333rem;     /* 37px (28 × 1.333) */
+  --text-3xl: 3.111rem;     /* 50px (37 × 1.333) */
+  --text-4xl: 4.147rem;     /* 66px (50 × 1.333) */
+  --text-5xl: 5.526rem;     /* 88px (66 × 1.333) */
+  --text-6xl: 7.369rem;     /* 118px (88 × 1.333) */
 
   /* Line Heights */
   --leading-none: 1;
@@ -77,25 +77,16 @@
      Effects & Interactions
      ================================================ */
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 1px 2px -1px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
-  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.3);
+  /* Minimal Shadows */
+  --shadow-sm: 0 1px 3px hsl(var(--foreground) / 0.1);
+  --shadow-md: 0 4px 6px hsl(var(--foreground) / 0.1);
 
-  /* Glow Effects */
-  --glow-primary: 0 0 20px rgba(99, 102, 241, 0.3);
-  --glow-accent: 0 0 20px rgba(16, 185, 129, 0.3);
-  --glow-secondary: 0 0 20px rgba(244, 63, 94, 0.3);
+  /* Minimal Shadows Only */
+  --shadow-subtle: 0 1px 3px hsl(var(--foreground) / 0.1);
 
-  /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slower: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Simple Transitions */
+  --transition-fast: 200ms ease;
+  --transition-base: 200ms ease;
 
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
@@ -135,13 +126,9 @@
    Component Classes
    ================================================ */
 
-/* Headlines with Reckless font */
+/* H1 and H2 use Reckless display font */
 .nexus-enhanced h1,
 .nexus-enhanced h2,
-.nexus-enhanced h3,
-.nexus-enhanced h4,
-.nexus-enhanced h5,
-.nexus-enhanced h6,
 .nexus-enhanced .headline {
   font-family: var(--font-display);
   font-weight: var(--weight-display-regular);
@@ -149,6 +136,18 @@
   letter-spacing: var(--tracking-tight);
 }
 
+/* H3-H6 use Roobert sans font */
+.nexus-enhanced h3,
+.nexus-enhanced h4,
+.nexus-enhanced h5,
+.nexus-enhanced h6 {
+  font-family: var(--font-body);
+  font-weight: var(--weight-body-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-normal);
+}
+
+/* Heading sizes follow Perfect Fourth scale */
 .nexus-enhanced h1 { font-size: var(--text-6xl); }
 .nexus-enhanced h2 { font-size: var(--text-5xl); }
 .nexus-enhanced h3 { font-size: var(--text-4xl); }
@@ -199,19 +198,94 @@
 /* Roobert Accent Text - For callouts and emphasis */
 .roobert-accent {
   font-family: var(--font-body);
+  font-weight: var(--weight-body-semibold);
+}
+
+/* ================================================
+   Design System Utility Classes
+   ================================================ */
+
+/* Semantic Color Roles - Text Emphasis */
+.text-emphasis-high {
+  color: hsl(var(--foreground));
+}
+
+.text-emphasis-medium {
+  color: hsl(var(--muted-foreground));
+}
+
+.text-emphasis-low {
+  color: hsl(var(--muted-foreground) / 0.7);
+}
+
+/* Surface Hierarchy */
+.surface-base {
+  background: hsl(var(--background));
+}
+
+.surface-raised {
+  background: hsl(var(--card));
+}
+
+.surface-overlay {
+  background: hsl(var(--popover));
+}
+
+.surface-inverse {
+  background: hsl(var(--foreground));
+  color: hsl(var(--background));
+}
+
+/* Elevation System - Consistent Shadow Hierarchy */
+.elevation-0 {
+  box-shadow: none;
+}
+
+.elevation-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.elevation-2 {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.elevation-3 {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.elevation-4 {
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22), 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Typography Utilities */
+.text-display {
+  font-family: var(--font-display);
+}
+
+.text-body {
+  font-family: var(--font-body);
+}
+
+.text-code {
+  font-family: var(--font-mono);
+}
+
+/* Roobert Accent Text - For callouts and emphasis (continued) */
+.roobert-accent-continued {
+  font-family: var(--font-body);
   font-weight: var(--weight-body-medium);
   font-size: var(--text-sm);
   text-transform: uppercase;
   letter-spacing: var(--tracking-widest);
-  color: var(--text-secondary);
+  color: hsl(var(--muted-foreground));
 }
 
 .roobert-accent--primary {
-  color: var(--color-primary-500);
+  color: hsl(var(--primary));
 }
 
 .roobert-accent--accent {
-  color: var(--color-accent-500);
+  color: hsl(var(--accent));
 }
 
 /* Roobert Lead Text - For introductions */
@@ -220,7 +294,7 @@
   font-size: var(--text-xl);
   font-weight: var(--weight-body-light);
   line-height: var(--leading-relaxed);
-  color: var(--text-secondary);
+  color: hsl(var(--muted-foreground));
 }
 
 /* Button Styles */
@@ -242,39 +316,37 @@
 
 /* Primary Button */
 .btn-nexus--primary {
-  background: var(--color-primary-500);
-  color: var(--color-white);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 
 .btn-nexus--primary:hover {
-  background: var(--color-primary-600);
-  transform: translateY(-1px);
-  box-shadow: var(--glow-primary);
+  background: hsl(var(--primary) / 0.9);
 }
 
 /* Secondary Button */
 .btn-nexus--secondary {
   background: transparent;
-  color: var(--color-primary-400);
-  border: 1px solid var(--color-primary-400);
+  color: hsl(var(--primary));
+  border: 1px solid hsl(var(--primary));
 }
 
 .btn-nexus--secondary:hover {
-  background: var(--color-primary-500);
-  color: var(--color-white);
-  border-color: var(--color-primary-500);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
 }
 
 /* Ghost Button */
 .btn-nexus--ghost {
   background: transparent;
-  color: var(--text-primary);
+  color: hsl(var(--foreground));
   padding: var(--space-3) var(--space-6);
 }
 
 .btn-nexus--ghost:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--color-primary-400);
+  background: hsl(var(--foreground) / 0.05);
+  color: hsl(var(--primary));
 }
 
 /* Button Sizes */
@@ -292,17 +364,15 @@
 
 /* Card Component */
 .card-nexus {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-primary);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: var(--radius-xl);
   padding: var(--space-8);
   transition: all var(--transition-base);
 }
 
 .card-nexus:hover {
-  border-color: var(--color-primary-500);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  border-color: hsl(var(--primary));
 }
 
 .card-nexus__header {
@@ -314,113 +384,48 @@
   font-size: var(--text-2xl);
   font-weight: var(--weight-display-medium);
   margin-bottom: var(--space-2);
-  color: var(--text-primary);
+  color: hsl(var(--foreground));
 }
 
 .card-nexus__subtitle {
   font-size: var(--text-base);
-  color: var(--text-secondary);
+  color: hsl(var(--muted-foreground));
 }
 
 .card-nexus__body {
-  color: var(--text-secondary);
+  color: hsl(var(--muted-foreground));
   line-height: var(--leading-relaxed);
 }
 
 .card-nexus__footer {
   margin-top: var(--space-6);
   padding-top: var(--space-6);
-  border-top: 1px solid var(--border-secondary);
+  border-top: 1px solid hsl(var(--border) / 0.5);
 }
 
-/* Card with Gradient Border */
-.card-nexus--gradient {
-  position: relative;
-  background: var(--bg-elevated);
-  border: none;
+/* Simple card with clean border */
+.card-nexus--accent {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--primary) / 0.2);
 }
 
-.card-nexus--gradient::before {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: var(--radius-xl);
-  padding: 1px;
-  background: linear-gradient(135deg, var(--color-primary-500), var(--color-accent-500));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* Highlight Text Effect - Realistic Highlighter */
+/* Simple Highlight - Clean Selection */
 .highlight-nexus {
-  position: relative;
-  display: inline;
-  padding: 0 var(--space-2);
-  color: inherit;
-  font-weight: inherit;
-  z-index: 1;
+  background: hsl(var(--primary) / 0.2);
+  padding: 2px 4px;
+  border-radius: 4px;
 }
 
-.highlight-nexus::before {
-  content: '';
-  position: absolute;
-  top: 20%;
-  left: -2px;
-  right: -2px;
-  bottom: 0;
-  background: rgba(91, 110, 255, 0.5);
-  transform: skewX(-0.5deg) rotate(-0.2deg);
-  z-index: -1;
-  border-radius: 0;
+.highlight-nexus--accent {
+  background: hsl(var(--accent) / 0.2);
 }
 
-.highlight-nexus--accent::before {
-  background: rgba(0, 229, 200, 0.5);
-  transform: skewX(0.3deg) rotate(0.1deg);
+.highlight-nexus--secondary {
+  background: hsl(var(--secondary) / 0.2);
 }
 
-.highlight-nexus--secondary::before {
-  background: rgba(255, 107, 122, 0.5);
-  transform: skewX(-0.3deg) rotate(-0.1deg);
-}
-
-.highlight-nexus--tertiary::before {
-  background: rgba(255, 179, 102, 0.55);
-  transform: skewX(0.4deg) rotate(0.15deg);
-}
-
-/* Double highlight effect */
-.highlight-nexus--double {
-  position: relative;
-  display: inline;
-  padding: 0 var(--space-2);
-  color: inherit;
-}
-
-.highlight-nexus--double::before,
-.highlight-nexus--double::after {
-  content: '';
-  position: absolute;
-  left: -2px;
-  right: -2px;
-  z-index: -1;
-  border-radius: 0;
-}
-
-.highlight-nexus--double::before {
-  top: 25%;
-  bottom: 5%;
-  background: rgba(91, 110, 255, 0.4);
-  transform: skewX(-0.4deg) rotate(-0.1deg);
-}
-
-.highlight-nexus--double::after {
-  top: 15%;
-  bottom: 10%;
-  background: rgba(0, 229, 200, 0.4);
-  transform: skewX(0.3deg) rotate(0.1deg);
+.highlight-nexus--tertiary {
+  background: hsl(var(--chart-4) / 0.2);
 }
 
 /* Status Badge */
@@ -432,15 +437,15 @@
   font-weight: var(--weight-body-medium);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-full);
-  border: 1px solid var(--border-primary);
-  background: var(--bg-elevated);
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
 }
 
 .status-nexus__dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-accent-500);
+  background: hsl(var(--accent));
 }
 
 .status-nexus__dot--processing {
@@ -465,7 +470,7 @@
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: var(--weight-display-semibold);
-  color: var(--text-primary);
+  color: hsl(var(--foreground));
 }
 
 .nav-nexus__links {
@@ -477,32 +482,31 @@
 .nav-nexus__link {
   font-size: var(--text-base);
   font-weight: var(--weight-body-medium);
-  color: var(--text-secondary);
+  color: hsl(var(--muted-foreground));
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-base);
   transition: all var(--transition-base);
 }
 
 .nav-nexus__link:hover {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
+  color: hsl(var(--foreground));
+  background: hsl(var(--foreground) / 0.05);
 }
 
 .nav-nexus__link--active {
-  color: var(--color-primary-400);
+  color: hsl(var(--primary));
 }
 
-/* Floating Navigation */
-.nav-nexus--floating {
+/* Clean navigation bar */
+.nav-nexus--fixed {
   position: fixed;
   top: var(--space-6);
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: var(--blur-md);
-  border: 1px solid var(--border-primary);
-  border-radius: var(--radius-2xl);
-  padding: var(--space-3) var(--space-6);
+  background: hsl(var(--background) / 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 12px 24px;
   z-index: var(--z-fixed);
 }
 
@@ -512,17 +516,16 @@
   font-family: var(--font-body);
   font-size: var(--text-base);
   padding: var(--space-4) var(--space-5);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-primary);
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
   border-radius: var(--radius-lg);
-  color: var(--text-primary);
+  color: hsl(var(--foreground));
   transition: all var(--transition-base);
 }
 
 .input-nexus:focus {
   outline: none;
-  border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: hsl(var(--primary));
 }
 
 .input-nexus::placeholder {
@@ -533,7 +536,7 @@
   display: block;
   font-size: var(--text-sm);
   font-weight: var(--weight-body-medium);
-  color: var(--text-secondary);
+  color: hsl(var(--muted-foreground));
   margin-bottom: var(--space-2);
 }
 
@@ -558,7 +561,7 @@
 
 .hero-nexus__subtitle {
   font-size: var(--text-xl);
-  color: var(--text-secondary);
+  color: hsl(var(--muted-foreground));
   max-width: 60ch;
   margin-left: auto;
   margin-right: auto;
@@ -573,13 +576,9 @@
   flex-wrap: wrap;
 }
 
-/* Hero with Gradient Background */
-.hero-nexus--gradient {
-  background: linear-gradient(180deg,
-    var(--bg-primary) 0%,
-    rgba(99, 102, 241, 0.1) 50%,
-    var(--bg-primary) 100%
-  );
+/* Clean hero background */
+.hero-nexus--subtle {
+  background: var(--bg-primary);
 }
 
 /* Grid Layouts */
@@ -660,136 +659,806 @@
 .animate-delay-300 { animation-delay: 300ms; }
 .animate-delay-400 { animation-delay: 400ms; }
 
-/* Focus States - Accessibility */
+/* Focus States - Clean Accessibility */
 .nexus-enhanced *:focus-visible {
-  outline: 2px solid var(--color-primary-400);
+  outline: 2px solid hsl(var(--primary));
   outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* ================================================
-   Enhanced Tabs with Sliding Indicator
+   Modern Utility Classes
    ================================================ */
 
-/* Duration for smooth transitions */
-.duration-250 {
-  transition-duration: 250ms;
-}
+/* Clean spacing utilities */
+.space-y-1 > * + * { margin-top: var(--space-1); }
+.space-y-2 > * + * { margin-top: var(--space-2); }
+.space-y-4 > * + * { margin-top: var(--space-4); }
+.space-y-6 > * + * { margin-top: var(--space-6); }
+.space-y-8 > * + * { margin-top: var(--space-8); }
 
-/* Smooth easing function */
-.ease-out {
-  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
-}
+/* Clean flexbox utilities */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
 
-/* Enhanced tabs container */
-.tabs-enhanced {
+/* Clean text utilities */
+.text-sm { font-size: var(--text-sm); }
+.text-base { font-size: var(--text-base); }
+.text-lg { font-size: var(--text-lg); }
+.text-xl { font-size: var(--text-xl); }
+.font-medium { font-weight: var(--weight-body-medium); }
+.font-semibold { font-weight: var(--weight-body-semibold); }
+
+/* Clean backgrounds */
+.bg-elevated { background: var(--bg-elevated); }
+.bg-subtle { background: rgba(255, 255, 255, 0.02); }
+
+/* Clean borders */
+.border { border: 1px solid hsl(var(--border)); }
+.border-subtle { border: 1px solid hsl(var(--border) / 0.5); }
+.rounded { border-radius: 8px; }
+.rounded-lg { border-radius: 12px; }
+.rounded-xl { border-radius: 16px; }
+
+/* ================================================
+   Clean Tabs
+   ================================================ */
+
+/* Clean tabs container */
+.tabs-container {
   position: relative;
 }
 
-/* Tab list with subtle background */
-.tabs-enhanced__list {
+/* Tab list with minimal background */
+.tabs-list {
   display: inline-flex;
   height: 2.5rem;
   align-items: center;
   justify-content: center;
-  border-radius: 0.5rem;
-  background-color: rgba(var(--muted), 0.5);
-  backdrop-filter: blur(4px);
-  padding: 0.25rem;
-  color: var(--text-secondary);
+  border-radius: 8px;
+  background: hsl(var(--foreground) / 0.02);
+  padding: 4px;
+  color: hsl(var(--muted-foreground));
   position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Sliding indicator pill */
-.tabs-enhanced__indicator {
-  position: absolute;
-  height: 2rem;
-  background: var(--bg-elevated);
-  border-radius: 0.375rem;
-  box-shadow: var(--shadow-sm);
-  transition: transform 250ms cubic-bezier(0.4, 0, 0.2, 1), width 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform, width;
-}
-
-/* Tab trigger with outline hover */
-.tabs-enhanced__trigger {
+/* Clean tab trigger */
+.tab-trigger {
   position: relative;
-  z-index: 10;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
-  border-radius: 0.375rem;
-  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  padding: 8px 12px;
   font-size: var(--text-sm);
   font-weight: var(--weight-body-medium);
-  transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--transition-fast);
   cursor: pointer;
   user-select: none;
   background: transparent;
-  border: 2px solid transparent;
+  border: none;
+  color: hsl(var(--muted-foreground));
 }
 
-/* Hover state - subtle outline */
-.tabs-enhanced__trigger:hover:not([data-state="active"]) {
-  outline: 2px solid rgba(99, 102, 241, 0.3);
-  outline-offset: -2px;
-  color: var(--text-primary);
-  background: transparent;
+/* Hover state */
+.tab-trigger:hover:not(.active) {
+  color: hsl(var(--foreground));
+  background: hsl(var(--foreground) / 0.05);
 }
 
-/* Active state - text color change */
-.tabs-enhanced__trigger[data-state="active"] {
-  color: var(--text-primary);
-  font-weight: var(--weight-body-semibold);
+/* Active state */
+.tab-trigger.active {
+  color: hsl(var(--foreground));
+  background: hsl(var(--primary) / 0.1);
+  border: 1px solid rgba(91, 110, 255, 0.2);
 }
 
-/* Inactive state */
-.tabs-enhanced__trigger[data-state="inactive"] {
-  color: var(--text-tertiary);
-}
-
-/* Focus visible state */
-.tabs-enhanced__trigger:focus-visible {
-  outline: 2px solid var(--color-primary-400);
-  outline-offset: 2px;
-}
-
-/* Disabled state */
-.tabs-enhanced__trigger:disabled {
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-/* Tab content with smooth transition */
-.tabs-enhanced__content {
+/* Tab content */
+.tab-content {
   margin-top: var(--space-4);
-  animation: fadeIn 250ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: fadeIn var(--transition-fast) forwards;
 }
 
-/* Fade in animation for content */
-@keyframes fadeInTab {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
+/* ================================================
+   Clean Navigation Components
+   ================================================ */
+
+.nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-body-medium);
+  transition: all var(--transition-fast);
+  border-radius: 8px;
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+}
+
+.nav-item:hover {
+  background: hsl(var(--foreground) / 0.05);
+  color: hsl(var(--foreground));
+}
+
+.nav-item--active {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+  border: 1px solid rgba(91, 110, 255, 0.2);
+}
+
+/* ================================================
+   Clean Terminal Text - For Terminal Views Only
+   ================================================ */
+
+/* Terminal text - clean, no effects */
+.terminal-text {
+  color: #00E5C8;
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
+}
+
+.terminal-text--primary {
+  color: #5B6EFF;
+}
+
+.terminal-text--secondary {
+  color: #FF6B7A;
+}
+
+.terminal-text--tertiary {
+  color: #FFB366;
+}
+
+/* Removed deprecated fake terminal effects */
+
+/* Removed: ASCII corner decorations - too decorative for clean design */
+
+/* ================================================
+   Clean Section Dividers
+   ================================================ */
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin: var(--space-16) 0;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.divider-label {
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* ================================================
+   Clean Loading States
+   ================================================ */
+
+.loading-text {
+  font-family: var(--font-body);
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+}
+
+.loading-dots .dot {
+  animation: loading-pulse 1.4s ease-in-out infinite;
+}
+
+.loading-dots .dot:nth-child(1) { animation-delay: 0s; }
+.loading-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes loading-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* Removed: ASCII background textures - too decorative for clean design */
+
+/* ================================================
+   Clean Table Styling
+   ================================================ */
+
+.table-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-footer code {
+  font-family: var(--font-mono);
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-xs);
+}
+
+/* ================================================
+   XTerm.js Terminal Styling
+   ================================================ */
+
+.xterm-container {
+  position: relative;
+}
+
+/* Override xterm.js default styles to match brand */
+.xterm {
+  font-feature-settings: "liga" 0;
+  position: relative;
+  user-select: none;
+  -ms-user-select: none;
+  -webkit-user-select: none;
+}
+
+.xterm.focus,
+.xterm:focus {
+  outline: none;
+}
+
+.xterm .xterm-helpers {
+  position: absolute;
+  top: 0;
+  z-index: 5;
+}
+
+.xterm .xterm-helper-textarea {
+  padding: 0;
+  border: 0;
+  margin: 0;
+  position: absolute;
+  opacity: 0;
+  left: -9999em;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: -5;
+  white-space: nowrap;
+  overflow: hidden;
+  resize: none;
+}
+
+.xterm .xterm-screen {
+  position: relative;
+  padding: 1rem;
+}
+
+.xterm .xterm-screen canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.xterm .xterm-scroll-area {
+  visibility: hidden;
+}
+
+.xterm-char-measure-element {
+  display: inline-block;
+  visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: -9999em;
+  line-height: normal;
+}
+
+.xterm.enable-mouse-events {
+  cursor: default;
+}
+
+.xterm:not(.enable-mouse-events) {
+  cursor: text;
+}
+
+.xterm .xterm-viewport {
+  background-color: #000000;
+  overflow-y: scroll;
+  cursor: default;
+  position: absolute;
+  right: 0;
+  left: 0;
+  top: 0;
+  bottom: 0;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.xterm .xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Clean terminal cursor */
+.xterm .xterm-cursor-layer {
+  z-index: 3;
+}
+
+.xterm .xterm-cursor-block {
+  background-color: #00E5C8;
+}
+
+.xterm .xterm-cursor-bar {
+  background-color: #00E5C8;
+  width: 2px;
+}
+
+.xterm .xterm-cursor-underline {
+  border-bottom: 2px solid #00E5C8;
+}
+
+/* ================================================
+   Clean Pipeline Table - Apple-like Spatial Design
+   ================================================ */
+
+/* Spatial Variables */
+:root {
+  --section-gap: 48px;
+  --component-gap: 32px;
+  --element-gap: 16px;
+  --tight-gap: 8px;
+}
+
+/* Container - Clean, Spacious */
+.pipeline-container {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 48px 96px;
+}
+
+/* Header - Clean, No Pipes */
+.pipeline-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 48px 0 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.header-title h1 {
+  font-family: var(--font-display);
+  font-size: 48px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  color: #FFFFFF;
+}
+
+.header-title p {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: #ADB5BD;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Buttons - Clean, Modern */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ghost:hover {
+  background: hsl(var(--foreground) / 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #5B6EFF;
+  border: 1px solid #5B6EFF;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary:hover {
+  background: #7A85FF;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #6C757D;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover {
+  background: hsl(var(--foreground) / 0.05);
+  color: #FFFFFF;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* Table Container - Clean Background */
+.pipeline-table-container {
+  background: hsl(var(--foreground) / 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 32px;
+}
+
+/* Search Bar - Modern */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: #FFFFFF;
+}
+
+.search-input::placeholder {
+  color: #6C757D;
+}
+
+/* Table - Clean, No Borders on Cells */
+.pipeline-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+
+/* Header - Clean, Minimal */
+.pipeline-table thead th {
+  text-align: left;
+  padding: 12px 16px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: #6C757D;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+}
+
+/* Rows - Clean, Subtle Background */
+.pipeline-table tbody tr {
+  background: hsl(var(--foreground) / 0.02);
+  transition: all 0.2s;
+}
+
+.pipeline-table tbody tr:hover {
+  background: rgba(91, 110, 255, 0.05);
+}
+
+/* Cells - Clean, No Borders */
+.pipeline-table tbody td {
+  padding: 16px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: #FFFFFF;
+  border: none;
+  vertical-align: middle;
+}
+
+/* First and Last Cell - Rounded Corners */
+.pipeline-table tbody td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.pipeline-table tbody td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* Pipeline Name Cell */
+.pipeline-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pipeline-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: hsl(var(--primary) / 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5B6EFF;
+}
+
+.pipeline-name .name {
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.pipeline-name .type {
+  font-size: 12px;
+  color: #6C757D;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+/* Status Badge - Minimal Terminal Feel */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+/* Quality Indicator - Clean Progress */
+.quality-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quality-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 40px;
+}
+
+.quality-bar {
+  flex: 1;
+  height: 6px;
+  background: hsl(var(--foreground) / 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+  max-width: 120px;
+}
+
+.quality-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* User Avatar - Clean */
+.user-avatar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  color: #000000;
+}
+
+.user-name {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: #FFFFFF;
+}
+
+/* Schedule Badge - Clean */
+.schedule-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: hsl(var(--foreground) / 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: #ADB5BD;
+}
+
+/* Timestamp & Duration */
+.timestamp {
+  color: #FFFFFF;
+}
+
+.duration {
+  font-size: 12px;
+  color: #6C757D;
+  margin-top: 2px;
+}
+
+/* Footer - Clean */
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 24px;
+  margin-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pagination {
+  display: flex;
+  gap: 8px;
+}
+
+/* ================================================
+   Clean Status Indicators
+   ================================================ */
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-dot--running {
+  background: #5B6EFF;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-dot--success {
+  background: #00E5C8;
+}
+
+.status-dot--failed {
+  background: #FF6B7A;
+}
+
+.status-dot--warning {
+  background: #FFB366;
+}
+
+.status-dot--paused {
+  background: #8B8B8B;
+}
+
+@keyframes pulse {
+  0%, 100% {
     opacity: 1;
-    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.6;
   }
 }
 
 /* ================================================
-   Navigation Components
+   Utility Classes
    ================================================ */
 
-.nav-item {
-  @apply inline-flex items-center gap-2 px-3 py-2 text-sm font-medium;
-  @apply transition-all duration-200 rounded-lg;
-  @apply hover:bg-accent/50 hover:text-accent-foreground;
-  @apply text-muted-foreground/80 hover:text-foreground;
+/* Terminal font for actual terminal content */
+.terminal-font {
+  font-family: var(--font-mono);
+  letter-spacing: 0.05em;
 }
 
-.nav-item--active {
-  @apply text-primary bg-primary/10 shadow-sm;
-  @apply border border-primary/20;
+/* Simple pulse for loading states */
+.pulse-animation {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ================================================
+   Terminal Views - For XTerm.js Only
+   ================================================ */
+
+/* Terminal window styling - clean, authentic */
+.terminal-window {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  white-space: pre;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 16px;
+  background: #000000;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+}
+
+.terminal-container {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.terminal-header {
+  padding: 12px 16px;
+  background: hsl(var(--foreground) / 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.terminal-title {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: hsl(var(--foreground));
+}
+
+/* Terminal color schemes - clean, no effects */
+.terminal-primary { color: #5B6EFF; }
+.terminal-accent { color: #00E5C8; }
+.terminal-secondary { color: #FF6B7A; }
+.terminal-tertiary { color: #FFB366; }
+
+/* Terminal interactive elements */
+.terminal-interactive:hover {
+  border-color: rgba(91, 110, 255, 0.3);
+  transition: border-color var(--transition-fast);
 }
