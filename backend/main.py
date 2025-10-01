@@ -1,0 +1,177 @@
+"""
+NexusOne Data Product Creation MVP Backend
+FastAPI application integrating real intelligence with smart infrastructure mocking
+"""
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import logging
+import sys
+import time
+import uvicorn
+from contextlib import asynccontextmanager
+
+from .api.routes import router
+from .api.overview_routes import router as overview_router
+from .api.kag_routes import router as kag_router
+from .models import schemas  # Import to register models
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("/tmp/nexusone_backend.log") if "/tmp" else logging.StreamHandler(sys.stdout)
+    ]
+)
+
+logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Application lifespan events
+    """
+    # Startup
+    logger.info("🚀 NexusOne Backend starting up...")
+    logger.info("Real intelligence services initialized:")
+    logger.info("  ✓ ydata-profiling for data analysis")
+    logger.info("  ✓ CrewAI for intelligent recommendations")
+    logger.info("  ✓ Great Expectations for quality validation")
+    logger.info("Smart infrastructure mocking enabled:")
+    logger.info("  ✓ Airflow DAG generation")
+    logger.info("  ✓ dbt model templates")
+    logger.info("  ✓ Trino API schemas")
+    logger.info("  ✓ Iceberg table simulation")
+
+    yield
+
+    # Shutdown
+    logger.info("🛑 NexusOne Backend shutting down...")
+
+# Create FastAPI application
+app = FastAPI(
+    title="NexusOne Data Product Creation API",
+    description="""
+    Backend API for NexusOne's intelligent data product creation platform.
+
+    This MVP demonstrates real intelligence capabilities with smart infrastructure mocking:
+
+    **Real Intelligence Services:**
+    - ydata-profiling for comprehensive data analysis
+    - CrewAI agents for quality and architecture recommendations
+    - Great Expectations for production-ready data validation
+
+    **Smart Infrastructure Mocking:**
+    - Realistic Airflow DAG generation
+    - Production-ready dbt model templates
+    - Complete API schema generation
+    - Iceberg table simulation
+
+    **Key Features:**
+    - 5-step guided data product creation workflow
+    - AI-powered quality recommendations
+    - Architecture optimization suggestions
+    - Real-time deployment simulation
+    - Production-ready code generation
+    """,
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://0.0.0.0:3000",
+        "https://*.vercel.app",
+        "https://*.netlify.app"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include API routes
+app.include_router(router)
+app.include_router(overview_router)
+app.include_router(kag_router)
+
+# Global exception handler
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """
+    Global exception handler for unhandled errors
+    """
+    logger.error(f"Unhandled exception: {exc}", exc_info=True)
+
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": "Internal server error",
+            "error_type": type(exc).__name__,
+            "path": str(request.url.path)
+        }
+    )
+
+# Root endpoint
+@app.get("/")
+async def root():
+    """
+    Root endpoint with API information
+    """
+    return {
+        "message": "NexusOne Data Product Creation API",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/api/v1/health",
+        "features": {
+            "real_intelligence": [
+                "ydata-profiling data analysis",
+                "CrewAI recommendation agents",
+                "Great Expectations validation"
+            ],
+            "smart_mocking": [
+                "Airflow DAG generation",
+                "dbt model templates",
+                "API schema creation",
+                "Deployment simulation"
+            ]
+        }
+    }
+
+# Additional middleware for request logging
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """
+    Log all requests for debugging
+    """
+    start_time = time.time()
+
+    response = await call_next(request)
+
+    process_time = time.time() - start_time
+    logger.info(
+        f"{request.method} {request.url.path} - "
+        f"Status: {response.status_code} - "
+        f"Time: {process_time:.4f}s"
+    )
+
+    return response
+
+if __name__ == "__main__":
+    # Development server configuration
+    uvicorn.run(
+        "backend.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info",
+        access_log=True
+    )
