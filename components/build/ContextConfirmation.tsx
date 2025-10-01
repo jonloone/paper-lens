@@ -45,7 +45,7 @@ export function ContextConfirmation({ context, onContinue }: ContextConfirmation
   const [editing, setEditing] = useState<string | null>(null);
 
   const handleContinue = () => {
-    if (onComplete) {
+    if (onContinue) {
       onContinue(confirmed);
     } else {
       // Proceed to source selection with confirmed context
