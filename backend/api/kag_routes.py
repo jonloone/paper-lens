@@ -62,6 +62,12 @@ class SimilarContractsRequest(BaseModel):
     min_similarity: float = Field(default=0.7, description="Minimum similarity score")
 
 
+class DetectIntentRequest(BaseModel):
+    """Request for AI-powered product type detection"""
+    description: str = Field(..., description="Natural language description of what to build")
+    context: Optional[Dict[str, Any]] = Field(default=None, description="Additional context")
+
+
 # ============================================================================
 # Enhanced Request Parsing
 # ============================================================================
@@ -435,6 +441,82 @@ async def load_domain_accelerator(domain: str) -> Dict[str, Any]:
 # ============================================================================
 # Health Check
 # ============================================================================
+
+@router.post("/detect-intent")
+async def detect_product_type(request: DetectIntentRequest) -> Dict[str, Any]:
+    """
+    AI-powered product type detection from natural language description
+
+    Analyzes user intent and recommends Foundation, Domain, or Solution product type
+    """
+    try:
+        description = request.description.lower()
+        confidence = 0.0
+        detected_type = "solution"  # Default
+        reasoning = []
+
+        # Enhanced keyword-based detection with confidence scoring
+        foundation_keywords = ["connect", "stream", "database", "source", "sync", "ingest", "kafka", "mysql", "postgres", "api", "s3"]
+        domain_keywords = ["customer", "product", "order", "entity", "profile", "model", "unified", "360", "canonical"]
+        solution_keywords = ["predict", "churn", "score", "analytics", "metric", "dashboard", "insight", "recommendation", "forecast"]
+
+        foundation_score = sum(1 for k in foundation_keywords if k in description)
+        domain_score = sum(1 for k in domain_keywords if k in description)
+        solution_score = sum(1 for k in solution_keywords if k in description)
+
+        # Determine type and confidence
+        if foundation_score > domain_score and foundation_score > solution_score:
+            detected_type = "source"
+            confidence = min(0.95, 0.6 + (foundation_score * 0.1))
+            reasoning.append(f"Detected {foundation_score} foundation-related keywords")
+            reasoning.append("User intent suggests connecting to a new data source")
+
+        elif domain_score > foundation_score and domain_score > solution_score:
+            detected_type = "entity"
+            confidence = min(0.95, 0.6 + (domain_score * 0.1))
+            reasoning.append(f"Detected {domain_score} domain entity keywords")
+            reasoning.append("User intent suggests modeling a business entity")
+
+        else:
+            detected_type = "solution"
+            confidence = min(0.95, 0.5 + (solution_score * 0.1)) if solution_score > 0 else 0.65
+            reasoning.append(f"Detected {solution_score} solution-related keywords")
+            reasoning.append("User intent suggests building an analytical solution")
+
+        # Extract suggested fields based on type
+        suggested_fields = {}
+
+        if detected_type == "source":
+            suggested_fields = {
+                "sync_frequency": "hourly" if "batch" in description else "realtime",
+                "connector_type": next((k for k in ["mysql", "kafka", "postgres", "s3"] if k in description), "mysql")
+            }
+
+        elif detected_type == "entity":
+            suggested_fields = {
+                "entity_type": next((k for k in ["customer", "product", "order"] if k in description), "customer"),
+                "resolution_key": "id"
+            }
+
+        else:
+            suggested_fields = {
+                "business_problem": request.description[:200],
+                "output_type": "dashboard" if "dashboard" in description else "api"
+            }
+
+        return {
+            "success": True,
+            "detected_type": detected_type,
+            "confidence": round(confidence, 2),
+            "reasoning": reasoning,
+            "suggested_fields": suggested_fields,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Intent detection failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/health")
 async def health_check() -> Dict[str, Any]:
