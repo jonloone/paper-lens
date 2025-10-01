@@ -9,11 +9,11 @@ from typing import Dict, List, Any, Optional
 import logging
 from datetime import datetime
 
-from services.kuzu_knowledge_graph import KuzuKnowledgeGraph, get_knowledge_graph
-from services.kag_intelligence import KAGIntelligence, get_kag_intelligence
-from services.contract_assistant import ContractAssistant
-from services.pattern_engine import PatternEngine
-from services.domain_accelerators import get_domain_accelerator
+from ..services.kuzu_knowledge_graph import KuzuKnowledgeGraph, get_knowledge_graph
+from ..services.kag_intelligence import KAGIntelligence, get_kag_intelligence
+from ..services.contract_assistant import ContractAssistant
+from ..services.pattern_engine import PatternRecommendationEngine
+from ..services.domain_accelerators import get_domain_accelerator
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +201,7 @@ async def find_patterns(request: PatternSearchRequest) -> Dict[str, Any]:
     - Success metrics (what works)
     """
     try:
-        engine = PatternEngine()
+        engine = PatternRecommendationEngine()
 
         # Find patterns via graph
         patterns = await engine.find_patterns(

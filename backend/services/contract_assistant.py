@@ -8,8 +8,8 @@ import logging
 from datetime import datetime
 import json
 
-from services.kuzu_knowledge_graph import KuzuKnowledgeGraph, get_knowledge_graph
-from services.kag_intelligence import KAGIntelligence, get_kag_intelligence
+from .kuzu_knowledge_graph import KuzuKnowledgeGraph, get_knowledge_graph
+from .kag_intelligence import KAGIntelligence, get_kag_intelligence
 
 logger = logging.getLogger(__name__)
 

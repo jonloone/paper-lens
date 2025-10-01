@@ -7,7 +7,7 @@ import logging
 from typing import Optional
 from datetime import datetime
 
-from services.kuzu_knowledge_graph import get_knowledge_graph, KuzuKnowledgeGraph
+from ..kuzu_knowledge_graph import get_knowledge_graph, KuzuKnowledgeGraph
 from .retail import RetailDomainAccelerator
 from .financial import FinancialDomainAccelerator
 from .healthcare import HealthcareDomainAccelerator
