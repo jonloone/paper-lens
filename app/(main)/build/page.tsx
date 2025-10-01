@@ -14,8 +14,6 @@ import {
   Search,
   Command,
   CheckCircle2,
-  Clock,
-  TrendingUp,
   Users
 } from 'lucide-react';
 import { detectIntent } from '@/lib/api/kag-client';
@@ -40,7 +38,6 @@ export default function BuildPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [mode, setMode] = useState<'natural' | 'command' | 'search'>('natural');
-  const [showShortcuts, setShowShortcuts] = useState(false);
 
   const templates: Template[] = [
     {
@@ -113,12 +110,7 @@ export default function BuildPage() {
         e.preventDefault();
         document.getElementById('command-input')?.focus();
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-        e.preventDefault();
-        setShowShortcuts(true);
-      }
       if (e.key === 'Escape') {
-        setShowShortcuts(false);
         setSelectedTemplate(null);
       }
     };
@@ -189,16 +181,6 @@ export default function BuildPage() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Build a Data Product</h1>
               <p className="text-muted-foreground mt-1">One intelligent workflow that adapts to your needs</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" onClick={() => setShowShortcuts(true)}>
-                <Command className="w-4 h-4 mr-2" />
-                Shortcuts
-              </Button>
-              <Badge variant="outline" className="text-xs">
-                <Clock className="w-3 h-3 mr-1" />
-                127 Active
-              </Badge>
             </div>
           </div>
         </div>
@@ -272,38 +254,27 @@ export default function BuildPage() {
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
 
         {/* Quick Actions */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Quick Start</h2>
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {quickActions.map((action) => {
-              const Icon = action.icon;
-              return (
-                <button
-                  key={action.id}
-                  onClick={() => handleQuickAction(action.type)}
-                  className="p-4 border-2 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-left group"
-                >
-                  <Icon className="w-5 h-5 text-primary mb-2 group-hover:scale-110 transition-transform" />
-                  <div className="font-medium text-sm">{action.title}</div>
-                </button>
-              );
-            })}
-          </div>
+        <div className="grid grid-cols-4 gap-3">
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <button
+                key={action.id}
+                onClick={() => handleQuickAction(action.type)}
+                className="p-4 border-2 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-left group"
+              >
+                <Icon className="w-5 h-5 text-primary mb-2 group-hover:scale-110 transition-transform" />
+                <div className="font-medium text-sm">{action.title}</div>
+              </button>
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-3 gap-6">
 
           {/* Templates - Takes 2 columns */}
           <div className="col-span-2 space-y-4" id="templates-section">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Popular Templates</h2>
-              <Badge variant="outline" className="text-xs">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                Most Used
-              </Badge>
-            </div>
+            <h2 className="text-lg font-semibold">Templates</h2>
 
             <div className="grid gap-3">
               {templates.map((template) => {
@@ -364,7 +335,7 @@ export default function BuildPage() {
 
           {/* Recent Activity - Takes 1 column */}
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Recent Activity</h2>
+            <h2 className="text-lg font-semibold">Recent</h2>
 
             <Card className="p-4 space-y-3">
               {recentActivity.map((item, idx) => (
@@ -382,51 +353,11 @@ export default function BuildPage() {
                 </div>
               ))}
             </Card>
-
-            <Card className="p-4 bg-muted/30">
-              <div className="space-y-3">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">~12 min</div>
-                  <div className="text-xs text-muted-foreground">Avg Build Time</div>
-                </div>
-                <div className="pt-3 border-t text-center">
-                  <div className="text-2xl font-bold text-primary">127</div>
-                  <div className="text-xs text-muted-foreground">Active Products</div>
-                </div>
-              </div>
-            </Card>
           </div>
 
         </div>
 
       </div>
-
-      {/* Keyboard Shortcuts Modal */}
-      {showShortcuts && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center" onClick={() => setShowShortcuts(false)}>
-          <Card className="max-w-md w-full m-4 p-6" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold mb-4">Keyboard Shortcuts</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Focus command bar</span>
-                <kbd className="px-2 py-1 bg-muted rounded text-xs">⌘K</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Build immediately</span>
-                <kbd className="px-2 py-1 bg-muted rounded text-xs">⌘↵</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Show shortcuts</span>
-                <kbd className="px-2 py-1 bg-muted rounded text-xs">⌘/</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Cancel/close</span>
-                <kbd className="px-2 py-1 bg-muted rounded text-xs">Esc</kbd>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
