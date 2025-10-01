@@ -69,7 +69,6 @@ const TOOLS_AS_ASSETS: DataAsset[] = [
     bgColor: 'bg-blue-500/10',
     description: 'Data flow orchestration and automation',
     status: 'running',
-    quality: 95,
     tags: ['orchestration', 'streaming'],
     actions: [
       { label: 'Open Dashboard', link: '#' },
@@ -91,7 +90,6 @@ const TOOLS_AS_ASSETS: DataAsset[] = [
     bgColor: 'bg-emerald-500/10',
     description: 'Metadata management and data discovery',
     status: 'healthy',
-    quality: 98,
     tags: ['metadata', 'catalog'],
     actions: [
       { label: 'Browse Catalog', link: '#' },
@@ -107,13 +105,12 @@ const TOOLS_AS_ASSETS: DataAsset[] = [
   {
     id: 'airflow',
     name: 'Apache Airflow',
-    type: 'pipeline',
+    type: 'tool',
     icon: Workflow,
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10',
     description: 'Workflow orchestration and scheduling',
     status: 'running',
-    quality: 92,
     tags: ['scheduling', 'workflows'],
     actions: [
       { label: 'DAG List', link: '#' },
@@ -129,17 +126,16 @@ const TOOLS_AS_ASSETS: DataAsset[] = [
   {
     id: 'trino',
     name: 'Trino',
-    type: 'query',
-    icon: Terminal,
+    type: 'tool',
+    icon: Database,
     color: 'text-cyan-400',
     bgColor: 'bg-cyan-500/10',
     description: 'Distributed SQL query engine',
     status: 'healthy',
-    quality: 96,
     tags: ['sql', 'analytics'],
     actions: [
-      { label: 'Query Editor', link: '#' },
-      { label: 'Query History', link: '#' }
+      { label: 'Query Editor', link: '/playground' },
+      { label: 'Saved Queries', link: '/query' }
     ],
     metadata: {
       usageCount: 200,
@@ -151,13 +147,12 @@ const TOOLS_AS_ASSETS: DataAsset[] = [
   {
     id: 'greatex',
     name: 'Great Expectations',
-    type: 'metric',
+    type: 'tool',
     icon: Shield,
     color: 'text-amber-400',
     bgColor: 'bg-amber-500/10',
     description: 'Data quality validation and testing',
     status: 'healthy',
-    quality: 94,
     tags: ['quality', 'validation'],
     actions: [
       { label: 'Expectations', link: '#' },
@@ -173,13 +168,12 @@ const TOOLS_AS_ASSETS: DataAsset[] = [
   {
     id: 'datadog',
     name: 'DataDog',
-    type: 'metric',
+    type: 'tool',
     icon: Activity,
     color: 'text-red-400',
     bgColor: 'bg-red-500/10',
     description: 'Infrastructure and application monitoring',
     status: 'healthy',
-    quality: 99,
     tags: ['monitoring', 'alerts'],
     actions: [
       { label: 'Dashboards', link: '#' },
@@ -608,7 +602,7 @@ export function OmniLauncherEnhanced({
     <div
       ref={containerRef}
       className={cn(
-        "fixed top-1/2 -translate-y-1/2 z-50 transition-all duration-300 ease-out elevation-4",
+        "fixed bottom-24 z-50 transition-all duration-300 ease-out elevation-4",
         position === 'right' ? 'right-0 rounded-l-2xl rounded-r-none border-r-6' : 'left-0 rounded-r-2xl rounded-l-none border-l-6',
         "border-primary/30",
         getContainerWidth()
@@ -689,7 +683,7 @@ export function OmniLauncherEnhanced({
           <div className="absolute left-[90px] top-0 bottom-0 right-0 transition-all duration-300 border-l border-border bg-background/60 backdrop-blur-sm">
             {/* AI Chat Mode */}
             {expandedMode === 'chat' && (
-              <div className="flex flex-col h-[600px]">
+              <div className="flex flex-col h-full max-h-[calc(100vh-100px)]">
                 {/* Context Bar */}
                 <div className="px-4 py-3 bg-primary/5 border-b border-border/50">
                   <p className="text-sm font-medium text-muted-foreground text-body">
@@ -741,7 +735,7 @@ export function OmniLauncherEnhanced({
 
             {/* Search/Query/Pipeline Mode */}
             {isSearchMode && (
-              <div className="flex flex-col h-[600px]">
+              <div className="flex flex-col h-full max-h-[calc(100vh-100px)]">
                 {/* Context Bar */}
                 <div className="px-4 py-3 bg-muted/30 border-b border-border/50">
                   <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground/80 text-body">
@@ -814,7 +808,7 @@ export function OmniLauncherEnhanced({
                                       )}
                                     </div>
                                     <div className="flex flex-col items-end gap-1 shrink-0">
-                                      {asset.quality && <QualityIndicator value={asset.quality} />}
+                                      {asset.type !== 'tool' && asset.quality && <QualityIndicator value={asset.quality} />}
                                       {asset.status && <StatusIndicator status={asset.status} />}
                                     </div>
                                   </div>
@@ -853,7 +847,7 @@ export function OmniLauncherEnhanced({
 
                           {/* Metadata */}
                           <div className="space-y-2">
-                            {selectedAsset.quality && (
+                            {selectedAsset.type !== 'tool' && selectedAsset.quality && (
                               <div className="flex items-center justify-between text-sm">
                                 <span className="font-medium text-muted-foreground/70 text-body">Quality</span>
                                 <QualityIndicator value={selectedAsset.quality} />
@@ -909,19 +903,20 @@ export function OmniLauncherEnhanced({
                                 size="sm"
                                 variant="outline"
                                 className="w-full justify-start gap-2 text-xs"
+                                onClick={() => {
+                                  if (action.link && action.link !== '#') {
+                                    if (action.label === 'Query Editor') {
+                                      window.open(action.link, '_blank', 'width=1200,height=800');
+                                    } else {
+                                      window.location.href = action.link;
+                                    }
+                                  }
+                                }}
                               >
                                 <ArrowRight className="w-3 h-3" />
                                 {action.label}
                               </Button>
                             ))}
-                            <Button size="sm" variant="outline" className="w-full justify-start gap-2 text-xs">
-                              <Eye className="w-3 h-3" />
-                              Preview Data
-                            </Button>
-                            <Button size="sm" variant="outline" className="w-full justify-start gap-2 text-xs">
-                              <Copy className="w-3 h-3" />
-                              Copy Info
-                            </Button>
                           </div>
                         </div>
                       </ScrollArea>
