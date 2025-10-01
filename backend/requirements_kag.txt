@@ -1,0 +1,23 @@
+# Knowledge Graph and Reasoning
+kuzu==0.0.12  # Embedded graph database
+# Note: KAG and OpenSPG need to be installed from GitHub as they're still in early development
+# pip install git+https://github.com/OpenSPG/KAG.git
+# pip install git+https://github.com/OpenSPG/openspg.git
+
+# Local LLM Integration
+ollama-python==0.1.9  # Python client for Ollama
+
+# Enhanced AI Capabilities
+# crewai already in main requirements.txt
+# langchain already in main requirements.txt
+
+# Graph Visualization and Export (for debugging)
+networkx==3.2.1
+matplotlib==3.8.2
+
+# Additional utilities for graph operations
+neo4j==5.14.0  # Driver for future Neo4j migration path (optional)
+rdflib==7.0.0  # RDF support for semantic graphs (optional)
+
+# Performance and caching
+cachetools==5.3.2
