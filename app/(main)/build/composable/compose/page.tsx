@@ -73,7 +73,7 @@ function ComposePageContent() {
                 2
               </div>
               <div>
-                <div className="font-semibold">Composable Product</div>
+                <div className="font-semibold">Solution Product</div>
                 <div className="text-sm text-muted-foreground">Step 2 of 4</div>
               </div>
             </div>

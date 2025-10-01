@@ -36,13 +36,20 @@ const themes = [
 export function SettingsSheet() {
   const [mounted, setMounted] = React.useState(false);
   const { theme, setTheme } = useTheme();
-  const [isDark, setIsDark] = React.useState(false);
+  const [isDark, setIsDark] = React.useState(true); // Default to dark
   const [isOpen, setIsOpen] = React.useState(false);
 
   React.useEffect(() => {
     setMounted(true);
-    // Check initial dark mode state
-    setIsDark(document.documentElement.classList.contains('dark'));
+    // Check localStorage first, then document classes, default to dark
+    const savedMode = localStorage.getItem('darkMode');
+    if (savedMode !== null) {
+      setIsDark(savedMode === 'true');
+    } else {
+      // Check document or default to dark
+      const isDarkMode = document.documentElement.classList.contains('dark');
+      setIsDark(isDarkMode || true);
+    }
   }, []);
 
   React.useEffect(() => {
@@ -69,6 +76,12 @@ export function SettingsSheet() {
 
   const toggleDarkMode = () => {
     const newIsDark = !isDark;
+    setIsDark(newIsDark);
+
+    // Update localStorage
+    localStorage.setItem('darkMode', newIsDark.toString());
+
+    // Toggle the dark class on the document element
     if (newIsDark) {
       document.documentElement.classList.remove('light');
       document.documentElement.classList.add('dark');
@@ -76,7 +89,6 @@ export function SettingsSheet() {
       document.documentElement.classList.remove('dark');
       document.documentElement.classList.add('light');
     }
-    setIsDark(newIsDark);
   };
 
   return (

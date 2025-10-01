@@ -75,7 +75,7 @@ export default function DomainContextPage() {
               Back to Build Hub
             </Button>
             <Button onClick={() => router.push('/build/composable/problem')} className="bg-green-600 hover:bg-green-700">
-              Try Composable Products
+              Try Solution Products
             </Button>
           </div>
         </div>

@@ -24,7 +24,11 @@ import {
   Play,
   Eye,
   Edit3,
-  Trash2
+  Trash2,
+  Database,
+  Brain,
+  RefreshCw,
+  Settings2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,6 +41,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 interface DataPipeline {
   id: string;
@@ -131,15 +136,15 @@ const data: DataPipeline[] = [
 
 const columnHelper = createColumnHelper<DataPipeline>();
 
-// Pipeline type icons
+// Pipeline type icons - clean, using Lucide icons
 const getTypeIcon = (type: DataPipeline['type']) => {
   const icons = {
-    etl: '⚡',
-    ml: '🤖',
-    sync: '🔄',
-    transform: '🔧',
+    etl: <Database className="w-4 h-4" />,
+    ml: <Brain className="w-4 h-4" />,
+    sync: <RefreshCw className="w-4 h-4" />,
+    transform: <Settings2 className="w-4 h-4" />,
   };
-  return icons[type] || '📊';
+  return icons[type] || <Database className="w-4 h-4" />;
 };
 
 // Row actions component
@@ -181,7 +186,7 @@ const columns = [
       const pipeline = info.row.original;
       return (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-base">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
             {getTypeIcon(pipeline.type)}
           </div>
           <div>
@@ -309,7 +314,7 @@ export function DataTableExample() {
 
   return (
     <div className="w-full">
-      {/* Enhanced Table Header */}
+      {/* Clean Table Header */}
       <div className="bg-card border border-border rounded-t-xl p-6 border-b-0">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -317,7 +322,7 @@ export function DataTableExample() {
               Pipeline Runs
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
-              {data.length} total pipelines • Last updated 2 min ago
+              {data.length} total pipelines · Last updated 2 min ago
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -344,52 +349,52 @@ export function DataTableExample() {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Clean Table */}
       <div className="bg-card border-x border-b border-border rounded-b-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-          <thead className="bg-muted/50">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className="px-4 py-3 text-left text-sm font-medium cursor-pointer hover:bg-muted/70 transition-colors"
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    <div className="flex items-center gap-1">
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                      {header.column.getIsSorted() && (
-                        header.column.getIsSorted() === 'asc' ? (
-                          <ChevronUp className="w-4 h-4" />
-                        ) : (
-                          <ChevronDown className="w-4 h-4" />
-                        )
-                      )}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="border-t border-border hover:bg-muted/30 transition-colors"
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="px-4 py-3 text-sm">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
+            <thead className="bg-muted/50">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th
+                      key={header.id}
+                      className="px-4 py-3 text-left text-sm font-medium cursor-pointer hover:bg-muted/70 transition-colors"
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      <div className="flex items-center gap-2">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                        {header.column.getIsSorted() && (
+                          header.column.getIsSorted() === 'asc' ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )
+                        )}
+                      </div>
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className="border-t border-border hover:bg-muted/30 transition-colors"
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td key={cell.id} className="px-4 py-3 text-sm">
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
 
-        {/* Enhanced Footer */}
+        {/* Clean Footer */}
         <div className="flex items-center justify-between p-4 border-t border-border bg-muted/20">
           <div className="text-sm text-muted-foreground">
             Showing {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{' '}

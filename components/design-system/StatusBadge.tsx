@@ -24,6 +24,7 @@ interface StatusBadgeProps {
 const statusConfig: Record<StatusType, {
   label: string;
   icon: React.ComponentType<any>;
+  asciiSymbol: string;
   color: string;
   bgColor: string;
   pulseColor?: string;
@@ -31,6 +32,7 @@ const statusConfig: Record<StatusType, {
   running: {
     label: 'Running',
     icon: Play,
+    asciiSymbol: '►',
     color: '#5B6EFF',
     bgColor: 'rgba(91, 110, 255, 0.1)',
     pulseColor: 'rgba(91, 110, 255, 0.4)'
@@ -38,30 +40,35 @@ const statusConfig: Record<StatusType, {
   success: {
     label: 'Success',
     icon: CheckCircle2,
+    asciiSymbol: '✓',
     color: '#00E5C8',
     bgColor: 'rgba(0, 229, 200, 0.1)'
   },
   failed: {
     label: 'Failed',
     icon: XCircle,
+    asciiSymbol: '✕',
     color: '#FF6B7A',
     bgColor: 'rgba(255, 107, 122, 0.1)'
   },
   pending: {
     label: 'Pending',
     icon: Clock,
+    asciiSymbol: '◷',
     color: '#FFB366',
     bgColor: 'rgba(255, 179, 102, 0.1)'
   },
   paused: {
     label: 'Paused',
     icon: Pause,
+    asciiSymbol: '⏸',
     color: '#8B8B8B',
     bgColor: 'rgba(139, 139, 139, 0.1)'
   },
   warning: {
     label: 'Warning',
     icon: AlertTriangle,
+    asciiSymbol: '⚠',
     color: '#FFB366',
     bgColor: 'rgba(255, 179, 102, 0.1)'
   }
@@ -90,6 +97,12 @@ export function StatusBadge({
     lg: 'w-5 h-5'
   };
 
+  const asciiSizes = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base'
+  };
+
   return (
     <div
       className={cn(
@@ -103,14 +116,29 @@ export function StatusBadge({
       }}
     >
       {showIcon && (
-        <div className="relative">
-          <Icon className={iconSizes[size]} />
-          {status === 'running' && (
-            <div
-              className="absolute inset-0 rounded-full animate-ping"
-              style={{ backgroundColor: config.pulseColor }}
-            />
-          )}
+        <div className="flex items-center gap-1">
+          {/* ASCII Symbol */}
+          <code
+            className={cn(
+              "font-mono ascii-glow font-bold",
+              asciiSizes[size],
+              status === 'running' && "ascii-pulse"
+            )}
+            style={{ color: config.color }}
+          >
+            {config.asciiSymbol}
+          </code>
+
+          {/* Modern Icon (secondary) */}
+          <div className="relative opacity-60">
+            <Icon className={iconSizes[size]} />
+            {status === 'running' && (
+              <div
+                className="absolute inset-0 rounded-full animate-ping"
+                style={{ backgroundColor: config.pulseColor }}
+              />
+            )}
+          </div>
         </div>
       )}
       {displayLabel}
@@ -137,20 +165,26 @@ export function StatusIcon({ status, size = 'md', className }: {
   className?: string;
 }) {
   const config = statusConfig[status];
-  const Icon = config.icon;
 
-  const iconSizes = {
-    sm: 'w-3 h-3',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5'
+  const asciiSizes = {
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg'
   };
 
   return (
     <div className="relative">
-      <Icon
-        className={cn(iconSizes[size], className)}
+      <code
+        className={cn(
+          "font-mono ascii-glow font-bold",
+          asciiSizes[size],
+          status === 'running' && "ascii-pulse",
+          className
+        )}
         style={{ color: config.color }}
-      />
+      >
+        {config.asciiSymbol}
+      </code>
       {status === 'running' && (
         <div
           className="absolute inset-0 rounded-full animate-ping"

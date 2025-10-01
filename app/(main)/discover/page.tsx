@@ -1,350 +1,656 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Search, Database, Clock, Shield, Copy, Check } from 'lucide-react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { useSearchParams } from 'next/navigation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  Search,
+  Plus,
+  Star,
+  CheckCircle,
+  Zap,
+  Database,
+  Sparkles,
+  Clock,
+  GitBranch,
+  Activity,
+  BarChart3,
+  Brain,
+  FileText,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// ============================================================================
+// Types
+// ============================================================================
+
+type ProductType = 'Foundation' | 'Domain' | 'Solution';
+type Latency = 'Real-time' | 'Near Real-time' | 'Batch';
+type Purpose = 'Analytics' | 'Operational' | 'ML/AI' | 'Reporting';
+type DeliveryMethod = 'SQL' | 'API' | 'Stream' | 'Feature Store';
+
 interface DataProduct {
-  name: string;
-  table: string;
+  id: string;
+  title: string;
   description: string;
-  schema: Array<{
-    name: string;
-    type: string;
-    nullable: boolean;
-  }>;
-  freshness: string;
+  domain: string;
+  productType: ProductType;
+  technicalType: 'Pipeline' | 'ML Model' | 'Dataset' | 'API';
+  author: string;
+  rating: number;
+  deployments: number;
   lastUpdated: string;
-  rowCount: string;
-  accessMethods: {
-    sql: string;
-    api: string;
-    python: string;
-  };
-  governance: {
-    piiMasked: boolean;
-    publicAccess: boolean;
-  };
-  usage: {
-    queries: number;
-    consumers: number;
-  };
+  verified: boolean;
+  tags: string[];
+  latency: Latency;
+  purpose: Purpose;
+  composedFrom?: string[];
+  usedBy?: number;
+  deliveryMethods: DeliveryMethod[];
 }
 
-export default function DiscoveryInterface() {
-  const searchParams = useSearchParams();
-  const initialSearch = searchParams.get('search') || '';
-  
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [selectedProduct, setSelectedProduct] = useState<DataProduct | null>(null);
-  const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  
-  // Mock data products (in production, these would be fetched from backend)
-  const [dataProducts] = useState<DataProduct[]>([
-    {
-      name: 'customer_analytics',
-      table: 'analytics.customer_analytics',
-      description: 'Customer revenue and order metrics aggregated daily',
-      schema: [
-        { name: 'customer_id', type: 'string', nullable: false },
-        { name: 'total_revenue', type: 'decimal', nullable: false },
-        { name: 'order_count', type: 'integer', nullable: false },
-        { name: 'last_order_date', type: 'date', nullable: true }
-      ],
-      freshness: 'Daily',
-      lastUpdated: '2 hours ago',
-      rowCount: '1.2M',
-      accessMethods: {
-        sql: 'SELECT * FROM analytics.customer_analytics',
-        api: 'GET https://api.nexus.com/data/customer_analytics',
-        python: "df = nexus.load('customer_analytics')"
-      },
-      governance: {
-        piiMasked: true,
-        publicAccess: false
-      },
-      usage: {
-        queries: 847,
-        consumers: 23
-      }
-    },
-    {
-      name: 'product_metrics',
-      table: 'analytics.product_metrics',
-      description: 'Product performance metrics including sales and inventory',
-      schema: [
-        { name: 'product_id', type: 'string', nullable: false },
-        { name: 'sales_volume', type: 'integer', nullable: false },
-        { name: 'inventory_level', type: 'integer', nullable: false },
-        { name: 'category', type: 'string', nullable: false }
-      ],
-      freshness: 'Hourly',
-      lastUpdated: '45 minutes ago',
-      rowCount: '45K',
-      accessMethods: {
-        sql: 'SELECT * FROM analytics.product_metrics',
-        api: 'GET https://api.nexus.com/data/product_metrics',
-        python: "df = nexus.load('product_metrics')"
-      },
-      governance: {
-        piiMasked: false,
-        publicAccess: true
-      },
-      usage: {
-        queries: 2341,
-        consumers: 67
-      }
-    },
-    {
-      name: 'revenue_forecast',
-      table: 'analytics.revenue_forecast',
-      description: 'ML-generated revenue forecasts updated daily',
-      schema: [
-        { name: 'date', type: 'date', nullable: false },
-        { name: 'predicted_revenue', type: 'decimal', nullable: false },
-        { name: 'confidence_interval', type: 'decimal', nullable: false },
-        { name: 'segment', type: 'string', nullable: false }
-      ],
-      freshness: 'Daily',
-      lastUpdated: 'Yesterday',
-      rowCount: '365',
-      accessMethods: {
-        sql: 'SELECT * FROM analytics.revenue_forecast',
-        api: 'GET https://api.nexus.com/data/revenue_forecast',
-        python: "df = nexus.load('revenue_forecast')"
-      },
-      governance: {
-        piiMasked: false,
-        publicAccess: false
-      },
-      usage: {
-        queries: 523,
-        consumers: 12
-      }
-    }
-  ]);
-  
-  const filteredProducts = dataProducts.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  
-  const copyToClipboard = (code: string, type: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(type);
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
-  
+// ============================================================================
+// Product Type Configuration
+// ============================================================================
+
+const productTypeConfig = {
+  Foundation: {
+    icon: Zap,
+    color: 'amber',
+    bgClass: 'bg-amber-50 dark:bg-amber-950/20',
+    textClass: 'text-amber-700 dark:text-amber-400',
+    borderClass: 'border-amber-200 dark:border-amber-800',
+    tagline: 'Essential data streams'
+  },
+  Domain: {
+    icon: Database,
+    color: 'blue',
+    bgClass: 'bg-blue-50 dark:bg-blue-950/20',
+    textClass: 'text-blue-700 dark:text-blue-400',
+    borderClass: 'border-blue-200 dark:border-blue-800',
+    tagline: 'Business building blocks'
+  },
+  Solution: {
+    icon: Sparkles,
+    color: 'green',
+    bgClass: 'bg-green-50 dark:bg-green-950/20',
+    textClass: 'text-green-700 dark:text-green-400',
+    borderClass: 'border-green-200 dark:border-green-800',
+    tagline: 'Ready-to-use solutions'
+  }
+};
+
+// ============================================================================
+// Mock Data
+// ============================================================================
+
+const mockProducts: DataProduct[] = [
+  {
+    id: '1',
+    title: 'Order Events Stream',
+    description: 'Real-time order transactions from e-commerce platform with CDC enabled for immediate downstream processing',
+    domain: 'Sales',
+    productType: 'Foundation',
+    technicalType: 'Pipeline',
+    author: 'Platform Engineering',
+    rating: 4.8,
+    deployments: 234,
+    lastUpdated: '2 days ago',
+    verified: true,
+    tags: ['events', 'real-time', 'cdc'],
+    latency: 'Real-time',
+    purpose: 'Operational',
+    usedBy: 8,
+    deliveryMethods: ['Stream', 'API']
+  },
+  {
+    id: '2',
+    title: 'Customer Entity',
+    description: 'Master customer record with unified profile, preferences, and behavioral attributes across all touchpoints',
+    domain: 'Customer',
+    productType: 'Domain',
+    technicalType: 'Dataset',
+    author: 'Customer Domain Team',
+    rating: 4.9,
+    deployments: 423,
+    lastUpdated: '1 day ago',
+    verified: true,
+    tags: ['customer', 'master-data', 'entity'],
+    latency: 'Near Real-time',
+    purpose: 'Analytics',
+    composedFrom: ['Order Events Stream', 'Support Tickets', 'Web Analytics'],
+    usedBy: 12,
+    deliveryMethods: ['SQL', 'API', 'Feature Store']
+  },
+  {
+    id: '3',
+    title: 'Customer 360 View',
+    description: 'Complete customer intelligence combining profile, orders, support, marketing engagement, and predictive scores',
+    domain: 'Customer',
+    productType: 'Solution',
+    technicalType: 'Dataset',
+    author: 'Analytics Team',
+    rating: 4.7,
+    deployments: 156,
+    lastUpdated: '3 days ago',
+    verified: true,
+    tags: ['customer-360', 'analytics', 'intelligence'],
+    latency: 'Batch',
+    purpose: 'Analytics',
+    composedFrom: ['Customer Entity', 'Order Entity', 'Marketing Events'],
+    deliveryMethods: ['SQL', 'API']
+  },
+  {
+    id: '4',
+    title: 'Churn Prediction Model',
+    description: 'ML model predicting customer churn with 94% accuracy using behavioral features, engagement patterns, and transaction history',
+    domain: 'Customer',
+    productType: 'Solution',
+    technicalType: 'ML Model',
+    author: 'Data Science Team',
+    rating: 4.8,
+    deployments: 89,
+    lastUpdated: '5 days ago',
+    verified: true,
+    tags: ['machine-learning', 'churn', 'prediction'],
+    latency: 'Batch',
+    purpose: 'ML/AI',
+    composedFrom: ['Customer Entity', 'Order Entity', 'Support Interactions'],
+    deliveryMethods: ['API', 'Feature Store']
+  },
+  {
+    id: '5',
+    title: 'Product Catalog',
+    description: 'Centralized product information with SKUs, pricing, inventory, and rich metadata for all channels',
+    domain: 'Product',
+    productType: 'Domain',
+    technicalType: 'Dataset',
+    author: 'Product Domain Team',
+    rating: 4.6,
+    deployments: 312,
+    lastUpdated: '1 week ago',
+    verified: true,
+    tags: ['product', 'catalog', 'master-data'],
+    latency: 'Near Real-time',
+    purpose: 'Operational',
+    composedFrom: ['Inventory Events', 'Pricing Updates'],
+    usedBy: 15,
+    deliveryMethods: ['SQL', 'API']
+  },
+  {
+    id: '6',
+    title: 'Clickstream Analytics',
+    description: 'Real-time web and app clickstream events with session tracking, user attribution, and conversion funnels',
+    domain: 'Product',
+    productType: 'Foundation',
+    technicalType: 'Pipeline',
+    author: 'Analytics Engineering',
+    rating: 4.7,
+    deployments: 187,
+    lastUpdated: '4 days ago',
+    verified: true,
+    tags: ['clickstream', 'real-time', 'analytics'],
+    latency: 'Real-time',
+    purpose: 'Analytics',
+    usedBy: 6,
+    deliveryMethods: ['Stream', 'SQL']
+  },
+  {
+    id: '7',
+    title: 'Executive KPI Dashboard',
+    description: 'Pre-aggregated metrics for executive reporting: revenue, growth, retention, and operational efficiency',
+    domain: 'Financial',
+    productType: 'Solution',
+    technicalType: 'Dataset',
+    author: 'BI Team',
+    rating: 4.5,
+    deployments: 45,
+    lastUpdated: '2 days ago',
+    verified: false,
+    tags: ['dashboard', 'kpi', 'executive'],
+    latency: 'Batch',
+    purpose: 'Reporting',
+    composedFrom: ['Order Entity', 'Customer Entity', 'Financial Transactions'],
+    deliveryMethods: ['SQL', 'API']
+  },
+  {
+    id: '8',
+    title: 'Real-time Inventory API',
+    description: 'Low-latency inventory availability API for e-commerce with sub-second freshness across all warehouses',
+    domain: 'Operations',
+    productType: 'Solution',
+    technicalType: 'API',
+    author: 'Operations Team',
+    rating: 4.9,
+    deployments: 278,
+    lastUpdated: '1 day ago',
+    verified: true,
+    tags: ['inventory', 'real-time', 'api'],
+    latency: 'Real-time',
+    purpose: 'Operational',
+    composedFrom: ['Inventory Events', 'Warehouse Data'],
+    deliveryMethods: ['API']
+  }
+];
+
+// ============================================================================
+// Components
+// ============================================================================
+
+function ProductTypeButton({
+  type,
+  active,
+  onClick
+}: {
+  type: ProductType;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const config = productTypeConfig[type];
+  const Icon = config.icon;
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="text-lg font-semibold">NexusOne</div>
-            <Badge variant="outline">Discovery</Badge>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {dataProducts.length} data products available
-          </div>
+    <Button
+      variant={active ? 'default' : 'outline'}
+      size="sm"
+      onClick={onClick}
+      className={cn(
+        'transition-all',
+        active && config.bgClass,
+        active && config.textClass
+      )}
+    >
+      <Icon className="mr-2 h-4 w-4" />
+      {type}
+    </Button>
+  );
+}
+
+function LatencyBadge({ latency }: { latency: Latency }) {
+  const Icon = latency === 'Real-time' ? Zap : latency === 'Near Real-time' ? Activity : Clock;
+  const colorClass =
+    latency === 'Real-time' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800' :
+    latency === 'Near Real-time' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800' :
+    'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950/20 dark:text-gray-400 dark:border-gray-800';
+
+  return (
+    <Badge variant="outline" className={cn('text-xs', colorClass)}>
+      <Icon className="mr-1 h-3 w-3" />
+      {latency}
+    </Badge>
+  );
+}
+
+function PurposeBadge({ purpose }: { purpose: Purpose }) {
+  const Icon =
+    purpose === 'Analytics' ? BarChart3 :
+    purpose === 'Operational' ? Activity :
+    purpose === 'ML/AI' ? Brain :
+    FileText;
+
+  return (
+    <Badge variant="outline" className="text-xs">
+      <Icon className="mr-1 h-3 w-3" />
+      {purpose}
+    </Badge>
+  );
+}
+
+function ProductCard({ product, onClick }: { product: DataProduct; onClick: () => void }) {
+  const config = productTypeConfig[product.productType];
+  const TypeIcon = config.icon;
+
+  return (
+    <Card
+      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={onClick}
+    >
+      {/* Header: Badge + Verified */}
+      <div className="flex items-center justify-between p-4 pb-3">
+        <Badge className={cn('font-medium', config.bgClass, config.textClass, config.borderClass)}>
+          <TypeIcon className="mr-1.5 h-3.5 w-3.5" />
+          {product.productType}
+        </Badge>
+        {product.verified && (
+          <CheckCircle className="h-4 w-4 text-green-600" />
+        )}
+      </div>
+
+      {/* Title & Subtitle */}
+      <div className="px-4 pb-3">
+        <h3 className="font-semibold text-lg mb-1">{product.title}</h3>
+        <p className="text-sm text-muted-foreground line-clamp-1">
+          {product.description}
+        </p>
+      </div>
+
+      {/* Key Metrics Bar */}
+      <div className="flex items-center gap-4 px-4 py-2.5 bg-muted/30">
+        <div className="flex items-center gap-1.5">
+          <Activity className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-sm font-medium">{product.deployments}</span>
         </div>
-      </header>
-      
-      {/* Search Bar */}
-      <div className="border-b border-border">
-        <div className="container max-w-6xl mx-auto p-6">
+        <div className="flex items-center gap-1.5">
+          <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+          <span className="text-sm font-medium">{product.rating}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {product.latency === 'Real-time' ? <Zap className="h-3.5 w-3.5 text-green-600" /> : <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
+          <span className="text-xs text-muted-foreground">{product.latency}</span>
+        </div>
+      </div>
+
+      {/* Last Updated Footer */}
+      <div className="px-4 py-2 text-xs text-muted-foreground bg-muted/20">
+        Updated {product.lastUpdated}
+      </div>
+    </Card>
+  );
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+export default function DiscoverMarketplace() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDomain, setSelectedDomain] = useState<string>('all');
+  const [selectedTechnicalType, setSelectedTechnicalType] = useState<string>('all');
+  const [selectedProductType, setSelectedProductType] = useState<ProductType | 'all'>('all');
+  const [selectedProduct, setSelectedProduct] = useState<DataProduct | null>(null);
+
+  // Filter products based on search and filters
+  const filteredProducts = mockProducts.filter((product) => {
+    const matchesSearch =
+      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesDomain = selectedDomain === 'all' || product.domain === selectedDomain;
+    const matchesTechnicalType = selectedTechnicalType === 'all' || product.technicalType === selectedTechnicalType;
+    const matchesProductType = selectedProductType === 'all' || product.productType === selectedProductType;
+
+    return matchesSearch && matchesDomain && matchesTechnicalType && matchesProductType;
+  });
+
+  return (
+    <div className="min-h-screen">
+      <div className="max-w-[1584px] mx-auto px-4 md:px-6 lg:px-8 py-6 space-y-6">
+        {/* Marketplace Header */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">
+                Data Product Marketplace
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Discover, compose, and deploy production-ready data products
+              </p>
+            </div>
+            <Button size="lg">
+              <Plus className="mr-2 h-4 w-4" />
+              Publish Product
+            </Button>
+          </div>
+
+          {/* Product Type Quick Filters */}
+          <div className="flex gap-2">
+            <ProductTypeButton
+              type="Foundation"
+              active={selectedProductType === 'Foundation'}
+              onClick={() => setSelectedProductType(selectedProductType === 'Foundation' ? 'all' : 'Foundation')}
+            />
+            <ProductTypeButton
+              type="Domain"
+              active={selectedProductType === 'Domain'}
+              onClick={() => setSelectedProductType(selectedProductType === 'Domain' ? 'all' : 'Domain')}
+            />
+            <ProductTypeButton
+              type="Solution"
+              active={selectedProductType === 'Solution'}
+              onClick={() => setSelectedProductType(selectedProductType === 'Solution' ? 'all' : 'Solution')}
+            />
+          </div>
+
+          {/* Enhanced Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search products, domains, or use cases..."
+              className="pl-12 h-12 text-base"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search data products..."
-              className="w-full pl-10 pr-4 py-3 bg-transparent border border-border rounded-lg focus:outline-none focus:border-blue-500"
-              autoFocus
             />
           </div>
         </div>
-      </div>
-      
-      {/* Results Grid */}
-      <div className="container max-w-6xl mx-auto p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredProducts.map((product) => (
-            <div
-              key={product.name}
-              className={cn(
-                "border border-border rounded-lg p-4 cursor-pointer transition-all",
-                "hover:border-blue-500/50 hover:shadow-lg",
-                selectedProduct?.name === product.name && "border-blue-500 shadow-lg"
-              )}
-              onClick={() => setSelectedProduct(product)}
-            >
-              {/* Product Header */}
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold">{product.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {product.description}
-                  </p>
-                </div>
-                {product.governance.piiMasked && (
-                  <Shield className="h-4 w-4 text-green-500" />
-                )}
-              </div>
-              
-              {/* Schema Preview */}
-              <div className="mb-3">
-                <div className="text-xs font-medium text-muted-foreground mb-1">Schema</div>
-                <div className="text-xs space-y-0.5">
-                  {product.schema.slice(0, 3).map((field, idx) => (
-                    <div key={idx} className="flex items-center justify-between">
-                      <span>{field.name}</span>
-                      <span className="text-muted-foreground">{field.type}</span>
-                    </div>
-                  ))}
-                  {product.schema.length > 3 && (
-                    <div className="text-muted-foreground">
-                      +{product.schema.length - 3} more fields
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Metadata */}
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{product.freshness}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Database className="h-3 w-3" />
-                    <span>{product.rowCount}</span>
-                  </div>
-                </div>
-                <div className="text-muted-foreground">
-                  {product.usage.consumers} users
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Selected Product Details */}
-        {selectedProduct && (
-          <div className="mt-8 border border-border rounded-lg p-6">
-            <h2 className="text-lg font-semibold mb-4">
-              Access {selectedProduct.name}
-            </h2>
-            
-            {/* Access Methods */}
-            <div className="space-y-4">
-              {/* SQL Access */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium">SQL</label>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => copyToClipboard(selectedProduct.accessMethods.sql, 'sql')}
-                  >
-                    {copiedCode === 'sql' ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
-                <pre className="p-3 bg-muted rounded text-xs overflow-x-auto">
-                  {selectedProduct.accessMethods.sql}
-                </pre>
-              </div>
-              
-              {/* API Access */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium">API</label>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => copyToClipboard(selectedProduct.accessMethods.api, 'api')}
-                  >
-                    {copiedCode === 'api' ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
-                <pre className="p-3 bg-muted rounded text-xs overflow-x-auto">
-                  {selectedProduct.accessMethods.api}
-                </pre>
-              </div>
-              
-              {/* Python Access */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium">Python</label>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => copyToClipboard(selectedProduct.accessMethods.python, 'python')}
-                  >
-                    {copiedCode === 'python' ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
-                </div>
-                <pre className="p-3 bg-muted rounded text-xs overflow-x-auto">
-                  {selectedProduct.accessMethods.python}
-                </pre>
-              </div>
-            </div>
-            
-            {/* Full Schema */}
-            <div className="mt-6">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium">Full Schema</h3>
-                <Button 
-                  size="sm" 
-                  onClick={() => {
-                    // Navigate to Query Workbench with table pre-populated
-                    window.location.href = `/query?table=${selectedProduct.table}&catalog=iceberg`;
-                  }}
-                >
-                  Query This Table
-                </Button>
-              </div>
-              <div className="border border-border rounded overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="bg-muted">
-                      <th className="text-left py-2 px-3">Column</th>
-                      <th className="text-left py-2 px-3">Type</th>
-                      <th className="text-left py-2 px-3">Nullable</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedProduct.schema.map((field, idx) => (
-                      <tr key={idx} className="border-t border-border">
-                        <td className="py-2 px-3">{field.name}</td>
-                        <td className="py-2 px-3">{field.type}</td>
-                        <td className="py-2 px-3">{field.nullable ? 'Yes' : 'No'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+
+        {/* Main Content Tabs with Filters */}
+        <Tabs defaultValue="featured" className="space-y-4">
+          <div className="flex items-center justify-between gap-4">
+            <TabsList>
+              <TabsTrigger value="featured">Featured</TabsTrigger>
+              <TabsTrigger value="popular">Most Popular</TabsTrigger>
+              <TabsTrigger value="recent">Recently Added</TabsTrigger>
+              <TabsTrigger value="recommended">Recommended</TabsTrigger>
+            </TabsList>
+
+            <div className="flex gap-2">
+              <Select value={selectedDomain} onValueChange={setSelectedDomain}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Domain" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Domains</SelectItem>
+                  <SelectItem value="Customer">Customer</SelectItem>
+                  <SelectItem value="Financial">Financial</SelectItem>
+                  <SelectItem value="Product">Product</SelectItem>
+                  <SelectItem value="Sales">Sales</SelectItem>
+                  <SelectItem value="Operations">Operations</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedTechnicalType} onValueChange={setSelectedTechnicalType}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="Pipeline">Pipeline</SelectItem>
+                  <SelectItem value="ML Model">ML Model</SelectItem>
+                  <SelectItem value="Dataset">Dataset</SelectItem>
+                  <SelectItem value="API">API</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        )}
+
+          <TabsContent value="featured" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="popular" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[...filteredProducts]
+                .sort((a, b) => b.deployments - a.deployments)
+                .map((product) => (
+                  <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
+                ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="recent" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="recommended" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredProducts
+                .filter(p => p.rating >= 4.7)
+                .map((product) => (
+                  <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
+                ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Product Detail Sheet */}
+        <Sheet open={selectedProduct !== null} onOpenChange={(open) => !open && setSelectedProduct(null)}>
+          <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+            {selectedProduct && (
+              <>
+                <SheetHeader className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Badge className={cn(
+                      'font-medium',
+                      productTypeConfig[selectedProduct.productType].bgClass,
+                      productTypeConfig[selectedProduct.productType].textClass,
+                      productTypeConfig[selectedProduct.productType].borderClass
+                    )}>
+                      {React.createElement(productTypeConfig[selectedProduct.productType].icon, { className: 'mr-1.5 h-3.5 w-3.5' })}
+                      {selectedProduct.productType}
+                    </Badge>
+                    {selectedProduct.verified && (
+                      <div className="flex items-center gap-1.5 text-sm text-green-600">
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Verified</span>
+                      </div>
+                    )}
+                  </div>
+                  <SheetTitle className="text-2xl">{selectedProduct.title}</SheetTitle>
+                  <SheetDescription className="text-base">
+                    {selectedProduct.description}
+                  </SheetDescription>
+                </SheetHeader>
+
+                <div className="mt-6 space-y-6">
+                  {/* Key Metrics */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3">Key Metrics</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="flex flex-col">
+                        <span className="text-2xl font-bold">{selectedProduct.deployments}</span>
+                        <span className="text-xs text-muted-foreground">Deployments</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-2xl font-bold">{selectedProduct.rating}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground">Rating</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-2xl font-bold">{selectedProduct.latency}</span>
+                        <span className="text-xs text-muted-foreground">Latency</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Details */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3">Details</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Domain</span>
+                        <span className="font-medium">{selectedProduct.domain}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Type</span>
+                        <span className="font-medium">{selectedProduct.technicalType}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Purpose</span>
+                        <span className="font-medium">{selectedProduct.purpose}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Author</span>
+                        <span className="font-medium">{selectedProduct.author}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Last Updated</span>
+                        <span className="font-medium">{selectedProduct.lastUpdated}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Composition */}
+                  {(selectedProduct.composedFrom || selectedProduct.usedBy) && (
+                    <div>
+                      <h3 className="text-sm font-medium mb-3">Composition</h3>
+                      <div className="space-y-2">
+                        {selectedProduct.composedFrom && selectedProduct.composedFrom.length > 0 && (
+                          <div className="flex items-start gap-2">
+                            <GitBranch className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div>
+                              <div className="text-sm font-medium">Combines {selectedProduct.composedFrom.length} products</div>
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {selectedProduct.composedFrom.join(', ')}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        {selectedProduct.usedBy && selectedProduct.usedBy > 0 && (
+                          <div className="flex items-start gap-2">
+                            <GitBranch className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div>
+                              <div className="text-sm font-medium">Used by {selectedProduct.usedBy} products</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Access Methods */}
+                  <div>
+                    <h3 className="text-sm font-medium mb-3">Access Methods</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProduct.deliveryMethods.map((method) => (
+                        <Badge key={method} variant="secondary" className="text-sm">
+                          {method}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 pt-4">
+                    <Button className="flex-1" size="lg">
+                      Deploy Product
+                    </Button>
+                    <Button variant="outline" size="lg">
+                      View Documentation
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );
-};
+}

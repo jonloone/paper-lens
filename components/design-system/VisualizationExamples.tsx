@@ -59,82 +59,86 @@ function LineChart() {
   });
 
   return (
-    <Card>
+    <Card className="relative">
       <CardHeader>
-        <CardTitle className="text-lg">Quality Trends</CardTitle>
+        <CardTitle className="text-lg font-mono">
+          Quality Trends
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <svg width={width} height={height}>
+          <LinearGradient id="line-gradient" from="#5B6EFF" to="#9B87FF" />
           <LinearGradient id="area-gradient" from="#5B6EFF" to="#5B6EFF" fromOpacity={0.3} toOpacity={0} />
+
           <Group left={margin.left} top={margin.top}>
             <Grid
               xScale={xScale}
               yScale={yScale}
               width={innerWidth}
               height={innerHeight}
-              stroke="#e0e0e0"
+              stroke="#333333"
               strokeOpacity={0.1}
+              strokeDasharray="2,2"
             />
 
-            {/* Primary line */}
+            <Area
+              data={lineData}
+              x={d => xScale(d.date)}
+              y0={innerHeight}
+              y1={d => yScale(d.value)}
+              fill="url(#area-gradient)"
+              curve={curveMonotoneX}
+            />
+
             <LinePath
               data={lineData}
-              x={(d) => xScale(d.date) ?? 0}
-              y={(d) => yScale(d.value) ?? 0}
-              stroke="#5B6EFF"
+              x={d => xScale(d.date)}
+              y={d => yScale(d.value)}
+              stroke="url(#line-gradient)"
               strokeWidth={2}
               curve={curveMonotoneX}
             />
 
-            {/* Secondary line */}
             <LinePath
               data={lineData}
-              x={(d) => xScale(d.date) ?? 0}
-              y={(d) => yScale(d.secondary) ?? 0}
+              x={d => xScale(d.date)}
+              y={d => yScale(d.secondary)}
               stroke="#00E5C8"
               strokeWidth={2}
+              strokeDasharray="4,4"
+              strokeOpacity={0.6}
               curve={curveMonotoneX}
-            />
-
-            <AxisLeft
-              scale={yScale}
-              stroke="#888"
-              tickStroke="#888"
-              tickLabelProps={() => ({
-                fill: '#888',
-                fontSize: 10,
-                textAnchor: 'end',
-                dx: -4,
-              })}
             />
 
             <AxisBottom
               scale={xScale}
               top={innerHeight}
-              stroke="#888"
-              tickStroke="#888"
+              stroke="#666666"
+              tickStroke="#666666"
               tickLabelProps={() => ({
-                fill: '#888',
-                fontSize: 10,
+                fill: '#999999',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
                 textAnchor: 'middle',
               })}
-              tickFormat={(value) => {
-                const date = new Date(value);
-                return `${date.getMonth() + 1}/${date.getDate()}`;
-              }}
+              tickFormat={(d) => new Date(d).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+            />
+
+            <AxisLeft
+              scale={yScale}
+              stroke="#666666"
+              tickStroke="#666666"
+              tickLabelProps={() => ({
+                fill: '#999999',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                textAnchor: 'end',
+                dx: -4,
+              })}
+              tickFormat={(d) => `${d}%`}
             />
           </Group>
         </svg>
-        <div className="flex items-center gap-4 mt-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#5B6EFF]" />
-            <span className="text-xs text-muted-foreground">Completeness</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#00E5C8]" />
-            <span className="text-xs text-muted-foreground">Validity</span>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
@@ -150,7 +154,7 @@ function BarChart() {
   const xScale = scaleBand({
     domain: barData.map(d => d.pipeline),
     range: [0, innerWidth],
-    padding: 0.3,
+    padding: 0.2,
   });
 
   const yScale = scaleLinear({
@@ -159,84 +163,84 @@ function BarChart() {
   });
 
   return (
-    <Card>
+    <Card className="relative">
       <CardHeader>
-        <CardTitle className="text-lg">Pipeline Runs</CardTitle>
+        <CardTitle className="text-lg font-mono">
+          Pipeline Runs
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <svg width={width} height={height}>
+          <LinearGradient id="bar-gradient" from="#5B6EFF" to="#7A85FF" />
+
           <Group left={margin.left} top={margin.top}>
             <Grid
               xScale={xScale}
               yScale={yScale}
               width={innerWidth}
               height={innerHeight}
-              stroke="#e0e0e0"
+              stroke="#333333"
               strokeOpacity={0.1}
+              strokeDasharray="2,2"
+              numTicksRows={6}
             />
 
-            {barData.map((d) => {
-              const barWidth = xScale.bandwidth();
+            {barData.map((d, i) => {
+              const barHeight = innerHeight - yScale(d.success);
               const barX = xScale(d.pipeline) ?? 0;
-              const successHeight = innerHeight - (yScale(d.success) ?? 0);
-              const failedHeight = innerHeight - (yScale(d.failed) ?? 0);
+              const barWidth = xScale.bandwidth();
+              const failedHeight = innerHeight - yScale(d.failed);
 
               return (
-                <Group key={d.pipeline}>
+                <Group key={`bar-${i}`}>
                   <Bar
                     x={barX}
-                    y={yScale(d.success) ?? 0}
-                    width={barWidth / 2 - 2}
-                    height={successHeight}
-                    fill="#00E5C8"
+                    y={yScale(d.success)}
+                    width={barWidth}
+                    height={barHeight}
+                    fill="url(#bar-gradient)"
+                    rx={4}
                   />
                   <Bar
-                    x={barX + barWidth / 2 + 2}
-                    y={yScale(d.failed) ?? 0}
-                    width={barWidth / 2 - 2}
+                    x={barX}
+                    y={yScale(d.failed)}
+                    width={barWidth}
                     height={failedHeight}
                     fill="#FF6B7A"
+                    fillOpacity={0.5}
+                    rx={4}
                   />
                 </Group>
               );
             })}
 
+            <AxisBottom
+              scale={xScale}
+              top={innerHeight}
+              stroke="#666666"
+              tickStroke="#666666"
+              tickLabelProps={() => ({
+                fill: '#999999',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                textAnchor: 'middle',
+              })}
+            />
+
             <AxisLeft
               scale={yScale}
-              stroke="#888"
-              tickStroke="#888"
+              stroke="#666666"
+              tickStroke="#666666"
               tickLabelProps={() => ({
-                fill: '#888',
-                fontSize: 10,
+                fill: '#999999',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
                 textAnchor: 'end',
                 dx: -4,
               })}
             />
-
-            <AxisBottom
-              scale={xScale}
-              top={innerHeight}
-              stroke="#888"
-              tickStroke="#888"
-              tickLabelProps={() => ({
-                fill: '#888',
-                fontSize: 10,
-                textAnchor: 'middle',
-                dy: 3,
-              })}
-            />
           </Group>
         </svg>
-        <div className="flex items-center gap-4 mt-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-[#00E5C8]" />
-            <span className="text-xs text-muted-foreground">Success</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-[#FF6B7A]" />
-            <span className="text-xs text-muted-foreground">Failed</span>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
@@ -252,7 +256,7 @@ function AreaChart() {
   const xScale = scaleBand({
     domain: areaData.map(d => d.time),
     range: [0, innerWidth],
-    padding: 0,
+    padding: 0.1,
   });
 
   const yScale = scaleLinear({
@@ -261,92 +265,92 @@ function AreaChart() {
   });
 
   return (
-    <Card>
+    <Card className="relative">
       <CardHeader>
-        <CardTitle className="text-lg">Resource Usage</CardTitle>
+        <CardTitle className="text-lg font-mono">
+          Resource Usage
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <svg width={width} height={height}>
-          <defs>
-            <linearGradient id="cpu-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#5B6EFF" stopOpacity={0.5} />
-              <stop offset="100%" stopColor="#5B6EFF" stopOpacity={0} />
-            </linearGradient>
-            <linearGradient id="memory-gradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#FFB366" stopOpacity={0.5} />
-              <stop offset="100%" stopColor="#FFB366" stopOpacity={0} />
-            </linearGradient>
-          </defs>
+          <LinearGradient id="cpu-gradient" from="#5B6EFF" to="#5B6EFF" fromOpacity={0.5} toOpacity={0} />
+          <LinearGradient id="memory-gradient" from="#00E5C8" to="#00E5C8" fromOpacity={0.5} toOpacity={0} />
+
           <Group left={margin.left} top={margin.top}>
             <Grid
               xScale={xScale}
               yScale={yScale}
               width={innerWidth}
               height={innerHeight}
-              stroke="#e0e0e0"
+              stroke="#333333"
               strokeOpacity={0.1}
+              strokeDasharray="2,2"
             />
 
-            {/* CPU Area */}
             <Area
               data={areaData}
-              x={(d) => (xScale(d.time) ?? 0) + xScale.bandwidth() / 2}
-              y={(d) => yScale(d.cpu) ?? 0}
-              yScale={yScale}
+              x={d => (xScale(d.time) ?? 0) + xScale.bandwidth() / 2}
+              y0={innerHeight}
+              y1={d => yScale(d.cpu)}
               fill="url(#cpu-gradient)"
+              curve={curveMonotoneX}
+            />
+
+            <Area
+              data={areaData}
+              x={d => (xScale(d.time) ?? 0) + xScale.bandwidth() / 2}
+              y0={innerHeight}
+              y1={d => yScale(d.memory)}
+              fill="url(#memory-gradient)"
+              curve={curveMonotoneX}
+            />
+
+            <LinePath
+              data={areaData}
+              x={d => (xScale(d.time) ?? 0) + xScale.bandwidth() / 2}
+              y={d => yScale(d.cpu)}
               stroke="#5B6EFF"
               strokeWidth={2}
               curve={curveMonotoneX}
             />
 
-            {/* Memory Area */}
-            <Area
+            <LinePath
               data={areaData}
-              x={(d) => (xScale(d.time) ?? 0) + xScale.bandwidth() / 2}
-              y={(d) => yScale(d.memory) ?? 0}
-              yScale={yScale}
-              fill="url(#memory-gradient)"
-              stroke="#FFB366"
+              x={d => (xScale(d.time) ?? 0) + xScale.bandwidth() / 2}
+              y={d => yScale(d.memory)}
+              stroke="#00E5C8"
               strokeWidth={2}
               curve={curveMonotoneX}
-            />
-
-            <AxisLeft
-              scale={yScale}
-              stroke="#888"
-              tickStroke="#888"
-              tickLabelProps={() => ({
-                fill: '#888',
-                fontSize: 10,
-                textAnchor: 'end',
-                dx: -4,
-              })}
-              tickFormat={(value) => `${value}%`}
             />
 
             <AxisBottom
               scale={xScale}
               top={innerHeight}
-              stroke="#888"
-              tickStroke="#888"
+              stroke="#666666"
+              tickStroke="#666666"
               tickLabelProps={() => ({
-                fill: '#888',
-                fontSize: 10,
+                fill: '#999999',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
                 textAnchor: 'middle',
               })}
             />
+
+            <AxisLeft
+              scale={yScale}
+              stroke="#666666"
+              tickStroke="#666666"
+              tickLabelProps={() => ({
+                fill: '#999999',
+                fontSize: 11,
+                fontFamily: 'var(--font-mono)',
+                textAnchor: 'end',
+                dx: -4,
+              })}
+              tickFormat={(d) => `${d}%`}
+            />
           </Group>
         </svg>
-        <div className="flex items-center gap-4 mt-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#5B6EFF]" />
-            <span className="text-xs text-muted-foreground">CPU Usage</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#FFB366]" />
-            <span className="text-xs text-muted-foreground">Memory Usage</span>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
@@ -354,10 +358,23 @@ function AreaChart() {
 
 export function VisualizationExamples() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-      <LineChart />
-      <BarChart />
-      <AreaChart />
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <h2 className="text-2xl font-display font-medium">
+          Chart Examples
+        </h2>
+        <p className="text-muted-foreground">
+          Modern graph visualizations powered by ViSX for data visualization.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <LineChart />
+        <BarChart />
+        <div className="md:col-span-2">
+          <AreaChart />
+        </div>
+      </div>
     </div>
   );
 }

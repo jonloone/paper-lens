@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
+import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -42,11 +43,13 @@ interface AIContext {
 
 export function AIAssistant() {
   const pathname = usePathname()
+  const { theme } = useTheme()
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
   const [aiContext, setAIContext] = useState<AIContext | null>(null)
+  const isWin98 = theme === 'win98'
   
   // Update AI context based on current page
   useEffect(() => {
@@ -245,13 +248,21 @@ What specific aspect would you like to explore?`
       {/* Floating Chat Button */}
       <Button
         className={cn(
-          "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg",
+          "fixed bottom-6 right-6 shadow-lg",
           "bg-primary hover:bg-primary/90 text-primary-foreground transition-all duration-200",
-          "hover:scale-110 z-50"
+          "z-50",
+          isWin98 ? "h-10 w-auto px-4 rounded-none win98-flat" : "h-14 w-14 rounded-full hover:scale-110"
         )}
         onClick={() => setIsOpen(true)}
       >
-        <MessageSquare className="h-6 w-6" />
+        {isWin98 ? (
+          <>
+            <MessageSquare className="h-4 w-4 mr-2" />
+            <span>AI Assistant</span>
+          </>
+        ) : (
+          <MessageSquare className="h-6 w-6" />
+        )}
         {aiContext?.contextData?.activeIncidents > 0 && (
           <span className="absolute -top-1 -right-1 flex h-5 w-5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -264,25 +275,58 @@ What specific aspect would you like to explore?`
       
       {/* Chat Interface */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
-        <SheetContent side="right" className="w-[400px] sm:w-[540px] p-0 flex flex-col">
-          <SheetHeader className="px-6 py-4 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Bot className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <SheetTitle className="text-base">{aiContext?.title}</SheetTitle>
-                  <SheetDescription className="text-xs">
-                    {aiContext?.description}
-                  </SheetDescription>
+        <SheetContent
+          side={isWin98 ? "bottom" : "right"}
+          className={cn(
+            "p-0 flex flex-col",
+            isWin98
+              ? "w-full h-[400px] win98-window border-t-[3px] border-l-[3px] border-r-[3px] bottom-0"
+              : "w-[400px] sm:w-[540px]"
+          )}
+        >
+          <SheetHeader className={cn(
+            "border-b",
+            isWin98 ? "win98-titlebar px-2 py-1" : "px-6 py-4"
+          )}>
+            {isWin98 ? (
+              <div className="flex items-center justify-between">
+                <span className="text-white font-bold text-[11px]">
+                  {aiContext?.title || "AI Assistant"} - NexusOne
+                </span>
+                <div className="flex gap-1">
+                  <button
+                    className="win98-flat w-4 h-4 bg-[#c0c0c0] border border-black flex items-center justify-center text-black text-[10px] font-bold"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    _
+                  </button>
+                  <button
+                    className="win98-flat w-4 h-4 bg-[#c0c0c0] border border-black flex items-center justify-center text-black text-[10px] font-bold"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    ×
+                  </button>
                 </div>
               </div>
-              <Badge variant="secondary" className="text-xs">
-                <Sparkles className="h-3 w-3 mr-1" />
-                AI Powered
-              </Badge>
-            </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Bot className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <SheetTitle className="text-base">{aiContext?.title}</SheetTitle>
+                    <SheetDescription className="text-xs">
+                      {aiContext?.description}
+                    </SheetDescription>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="text-xs">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  AI Powered
+                </Badge>
+              </div>
+            )}
           </SheetHeader>
           
           <div className="flex-1 flex flex-col">

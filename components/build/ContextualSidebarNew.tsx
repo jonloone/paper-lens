@@ -21,7 +21,7 @@ import {
   Diamond,
   Lightning,
   Wrench,
-  Wrench as Hammer
+  Gear as Hammer
 } from 'phosphor-react';
 
 // Helper function to map icon names to components

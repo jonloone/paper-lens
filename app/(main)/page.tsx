@@ -1,995 +1,384 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
 import {
-  Activity, AlertCircle, AlertTriangle, ArrowRight, ArrowUp, ArrowDown,
-  Brain, CheckCircle, ChevronRight, Clock, Cpu, Database,
-  DollarSign, Flame, GitBranch, HardDrive, Loader2, MemoryStick,
-  RefreshCw, Server, Shield, Sparkles, Target, TrendingDown,
-  TrendingUp, Users, XCircle, Zap, Timer, Minus, Bot,
-  FileWarning, Package, Layers, Network, Play, Pause, BarChart3,
-  Eye, Settings, Wrench, CheckCircle2, LineChart, Calendar,
-  Grid3X3, Activity as Pulse
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle2,
+  RefreshCw,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Sparkles,
+  Users,
+  BarChart3,
+  GitBranch
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-// Import VisX visualization components
-import { QualityTrendsChart } from '@/components/visualizations/QualityTrendsChart';
-import { SchemaDriftTimeline } from '@/components/visualizations/SchemaDriftTimeline';
-import { DataCompletenessHeatmap } from '@/components/visualizations/DataCompletenessHeatmap';
-import { PipelineHealthChart } from '@/components/visualizations/PipelineHealthChart';
-import { mockVisualizationData } from '@/lib/mock-data/visualization-data';
+// ============================================================================
+// Types
+// ============================================================================
 
-// Types for operational intelligence
 interface CriticalIssue {
   id: string;
-  severity: 'critical' | 'high' | 'medium';
-  system: string;
-  title: string;
-  businessImpact: string;
-  duration: string;
-  affectedPipelines: number;
-  recommendation?: AIRecommendation;
+  pipeline: string;
+  error: string;
+  blockedPipelines: number;
+  status: 'critical' | 'warning';
 }
 
-// New Pipeline Types
 interface PipelineStatus {
-  id: string;
+  domain: string;
   name: string;
-  domain: string;
-  status: 'running' | 'paused' | 'failed' | 'warning';
-  lastRun: string;
-  nextRun: string;
-  successRate: number;
-  avgDuration: string;
-  qualityScore: number;
-  recordsProcessed: string;
-}
-
-interface QualityMetric {
-  domain: string;
-  score: number;
+  status: 'healthy' | 'degraded' | 'failed';
+  quality: number | null;
+  latency: string;
   trend: 'up' | 'down' | 'stable';
-  change: number;
-  issuesCount: number;
-  rulesCount: number;
+  trendValue: string;
 }
 
-interface AIRecommendation {
-  action: string;
-  confidence: number;
-  estimatedTime: string;
-  successRate: number;
-  reasoning: string;
-  alternativeActions?: string[];
+interface Incident {
+  id: string;
+  time: string;
+  message: string;
+  type: 'error' | 'warning' | 'success' | 'info';
 }
 
-interface SystemHealth {
-  system: string;
-  status: 'healthy' | 'degraded' | 'critical';
-  metrics: {
-    current: number;
-    trend: 'up' | 'down' | 'stable';
-    threshold?: number;
-    unit: string;
-  };
-  prediction?: string;
+interface SystemResource {
+  name: string;
+  usage: number;
+  status: 'normal' | 'warning' | 'critical';
 }
 
-interface OperationalMetric {
-  label: string;
-  value: string | number;
-  change?: number;
-  trend?: 'up' | 'down' | 'stable';
-  status?: 'good' | 'warning' | 'critical';
-}
+// ============================================================================
+// Mock Data
+// ============================================================================
 
-interface TeamTask {
-  type: 'review' | 'deploy' | 'incident' | 'approval';
-  count: number;
-  urgent?: boolean;
-}
-
-// Mock data for intelligent operations
-const criticalIssues: CriticalIssue[] = [
+const mockCriticalIssues: CriticalIssue[] = [
   {
     id: '1',
-    severity: 'critical',
-    system: 'Kafka',
-    title: 'Consumer lag spike detected',
-    businessImpact: 'Customer order processing delayed by 15+ minutes',
-    duration: '32 minutes',
-    affectedPipelines: 12,
-    recommendation: {
-      action: 'Restart Kafka consumer group with increased partition allocation',
-      confidence: 92,
-      estimatedTime: '3 minutes',
-      successRate: 88,
-      reasoning: 'Similar lag pattern resolved 8 times this month using this approach. Current lag matches signature of partition imbalance.',
-      alternativeActions: [
-        'Scale consumer instances (+5 pods)',
-        'Increase consumer fetch size to 10MB',
-      ]
-    }
+    pipeline: 'customer_churn',
+    error: 'OOM Error',
+    blockedPipelines: 8,
+    status: 'critical'
   },
   {
     id: '2',
-    severity: 'high',
-    system: 'Trino',
-    title: 'Query performance degradation',
-    businessImpact: 'Analytics dashboards loading 5x slower',
-    duration: '1 hour 14 minutes',
-    affectedPipelines: 7,
-    recommendation: {
-      action: 'Clear query cache and optimize table statistics',
-      confidence: 78,
-      estimatedTime: '10 minutes',
-      successRate: 72,
-      reasoning: 'Table statistics are 3 days old. Query plan shows suboptimal join strategy due to outdated cardinality estimates.',
-      alternativeActions: [
-        'Increase worker memory to 32GB',
-        'Enable cost-based optimizer',
-      ]
-    }
+    pipeline: 'financial_report',
+    error: 'Schema mismatch',
+    blockedPipelines: 3,
+    status: 'critical'
   }
 ];
 
-const systemHealthMetrics: SystemHealth[] = [
-  {
-    system: 'Airflow',
-    status: 'healthy',
-    metrics: {
-      current: 89,
-      trend: 'stable',
-      threshold: 85,
-      unit: '% tasks on time'
-    }
-  },
-  {
-    system: 'Kafka',
-    status: 'critical',
-    metrics: {
-      current: 15000,
-      trend: 'up',
-      threshold: 1000,
-      unit: 'msg lag'
-    },
-    prediction: 'OOM risk in 2 hours at current rate'
-  },
-  {
-    system: 'Trino',
-    status: 'degraded',
-    metrics: {
-      current: 78,
-      trend: 'down',
-      threshold: 60,
-      unit: '% CPU'
-    }
-  },
-  {
-    system: 'DataHub',
-    status: 'healthy',
-    metrics: {
-      current: 12,
-      trend: 'stable',
-      unit: 'ms latency'
-    }
-  },
-  {
-    system: 'Storage',
-    status: 'healthy',
-    metrics: {
-      current: 72,
-      trend: 'up',
-      unit: '% used'
-    },
-    prediction: 'Capacity limit in 14 days'
-  }
+const mockPipelines: PipelineStatus[] = [
+  { domain: 'Customer', name: 'churn_model', status: 'failed', quality: null, latency: '--', trend: 'down', trendValue: '12%' },
+  { domain: 'Customer', name: 'segmentation', status: 'degraded', quality: 92, latency: '+45m', trend: 'down', trendValue: '5%' },
+  { domain: 'Customer', name: 'daily_aggregate', status: 'healthy', quality: 96, latency: '12m', trend: 'stable', trendValue: '0%' },
+  { domain: 'Customer', name: 'retention_calc', status: 'healthy', quality: 94, latency: '8m', trend: 'up', trendValue: '2%' },
+  { domain: 'Financial', name: 'revenue_forecast', status: 'healthy', quality: 97, latency: '22m', trend: 'stable', trendValue: '0%' },
+  { domain: 'Financial', name: 'expense_report', status: 'healthy', quality: 98, latency: '15m', trend: 'stable', trendValue: '0%' },
 ];
 
-const pipelineHealth: OperationalMetric[] = [
-  { label: 'Active', value: 147, status: 'good' },
-  { label: 'Degraded', value: 3, change: 2, trend: 'up', status: 'warning' },
-  { label: 'Failed', value: 0, status: 'good' },
-  { label: 'Success Rate', value: '98.2%', change: -1.5, trend: 'down' }
+const mockIncidents: Incident[] = [
+  { id: '1', time: '14:32', message: 'Spark job failure → 3 retries', type: 'error' },
+  { id: '2', time: '14:28', message: 'Slow query detected in Trino', type: 'warning' },
+  { id: '3', time: '14:15', message: 'Schema evolution completed', type: 'success' },
+  { id: '4', time: '13:45', message: 'Backfill started (45% done)', type: 'info' },
+  { id: '5', time: '13:30', message: 'Pattern applied successfully', type: 'success' },
 ];
 
-const resourceMetrics: OperationalMetric[] = [
-  { label: 'CPU Usage', value: '67%', trend: 'stable', status: 'good' },
-  { label: 'Memory', value: '78%', change: 5, trend: 'up', status: 'warning' },
-  { label: 'Cost Today', value: '$2,147', change: -12, trend: 'down', status: 'good' },
-  { label: 'Efficiency', value: '94%', change: 3, trend: 'up', status: 'good' }
+const mockSystemResources: SystemResource[] = [
+  { name: 'Spark', usage: 85, status: 'warning' },
+  { name: 'Trino', usage: 42, status: 'normal' },
+  { name: 'Airflow', usage: 71, status: 'normal' },
+  { name: 'Storage', usage: 93, status: 'critical' },
+  { name: 'Network', usage: 31, status: 'normal' },
 ];
 
-const teamQueue: TeamTask[] = [
-  { type: 'review', count: 3, urgent: true },
-  { type: 'deploy', count: 1 },
-  { type: 'incident', count: 0 },
-  { type: 'approval', count: 2 }
-];
+// ============================================================================
+// Components
+// ============================================================================
 
-// Pipeline Operations Data
-const activePipelines: PipelineStatus[] = [
-  {
-    id: 'customer-360-etl',
-    name: 'Customer 360 ETL',
-    domain: 'Customer',
-    status: 'running',
-    lastRun: '2 hours ago',
-    nextRun: 'In 4 hours',
-    successRate: 98.5,
-    avgDuration: '12 min',
-    qualityScore: 94,
-    recordsProcessed: '2.3M'
-  },
-  {
-    id: 'revenue-attribution',
-    name: 'Revenue Attribution',
-    domain: 'Finance',
-    status: 'warning',
-    lastRun: '15 min ago',
-    nextRun: 'In 45 min',
-    successRate: 89.2,
-    avgDuration: '8 min',
-    qualityScore: 87,
-    recordsProcessed: '847K'
-  },
-  {
-    id: 'product-analytics',
-    name: 'Product Analytics Stream',
-    domain: 'Product',
-    status: 'running',
-    lastRun: '1 min ago',
-    nextRun: 'Continuous',
-    successRate: 99.1,
-    avgDuration: '3 sec',
-    qualityScore: 96,
-    recordsProcessed: '1.2M/hr'
-  },
-  {
-    id: 'marketing-attribution',
-    name: 'Marketing Attribution',
-    domain: 'Marketing',
-    status: 'paused',
-    lastRun: '1 day ago',
-    nextRun: 'Manual',
-    successRate: 92.3,
-    avgDuration: '15 min',
-    qualityScore: 91,
-    recordsProcessed: '654K'
-  },
-  {
-    id: 'ops-monitoring',
-    name: 'Operations Monitoring',
-    domain: 'Operations',
-    status: 'failed',
-    lastRun: '30 min ago',
-    nextRun: 'Retry in 15 min',
-    successRate: 95.7,
-    avgDuration: '5 min',
-    qualityScore: 78,
-    recordsProcessed: '0'
-  }
-];
-
-// Quality Intelligence Data
-const qualityMetrics: QualityMetric[] = [
-  {
-    domain: 'Customer',
-    score: 94.2,
-    trend: 'up',
-    change: 2.1,
-    issuesCount: 2,
-    rulesCount: 15
-  },
-  {
-    domain: 'Finance',
-    score: 91.7,
-    trend: 'down',
-    change: -1.3,
-    issuesCount: 4,
-    rulesCount: 12
-  },
-  {
-    domain: 'Product',
-    score: 96.8,
-    trend: 'stable',
-    change: 0.2,
-    issuesCount: 1,
-    rulesCount: 18
-  },
-  {
-    domain: 'Marketing',
-    score: 89.4,
-    trend: 'up',
-    change: 3.2,
-    issuesCount: 3,
-    rulesCount: 10
-  },
-  {
-    domain: 'Operations',
-    score: 87.1,
-    trend: 'down',
-    change: -4.1,
-    issuesCount: 6,
-    rulesCount: 14
-  }
-];
-
-// Active Issues and Opportunities
-const activeIssues = [
-  {
-    id: 'schema-drift-customer',
-    title: 'Schema drift in customer_events',
-    domain: 'Customer',
-    severity: 'high',
-    impact: '3 downstream pipelines affected',
-    action: 'Fix Schema Issues'
-  },
-  {
-    id: 'quality-rule-failing',
-    title: 'Completeness rule failing (revenue)',
-    domain: 'Finance',
-    severity: 'medium',
-    impact: 'Revenue reports may be incomplete',
-    action: 'Review Quality Rules'
-  }
-];
-
-const optimizationOpportunities = [
-  {
-    id: 'customer-etl-perf',
-    title: 'Customer ETL 40% slower than baseline',
-    domain: 'Customer',
-    impact: 'Potential cost savings: $340/month',
-    action: 'Optimize Pipeline'
-  },
-  {
-    id: 'unused-data-product',
-    title: 'Marketing segments unused for 30+ days',
-    domain: 'Marketing',
-    impact: 'Storage cost reduction: $180/month',
-    action: 'Archive or Sunset'
-  }
-];
-
-export default function HomePage() {
-  const router = useRouter();
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [aiProcessing, setAiProcessing] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1000);
-  };
-
-  const handleAIRecommendation = (issue: CriticalIssue) => {
-    setAiProcessing(true);
-    setTimeout(() => {
-      setAiProcessing(false);
-      // Navigate to investigation with context
-      router.push(`/investigate?issue=${issue.id}&ai=true`);
-    }, 1500);
-  };
-
-  const navigateToWorkflow = (actionType: string, context?: any) => {
-    switch (actionType) {
-      case 'Fix Schema Issues':
-        router.push('/build?mode=schema-fix&domain=' + context?.domain);
-        break;
-      case 'Review Quality Rules':
-        router.push('/quality-dashboard?domain=' + context?.domain);
-        break;
-      case 'Optimize Pipeline':
-        router.push('/build?mode=optimize&pipeline=' + context?.id);
-        break;
-      case 'View Pipeline Details':
-        router.push('/quality-dashboard?pipeline=' + context?.id);
-        break;
-      default:
-        router.push('/build');
-    }
-  };
-
-  const getPipelineStatusColor = (status: string) => {
-    switch (status) {
-      case 'running': return 'text-green-600 dark:text-green-400';
-      case 'warning': return 'text-amber-600 dark:text-amber-400';
-      case 'failed': return 'text-destructive';
-      case 'paused': return 'text-muted-foreground';
-      default: return 'text-muted-foreground';
-    }
-  };
-
-  const getPipelineStatusIcon = (status: string) => {
-    switch (status) {
-      case 'running': return <Play className="h-3 w-3 text-green-600 dark:text-green-400" />;
-      case 'warning': return <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400" />;
-      case 'failed': return <XCircle className="h-3 w-3 text-destructive" />;
-      case 'paused': return <Pause className="h-3 w-3 text-muted-foreground" />;
-      default: return <Clock className="h-3 w-3" />;
-    }
-  };
-
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'border-destructive bg-destructive/5';
-      case 'high': return 'border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20';
-      case 'medium': return 'border-border';
-      default: return 'border-border';
-    }
-  };
-
-  const getHealthColor = (status: string) => {
-    switch (status) {
-      case 'healthy': return 'text-green-600 dark:text-green-400';
-      case 'degraded': return 'text-amber-600 dark:text-amber-400';
-      case 'critical': return 'text-destructive';
-      default: return 'text-muted-foreground';
-    }
-  };
-
-  const getTrendIcon = (trend?: string) => {
-    switch (trend) {
-      case 'up': return <TrendingUp className="h-3 w-3" />;
-      case 'down': return <TrendingDown className="h-3 w-3" />;
-      default: return <Minus className="h-3 w-3" />;
-    }
-  };
-
-  const getTaskIcon = (type: string) => {
-    switch (type) {
-      case 'review': return <FileWarning className="h-4 w-4" />;
-      case 'deploy': return <Package className="h-4 w-4" />;
-      case 'incident': return <Flame className="h-4 w-4" />;
-      case 'approval': return <Shield className="h-4 w-4" />;
-      default: return <Clock className="h-4 w-4" />;
-    }
-  };
-
-  const hasIssues = criticalIssues.length > 0;
+function TrendIndicator({ trend, value }: { trend: string; value: string }) {
+  const Icon = trend === 'up' ? TrendingUp : trend === 'down' ? TrendingDown : Minus;
+  const colorClass = trend === 'up' ? 'text-green-600' : trend === 'down' ? 'text-red-600' : 'text-muted-foreground';
 
   return (
-    <div className="w-full px-8 lg:px-12 xl:px-16 py-6">
-      <div className="space-y-6 max-w-[1920px] mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-light tracking-tight">
-              Data Operations Command Center
-            </h1>
-            <p className="text-sm dark:text-[#7d8590] mt-1">
-              {mounted ? currentTime.toLocaleString('en-US', { 
-                weekday: 'short', 
-                month: 'short', 
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }) : 'Loading...'}
-            </p>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            {isRefreshing ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            <span className="ml-2">Refresh</span>
+    <div className="flex items-center gap-1">
+      <Icon className={cn("h-3 w-3", colorClass)} />
+      <span className={cn("text-sm font-medium", colorClass)}>{value}</span>
+    </div>
+  );
+}
+
+interface MetricCardProps {
+  title: string;
+  value: string | number;
+  trend: string;
+  description: string;
+  icon: React.ReactNode;
+}
+
+function MetricCard({ title, value, trend, description, icon }: MetricCardProps) {
+  const trendIsPositive = trend.startsWith('+');
+  const trendIsNeutral = trend.startsWith('→') || trend === '0%';
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        <div className="text-muted-foreground">{icon}</div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+        <p className="text-xs text-muted-foreground mt-1">{description}</p>
+        <div className="flex items-center pt-1">
+          <span className={cn(
+            "text-xs font-medium",
+            trendIsPositive ? "text-green-600" :
+            trendIsNeutral ? "text-muted-foreground" :
+            "text-red-600"
+          )}>
+            {trend} from last period
+          </span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ============================================================================
+// Main Component
+// ============================================================================
+
+export default function OverviewPage() {
+  const criticalCount = 2;
+  const degradedCount = 5;
+  const healthyCount = 135;
+
+  return (
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      {/* Header */}
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Overview</h2>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
           </Button>
         </div>
+      </div>
 
-        {/* Data Intelligence Visualization Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Quality Trends Over Time */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <LineChart className="h-5 w-5 text-primary" />
-                Data Quality Trends
-              </CardTitle>
-              <CardDescription>Quality scores across domains over the last 30 days</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <QualityTrendsChart data={mockVisualizationData.qualityTrends} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Schema Drift Timeline */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-amber-600" />
-                Schema Changes
-              </CardTitle>
-              <CardDescription>Recent schema modifications and their impact</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <SchemaDriftTimeline data={mockVisualizationData.schemaDrift} />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Data Completeness & Pipeline Health Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-          {/* Data Completeness Heatmap */}
-          <Card className="xl:col-span-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Grid3X3 className="h-5 w-5 text-green-600" />
-                Data Completeness Matrix
-              </CardTitle>
-              <CardDescription>Field completeness across datasets and domains</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <DataCompletenessHeatmap data={mockVisualizationData.completeness} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pipeline Health Metrics */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Pulse className="h-5 w-5 text-blue-600" />
-                Pipeline Health
-              </CardTitle>
-              <CardDescription>Real-time processing metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Throughput Chart */}
-              <div>
-                <div className="text-sm font-medium mb-2 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  Throughput
-                </div>
-                <div className="h-[120px]">
-                  <PipelineHealthChart
-                    data={mockVisualizationData.pipelineHealth}
-                    metric="throughput"
-                  />
-                </div>
-              </div>
-
-              {/* Latency Chart */}
-              <div>
-                <div className="text-sm font-medium mb-2 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                  Latency
-                </div>
-                <div className="h-[120px]">
-                  <PipelineHealthChart
-                    data={mockVisualizationData.pipelineHealth}
-                    metric="latency"
-                  />
-                </div>
-              </div>
-
-              {/* CDC Events Chart */}
-              <div>
-                <div className="text-sm font-medium mb-2 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  CDC Events
-                </div>
-                <div className="h-[120px]">
-                  <PipelineHealthChart
-                    data={mockVisualizationData.pipelineHealth}
-                    metric="cdc"
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* System Health Command Strip */}
-        <div className="bg-card p-4 rounded-lg border">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              System Health Overview
-            </h2>
-            <div className="text-sm text-muted-foreground">
-              Last updated: {mounted ? new Date(Date.now() - 2 * 60 * 1000).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-              }) : '...'} ago
-            </div>
+      {/* Status Alert Bar */}
+      <Alert variant={criticalCount > 0 ? "destructive" : "default"}>
+        <AlertTriangle className="h-4 w-4" />
+        <AlertDescription className="flex items-center justify-between">
+          <div className="flex gap-4 items-center">
+            <span className="font-medium">{criticalCount} Critical</span>
+            <Separator orientation="vertical" className="h-4" />
+            <span>{degradedCount} Degraded</span>
+            <Separator orientation="vertical" className="h-4" />
+            <span className="text-muted-foreground">{healthyCount} Healthy</span>
           </div>
+          <span className="text-sm text-muted-foreground">
+            Last sync: 30s ago
+          </span>
+        </AlertDescription>
+      </Alert>
 
-          <div className="flex gap-6">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Pipelines</span>
-                <span className="text-xs text-muted-foreground">23 active, 2 need attention</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 bg-amber-500 rounded-full"></div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Quality</span>
-                <span className="text-xs text-muted-foreground">92.1% avg, 3 rules failing</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Processing</span>
-                <span className="text-xs text-muted-foreground">2.3M records/hr, normal throughput</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">Infrastructure</span>
-                <span className="text-xs text-muted-foreground">All systems operational</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Grid: Pipeline Operations + Quality Intelligence */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Left Column: Pipeline Operations */}
-          <div className="col-span-7">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <GitBranch className="h-5 w-5" />
-                    Pipeline Operations
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">All Domains</Button>
-                    <Button size="sm" variant="outline">Issues Only</Button>
-                    <Button size="sm" variant="outline">High Usage</Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {activePipelines.map(pipeline => (
-                    <div
-                      key={pipeline.id}
-                      className="border rounded-lg p-3 hover:bg-muted/50 transition-colors cursor-pointer"
-                      onClick={() => navigateToWorkflow('View Pipeline Details', pipeline)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {getPipelineStatusIcon(pipeline.status)}
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{pipeline.name}</span>
-                              <Badge variant="outline" className="text-xs">{pipeline.domain}</Badge>
-                            </div>
-                            <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                              <span>Last: {pipeline.lastRun}</span>
-                              <span>Next: {pipeline.nextRun}</span>
-                              <span>{pipeline.recordsProcessed} records</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-right">
-                          <div>
-                            <div className="text-sm font-medium">{pipeline.successRate}%</div>
-                            <div className="text-xs text-muted-foreground">Success</div>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">{pipeline.qualityScore}%</div>
-                            <div className="text-xs text-muted-foreground">Quality</div>
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium">{pipeline.avgDuration}</div>
-                            <div className="text-xs text-muted-foreground">Avg time</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => router.push('/quality-dashboard')}
-                  >
-                    View All Pipelines
-                    <ArrowRight className="h-3 w-3 ml-2" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column: Quality Intelligence */}
-          <div className="col-span-5">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Data Quality Intelligence
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Quality Score Overview */}
-                  <div className="text-center p-4 bg-muted/30 rounded-lg">
-                    <div className="text-3xl font-bold mb-1">92.1%</div>
-                    <div className="text-sm text-muted-foreground">Overall Quality Score</div>
-                    <div className="flex items-center justify-center gap-1 mt-2">
-                      <TrendingDown className="h-3 w-3 text-amber-600" />
-                      <span className="text-xs text-amber-600">-0.8% from last week</span>
-                    </div>
-                  </div>
-
-                  {/* Domain Quality Breakdown */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Quality by Domain</h4>
-                    {qualityMetrics.map(metric => (
-                      <div key={metric.domain} className="flex items-center justify-between p-2 rounded border">
-                        <div>
-                          <div className="text-sm font-medium">{metric.domain}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {metric.issuesCount} issues • {metric.rulesCount} rules
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="flex items-center gap-1">
-                            <span className="text-sm font-medium">{metric.score}%</span>
-                            <div className={cn(
-                              "flex items-center text-xs",
-                              metric.trend === 'up' ? 'text-green-600' :
-                              metric.trend === 'down' ? 'text-amber-600' :
-                              'text-muted-foreground'
-                            )}>
-                              {getTrendIcon(metric.trend)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => router.push('/quality-dashboard')}
-                  >
-                    Quality Dashboard
-                    <Eye className="h-3 w-3 ml-2" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* AI Recommendations */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  AI Recommendations
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <div className="text-sm font-medium mb-1">Optimize Customer ETL</div>
-                    <div className="text-xs text-muted-foreground mb-2">
-                      Pipeline running 40% slower than baseline. Potential savings: $340/month.
-                    </div>
-                    <Button size="sm" variant="outline" className="h-6 text-xs">
-                      Apply Optimization
-                    </Button>
-                  </div>
-                  <div className="p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                    <div className="text-sm font-medium mb-1">Update Quality Rules</div>
-                    <div className="text-xs text-muted-foreground mb-2">
-                      3 rules haven't been updated in 90+ days. Consider refresh.
-                    </div>
-                    <Button size="sm" variant="outline" className="h-6 text-xs">
-                      Review Rules
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Active Issues & Opportunities */}
-        <div className="grid grid-cols-2 gap-6">
-          {/* Issues Requiring Attention */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
-                Issues Requiring Attention
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {activeIssues.map(issue => (
-                  <div key={issue.id} className="border rounded-lg p-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge
-                            variant={issue.severity === 'high' ? 'destructive' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {issue.severity.toUpperCase()}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">{issue.domain}</Badge>
-                        </div>
-                        <div className="text-sm font-medium">{issue.title}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {issue.impact}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-6 text-xs"
-                        onClick={() => navigateToWorkflow(issue.action, issue)}
-                      >
-                        {issue.action}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Optimization Opportunities */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-green-500" />
-                Optimization Opportunities
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {optimizationOpportunities.map(opp => (
-                  <div key={opp.id} className="border rounded-lg p-3">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="text-xs">{opp.domain}</Badge>
-                        </div>
-                        <div className="text-sm font-medium">{opp.title}</div>
-                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                          {opp.impact}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-6 text-xs"
-                        onClick={() => navigateToWorkflow(opp.action, opp)}
-                      >
-                        {opp.action}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Launch Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Zap className="h-5 w-5" />
-              Quick Actions
-            </CardTitle>
-            <CardDescription>Start workflows with contextual assistance</CardDescription>
+      {/* Main Grid Layout - 12 column system */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-12">
+        {/* Critical Issues - 3 columns */}
+        <Card className="col-span-full lg:col-span-3">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+            <CardTitle className="text-sm font-medium">Critical Issues</CardTitle>
+            <Badge variant="destructive">{mockCriticalIssues.length}</Badge>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-4 gap-4">
-              <Button
-                className="justify-start h-auto py-4 px-4 bg-primary hover:bg-primary/90"
-                onClick={() => router.push('/build')}
-              >
-                <div className="flex items-start gap-3">
-                  <Layers className="h-6 w-6 mt-0.5" />
-                  <div className="text-left">
-                    <div className="font-medium text-sm">Build Data Product</div>
-                    <div className="text-xs text-primary-foreground/80">
-                      Intent-driven creation
+            <div className="space-y-4">
+              {mockCriticalIssues.map((issue) => (
+                <div key={issue.id} className="space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium leading-none">{issue.pipeline}</p>
+                      <p className="text-xs text-muted-foreground">{issue.error}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {issue.blockedPipelines} pipelines blocked
+                      </p>
                     </div>
                   </div>
-                </div>
-              </Button>
-
-              <Button
-                variant="outline"
-                className="justify-start h-auto py-4 px-4"
-                onClick={() => router.push('/quality-dashboard')}
-              >
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="h-5 w-5 mt-0.5 text-green-600 dark:text-green-400" />
-                  <div className="text-left">
-                    <div className="font-medium text-sm">Quality Monitoring</div>
-                    <div className="text-xs text-muted-foreground">
-                      Real-time quality dashboards
-                    </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="h-7 text-xs">
+                      Apply Fix
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-7 text-xs">
+                      Details
+                    </Button>
                   </div>
+                  <Separator />
                 </div>
-              </Button>
-
-              <Button
-                variant="outline"
-                className="justify-start h-auto py-4 px-4"
-                onClick={() => router.push('/catalog')}
-              >
-                <div className="flex items-start gap-3">
-                  <Database className="h-5 w-5 mt-0.5 text-blue-500" />
-                  <div className="text-left">
-                    <div className="font-medium text-sm">Browse Data Catalog</div>
-                    <div className="text-xs text-muted-foreground">
-                      Discover data assets
-                    </div>
-                  </div>
-                </div>
-              </Button>
-
-              <Button
-                variant="outline"
-                className="justify-start h-auto py-4 px-4"
-                onClick={() => router.push('/sources')}
-              >
-                <div className="flex items-start gap-3">
-                  <Settings className="h-5 w-5 mt-0.5 text-purple-500" />
-                  <div className="text-left">
-                    <div className="font-medium text-sm">Manage Sources</div>
-                    <div className="text-xs text-muted-foreground">
-                      Configure connections
-                    </div>
-                  </div>
-                </div>
-              </Button>
+              ))}
             </div>
           </CardContent>
         </Card>
+
+        {/* Pipeline Status - 9 columns */}
+        <Card className="col-span-full lg:col-span-9">
+          <CardHeader>
+            <CardTitle>Pipeline Status</CardTitle>
+            <CardDescription>Real-time health across all domains</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Domain</TableHead>
+                  <TableHead>Pipeline</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Quality</TableHead>
+                  <TableHead className="text-right">Latency</TableHead>
+                  <TableHead className="text-right">24h Trend</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {mockPipelines.map((pipeline, idx) => (
+                  <TableRow key={`${pipeline.domain}-${pipeline.name}`}>
+                    <TableCell className="font-medium">{pipeline.domain}</TableCell>
+                    <TableCell className="font-mono text-xs">{pipeline.name}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          pipeline.status === 'failed' ? 'destructive' :
+                          pipeline.status === 'degraded' ? 'secondary' :
+                          'outline'
+                        }
+                      >
+                        {pipeline.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {pipeline.quality ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm">{pipeline.quality}%</span>
+                          <Progress value={pipeline.quality} className="w-[60px] h-2" />
+                        </div>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">--</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-sm">{pipeline.latency}</TableCell>
+                    <TableCell className="text-right">
+                      <TrendIndicator trend={pipeline.trend} value={pipeline.trendValue} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Second Row */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-12">
+        {/* Active Incidents - 7 columns */}
+        <Card className="col-span-full lg:col-span-7">
+          <CardHeader>
+            <CardTitle>Active Incidents</CardTitle>
+            <CardDescription>Recent activity and events</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {mockIncidents.map((incident) => (
+                <div key={incident.id} className="flex items-center justify-between py-2 hover:bg-muted/50 rounded-lg px-2 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground font-mono min-w-[42px]">
+                      {incident.time}
+                    </span>
+                    <span className="text-sm">{incident.message}</span>
+                  </div>
+                  <Badge variant="outline" className="capitalize">
+                    {incident.type}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* System Resources - 5 columns */}
+        <Card className="col-span-full lg:col-span-5">
+          <CardHeader>
+            <CardTitle>System Resources</CardTitle>
+            <CardDescription>Current utilization</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {mockSystemResources.map((resource) => (
+              <div key={resource.name} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{resource.name}</span>
+                  <span className={cn(
+                    "text-sm font-medium",
+                    resource.status === 'critical' ? 'text-red-600' :
+                    resource.status === 'warning' ? 'text-amber-600' :
+                    'text-muted-foreground'
+                  )}>
+                    {resource.usage}%
+                  </span>
+                </div>
+                <Progress
+                  value={resource.usage}
+                  className={cn(
+                    "h-2",
+                    resource.status === 'critical' && "[&>div]:bg-red-600",
+                    resource.status === 'warning' && "[&>div]:bg-amber-500"
+                  )}
+                />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Bottom Metrics Row */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <MetricCard
+          title="Pattern Library"
+          value={23}
+          trend="+15%"
+          description="Patterns used this week"
+          icon={<Sparkles className="h-4 w-4" />}
+        />
+        <MetricCard
+          title="Team Activity"
+          value={47}
+          trend="+8%"
+          description="Actions completed"
+          icon={<Users className="h-4 w-4" />}
+        />
+        <MetricCard
+          title="Quality Score"
+          value="94%"
+          trend="+2%"
+          description="Average across domains"
+          icon={<BarChart3 className="h-4 w-4" />}
+        />
+        <MetricCard
+          title="Recent Changes"
+          value={156}
+          trend="→ 0%"
+          description="In the last 24 hours"
+          icon={<GitBranch className="h-4 w-4" />}
+        />
       </div>
     </div>
   );

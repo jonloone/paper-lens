@@ -3,36 +3,60 @@ import type { NextRequest } from 'next/server';
 
 // Mapping of old routes to new routes
 const redirectMap: Record<string, string> = {
-  // Old intent pages now in pipelines
-  '/intent': '/pipelines/create',
-  '/learn/create': '/pipelines/create',
-  '/learn/patterns': '/pipelines/library',
-  '/learn/templates': '/pipelines/templates',
-  '/learn/remix': '/pipelines/remix',
-  '/learn': '/pipelines',
-  
-  // BUILD section redirects (moved to configure)
-  '/build/pipeline': '/pipelines/create',
-  '/build/templates': '/pipelines/templates',
-  // '/build/patterns': '/pipelines/library', // Commented out - Patterns page is now active
-  '/build/query': '/pipelines/create',
-  '/build/connections': '/configure/connections',
-  // '/build': '/configure', // Commented out - Build module is now active
-  
-  // FIX section redirects (moved to operations)
-  '/fix': '/operations',
-  '/fix/investigate': '/operations/investigate',
-  
-  // ADMIN section redirects (moved to configure)
-  '/admin': '/configure',
-  '/admin/catalog': '/configure/schemas',
-  
-  // Other legacy redirects
-  // '/investigate': '/operations/investigate', // Commented out - Investigate module is now active
-  '/lifecycle': '/monitor/pipelines',
-  '/builder': '/pipelines/create',
-  '/catalog': '/configure/schemas',
-  '/connect': '/configure/connections',
+  // Legacy Overview routes → Monitor
+  '/overview': '/',
+  '/team-activity': '/',
+  '/quick-launch': '/',
+  '/work-queue': '/',
+  '/system-health': '/',
+  '/data-product-health': '/quality-dashboard',
+  '/sources': '/', // Tool Health covers sources
+  '/active-operations': '/',
+
+  // Legacy Explore routes → Catalog
+  '/explore': '/catalog',
+  '/explore/query': '/catalog/query',
+  '/explore/contracts': '/catalog/api-docs',
+  '/explore/schemas': '/catalog/schemas',
+  '/explore/analytics': '/catalog',
+  '/explore/support': '/catalog',
+
+  // Legacy Build routes (mostly preserved)
+  '/pipelines': '/build',
+  '/pipelines/create': '/build/products',
+  '/pipelines/library': '/build/patterns',
+  '/build/templates': '/build/patterns',
+  '/build/query': '/catalog/query', // Moved to Catalog
+
+  // Legacy Products/Investigate routes
+  '/products': '/catalog',
+  '/products/quality': '/quality-dashboard',
+  '/products/usage': '/catalog',
+  '/investigate': '/incidents',
+  '/investigate/performance': '/domain-health',
+  '/investigate/correlation': '/incidents',
+
+  // Legacy Platform routes
+  '/platform': '/manage',
+  '/platform/connections': '/build/connections',
+  '/platform/users': '/manage/users',
+  '/platform/settings': '/manage',
+
+  // Legacy Configure routes
+  '/configure': '/manage',
+  '/configure/schemas': '/catalog/schemas',
+  '/configure/connections': '/build/connections',
+
+  // Legacy Monitor routes
+  // '/monitor': '/', // Commented out - monitor is now a valid page
+  // '/monitor/pipelines': '/', // Commented out - pipelines is now a valid monitor sub-page
+  '/monitor/quality': '/quality-dashboard',
+  '/monitor/infrastructure': '/domain-health',
+  '/monitor/compliance': '/manage/security',
+
+  // Legacy Manage routes (consolidation)
+  '/manage/resources': '/domain-health',
+  '/manage/infrastructure': '/domain-health',
 };
 
 export function middleware(request: NextRequest) {

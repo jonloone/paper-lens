@@ -85,7 +85,7 @@ export default function BuildHubPage() {
         'Deploy combined output'
       ],
       route: '/build/composable/problem',
-      badge: 'Composable Product'
+      badge: 'Solution Product'
     }
   ];
 
@@ -180,7 +180,7 @@ export default function BuildHubPage() {
               <div className="text-sm text-muted-foreground space-y-1">
                 <p><strong>Foundation</strong>: Start here when connecting a new database, API, or file source</p>
                 <p><strong>Domain</strong>: Create canonical business entities like Customer, Order, or Product</p>
-                <p><strong>Composable</strong>: Solve specific business problems by combining existing products</p>
+                <p><strong>Solution</strong>: Solve specific business problems by combining existing products</p>
               </div>
             </div>
           </div>

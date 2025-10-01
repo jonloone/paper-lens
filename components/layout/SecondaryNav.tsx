@@ -3,8 +3,8 @@
 import React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import {
   LayoutDashboard,
@@ -41,6 +41,16 @@ import {
   Clock,
   PlusCircle,
   Cog,
+  HeartHandshake,
+  Plug,
+  ListChecks,
+  ShoppingBag,
+  BookOpen,
+  UserCheck,
+  Lock,
+  LineChart,
+  UserCog,
+  BarChart,
 } from "lucide-react"
 
 interface NavItem {
@@ -62,65 +72,83 @@ interface SecondaryNavConfig {
 
 const secondaryNavConfig: SecondaryNavConfig = {
   '/': {
-    title: 'Overview',
-    description: 'Mission control center',
+    title: 'Monitor',
+    description: 'Engineering-first operational intelligence',
     items: [
-      { id: 'system-health', label: 'System Health', href: '/', icon: LayoutDashboard },
-      { id: 'work-queue', label: 'My Work Queue', href: '/work-queue', icon: Clock },
-      { id: 'team-activity', label: 'Team Activity', href: '/team-activity', icon: Users },
-      { id: 'quick-launch', label: 'Quick Launch', href: '/quick-launch', icon: Zap },
+      { id: 'tool-health', label: 'Tool Health', href: '/', icon: Activity },
+      { id: 'data-quality', label: 'Data Quality Dashboard', href: '/quality-dashboard', icon: HeartHandshake },
+      { id: 'active-incidents', label: 'Active Incidents', href: '/incidents', icon: AlertTriangle },
+      { id: 'domain-health', label: 'Domain Health', href: '/domain-health', icon: Target },
     ]
   },
   '/build': {
     title: 'Build',
-    description: 'Pipeline creation & patterns',
+    description: 'Domain-driven development workflows',
     items: [
-      { id: 'create', label: 'Pipeline Creation', href: '/build', icon: PlusCircle },
-      { id: 'patterns', label: 'Pattern Library', href: '/build/patterns', icon: Brain },
-      { id: 'data-products', label: 'Data Product Definition', href: '/build/data-products', icon: Package },
-      { id: 'templates', label: 'Template Management', href: '/build/templates', icon: Layers },
+      { id: 'domains', label: 'Domains', href: '/build', icon: Layers },
+      { id: 'projects', label: 'Projects', href: '/build/projects', icon: GitBranch },
+      { id: 'requests', label: 'Requests', href: '/build/requests', icon: Share2 },
+      { id: 'schema', label: 'Schema', href: '/build/schema', icon: Database },
     ]
   },
-  '/products': {
-    title: 'Products',
-    description: 'Data marketplace & insights',
+  '/catalog': {
+    title: 'Catalog',
+    description: 'Data discovery & consumption',
     items: [
-      { id: 'marketplace', label: 'Data Marketplace', href: '/products', icon: Globe },
-      { id: 'quality', label: 'Quality Analytics', href: '/products/quality', icon: BarChart3 },
-      { id: 'usage', label: 'Usage Insights', href: '/products/usage', icon: TrendingUp },
+      { id: 'data-product-marketplace', label: 'Product Marketplace', href: '/catalog', icon: ShoppingBag },
+      { id: 'query-workspace', label: 'Query Workspace', href: '/catalog/query', icon: Database },
+      { id: 'schema-explorer', label: 'Schema Explorer', href: '/catalog/schemas', icon: Search },
+      { id: 'api-documentation', label: 'API Documentation', href: '/catalog/api-docs', icon: FileText },
     ]
   },
-  '/investigate': {
-    title: 'Investigate',
-    description: 'Issues & performance analysis',
+  '/manage': {
+    title: 'Manage',
+    description: 'Platform administration',
     items: [
-      { id: 'overview', label: 'Active Issues', href: '/investigate', icon: AlertTriangle },
-      { id: 'performance', label: 'Performance Analysis', href: '/investigate/performance', icon: BarChart3 },
-      { id: 'correlation', label: 'System Correlation', href: '/investigate/correlation', icon: Target },
-    ]
-  },
-  '/platform': {
-    title: 'Platform',
-    description: 'Configuration & management',
-    items: [
-      { id: 'connections', label: 'Data Source Connections', href: '/platform/connections', icon: Database },
-      { id: 'users', label: 'User Management', href: '/platform/users', icon: Users },
-      { id: 'settings', label: 'System Settings', href: '/platform/settings', icon: Settings },
+      { id: 'governance-overview', label: 'Governance Overview', href: '/manage', icon: Shield },
+      { id: 'source-connections', label: 'Source Connections', href: '/sources', icon: Cable },
+      { id: 'connection-setup', label: 'Connection Setup', href: '/connections', icon: Plug },
+      { id: 'security-access', label: 'Security & Access', href: '/manage/security', icon: Lock },
+      { id: 'user-administration', label: 'User Administration', href: '/manage/users', icon: UserCog },
     ]
   }
 }
 
 export function SecondaryNav() {
   const pathname = usePathname()
+  const { theme } = useTheme()
 
   // Get the primary section from the pathname
   let primarySection = '/'
   const pathSegments = pathname.split('/')
 
-  // Check if this is an Overview section page
-  const overviewPages = ['/work-queue', '/team-activity', '/quick-launch']
-  if (pathname === '/' || overviewPages.some(page => pathname.startsWith(page))) {
+  // Check if this is a Monitor section page
+  const monitorPages = [
+    '/',
+    '/quality-dashboard',
+    '/incidents',
+    '/domain-health'
+  ]
+
+  // Check if this is a Catalog section page (includes catalog and playground pages)
+  const catalogPages = [
+    '/catalog',
+    '/playground'
+  ]
+
+  // Check if this is a Manage section page (includes sources and connections)
+  const managePages = [
+    '/manage',
+    '/sources',
+    '/connections'
+  ]
+
+  if (monitorPages.includes(pathname) || monitorPages.some(page => page !== '/' && pathname.startsWith(page))) {
     primarySection = '/'
+  } else if (catalogPages.some(page => pathname.startsWith(page))) {
+    primarySection = '/catalog'
+  } else if (managePages.some(page => pathname.startsWith(page))) {
+    primarySection = '/manage'
   } else if (pathSegments[1]) {
     primarySection = '/' + pathSegments[1]
   }
@@ -135,53 +163,60 @@ export function SecondaryNav() {
       return pathname === '/'
     }
     // For section landing pages, exact match
-    if (href === '/build' || href === '/products' || href === '/investigate' || href === '/platform') {
+    if (href === '/build' || href === '/catalog' || href === '/manage') {
       return pathname === href
     }
-    // For sub-pages, check if pathname starts with href
+    // For sub-pages, exact match or starts with
     return pathname === href || pathname.startsWith(href + '/')
   }
   
+  const isWin98 = theme === 'win98';
+
   return (
-    <div className="w-64 bg-gray-50 dark:bg-card border-r border-border flex flex-col h-full transition-colors duration-200">
+    <div className={cn(
+      "w-64 bg-secondary/30 border-r border-border flex flex-col min-h-full transition-colors duration-200",
+      isWin98 && "win98-secondary-nav win98-window"
+    )}>
       {/* Header */}
-      <div className="p-4 border-b border-border">
-        <h2 className="text-lg font-semibold text-foreground font-reckless">{config.title}</h2>
-        <p className="text-sm text-muted-foreground">{config.description}</p>
+      <div className={cn(
+        "p-4 border-b border-border bg-secondary/50 backdrop-blur-sm z-10",
+        isWin98 && "win98-titlebar p-2 border-b-2"
+      )}>
+        <h2 className={cn(
+          "text-xl font-semibold text-foreground font-reckless",
+          isWin98 && "text-white text-sm font-bold"
+        )}>{config.title}</h2>
       </div>
-      
-      {/* Navigation Items */}
-      <ScrollArea className="flex-1">
-        <div className="p-2">
-          {config.items.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.href)
-            
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={cn(
-                  "flex items-center justify-between gap-3 rounded-md px-3 py-2 text-sm transition-colors mb-1",
-                  "text-muted-foreground",
-                  "",
-                  active && "bg-primary/10 text-primary font-medium border border-primary/20"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span>{item.label}</span>
-                </div>
-                {item.badge && (
-                  <Badge variant={item.badgeVariant || "default"} className="h-5 px-1.5">
-                    {item.badge}
-                  </Badge>
-                )}
-              </Link>
-            )
-          })}
-        </div>
-      </ScrollArea>
+
+      {/* Navigation Items - No ScrollArea needed */}
+      <div className="flex-1 p-2">
+        {config.items.map((item) => {
+          const Icon = item.icon
+          const active = isActive(item.href)
+
+          return (
+            <Link
+              key={item.id}
+              href={item.href}
+              className={cn(
+                "flex items-center justify-between gap-2 rounded-md px-3 py-2 text-[15px] transition-all",
+                "text-muted-foreground hover:text-foreground hover:bg-accent",
+                active ? "bg-primary/10 text-primary font-medium border border-primary/20" : ""
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="leading-5">{item.label}</span>
+              </div>
+              {item.badge && (
+                <Badge variant={item.badgeVariant || "default"} className="h-5 px-2 text-xs">
+                  {item.badge}
+                </Badge>
+              )}
+            </Link>
+          )
+        })}
+      </div>
     </div>
   )
 }
