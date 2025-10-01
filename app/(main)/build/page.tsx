@@ -17,6 +17,7 @@ import {
   Database,
   TrendingUp
 } from 'lucide-react';
+import { detectIntent } from '@/lib/api/kag-client';
 
 interface QuickAction {
   id: string;
@@ -77,14 +78,31 @@ export default function BuildPage() {
 
     setIsAnalyzing(true);
 
-    // Simulate AI classification (will integrate with backend later)
-    setTimeout(() => {
+    try {
+      // Call backend AI for type detection
+      const result = await detectIntent({
+        description: input,
+        context: {}
+      });
+
+      // Navigate with detected type and metadata
       const params = new URLSearchParams({
         input: input,
-        detected: 'auto'
+        type: result.detected_type,
+        confidence: result.confidence.toString(),
+        reasoning: JSON.stringify(result.reasoning)
       });
       router.push(`/build/new/define?${params.toString()}`);
-    }, 1500);
+    } catch (error) {
+      console.error('Failed to detect intent:', error);
+      // Fallback to manual selection
+      const params = new URLSearchParams({
+        input: input
+      });
+      router.push(`/build/new/define?${params.toString()}`);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleQuickAction = (type: string) => {

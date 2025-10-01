@@ -74,32 +74,35 @@ function DefinePageContent() {
   // Type detection
   const urlInput = searchParams.get('input');
   const urlType = searchParams.get('type');
+  const urlConfidence = searchParams.get('confidence');
+  const urlReasoning = searchParams.get('reasoning');
+
   const [detectedType, setDetectedType] = useState<string | null>(urlType || null);
+  const [confidence, setConfidence] = useState<number | null>(
+    urlConfidence ? parseFloat(urlConfidence) : null
+  );
+  const [reasoning, setReasoning] = useState<string[]>([]);
   const [showTypeSelector, setShowTypeSelector] = useState(!urlType);
-  const [detecting, setDetecting] = useState(!!urlInput && !urlType);
+  const [detecting, setDetecting] = useState(false);
 
   useEffect(() => {
-    if (urlInput && !urlType) {
-      // Simulate AI classification
-      setDetecting(true);
-      setTimeout(() => {
-        // Simple keyword detection (will replace with backend AI)
-        const input = urlInput.toLowerCase();
-        let detected = 'solution';
+    // If we have type from API, use it directly
+    if (urlInput && urlType) {
+      setDetectedType(urlType);
+      setDescription(urlInput);
+      setShowTypeSelector(false);
 
-        if (input.includes('connect') || input.includes('stream') || input.includes('database')) {
-          detected = 'source';
-        } else if (input.includes('customer') || input.includes('product') || input.includes('entity')) {
-          detected = 'entity';
+      // Parse reasoning if available
+      if (urlReasoning) {
+        try {
+          const parsedReasoning = JSON.parse(urlReasoning);
+          setReasoning(Array.isArray(parsedReasoning) ? parsedReasoning : []);
+        } catch (e) {
+          console.error('Failed to parse reasoning:', e);
         }
-
-        setDetectedType(detected);
-        setDescription(urlInput);
-        setDetecting(false);
-        setShowTypeSelector(false);
-      }, 1500);
+      }
     }
-  }, [urlInput, urlType]);
+  }, [urlInput, urlType, urlReasoning]);
 
   const handleTypeSelect = (typeId: string) => {
     setDetectedType(typeId);
@@ -190,7 +193,7 @@ function DefinePageContent() {
 
           {!detecting && detectedType && !showTypeSelector && (
             <Card className="p-6 border-primary/20">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
                   {Icon && (
                     <div className={`w-12 h-12 rounded-xl ${selectedType.bgColor} flex items-center justify-center`}>
@@ -201,6 +204,11 @@ function DefinePageContent() {
                     <div className="flex items-center gap-2">
                       <div className="font-semibold">{selectedType?.name}</div>
                       <Check className="w-4 h-4 text-green-600" />
+                      {confidence && (
+                        <Badge variant="outline" className="text-xs">
+                          {Math.round(confidence * 100)}% confidence
+                        </Badge>
+                      )}
                     </div>
                     <div className="text-sm text-muted-foreground">{selectedType?.when}</div>
                   </div>
@@ -213,6 +221,19 @@ function DefinePageContent() {
                   Change Type
                 </Button>
               </div>
+              {reasoning.length > 0 && (
+                <div className="pt-4 border-t">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">AI Reasoning:</div>
+                  <div className="space-y-1">
+                    {reasoning.map((reason, idx) => (
+                      <div key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
+                        <Sparkles className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                        <span>{reason}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
           )}
 
