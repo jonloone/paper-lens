@@ -21,7 +21,7 @@ import {
 
 const steps = [
   { id: 'define', name: 'Define', description: 'What are you building?' },
-  { id: 'source', name: 'Source', description: 'Where's your data?' },
+  { id: 'source', name: 'Source', description: 'Where is your data?' },
   { id: 'transform', name: 'Transform', description: 'Shape your data' },
   { id: 'deliver', name: 'Deliver', description: 'How to access' }
 ];
