@@ -1,206 +1,265 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
+  Rocket,
   Zap,
   Box,
   Sparkles,
+  FileText,
+  Lightbulb,
   ArrowRight,
-  Clock,
   Database,
-  Brain,
-  Workflow
+  TrendingUp
 } from 'lucide-react';
 
-interface ProductType {
+interface QuickAction {
   id: string;
   icon: any;
-  iconColor: string;
-  bgColor: string;
-  borderColor: string;
   title: string;
   description: string;
-  time: string;
-  features: string[];
-  route: string;
-  badge?: string;
+  type: 'source' | 'entity' | 'solution' | 'template';
 }
 
-export default function BuildHubPage() {
+export default function BuildPage() {
   const router = useRouter();
+  const [input, setInput] = useState('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const productTypes: ProductType[] = [
+  const quickActions: QuickAction[] = [
     {
-      id: 'foundation',
+      id: 'source',
       icon: Zap,
-      iconColor: 'text-amber-600',
-      bgColor: 'bg-amber-50',
-      borderColor: 'border-amber-200 hover:border-amber-400',
-      title: 'Connect Data Source',
-      description: 'Connect a new data source and make it discoverable',
-      time: '30 min',
-      features: [
-        'Auto-discover schema',
-        'Profile data quality',
-        'Publish to catalog',
-        'Set refresh schedule'
-      ],
-      route: '/build/foundation/connect',
-      badge: 'Foundation Product'
+      title: 'Connect New Source',
+      description: 'Stream data from operational systems',
+      type: 'source'
     },
     {
-      id: 'domain',
+      id: 'entity',
       icon: Box,
-      iconColor: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      borderColor: 'border-blue-200 hover:border-blue-400',
       title: 'Model Business Entity',
-      description: 'Create a domain entity with business context',
-      time: '1 hour',
-      features: [
-        'Define business terms',
-        'Map source tables',
-        'Apply governance',
-        'Generate products'
-      ],
-      route: '/build/domain/context',
-      badge: 'Domain Product'
+      description: 'Define customers, products, orders',
+      type: 'entity'
     },
     {
-      id: 'composable',
+      id: 'solution',
       icon: Sparkles,
-      iconColor: 'text-green-600',
-      bgColor: 'bg-green-50',
-      borderColor: 'border-green-200 hover:border-green-400',
-      title: 'Solve Business Problem',
-      description: 'Describe a problem and compose from existing products',
-      time: '45 min',
-      features: [
-        'Natural language input',
-        'Find similar solutions',
-        'Compose products',
-        'Deploy combined output'
-      ],
-      route: '/build/composable/problem',
-      badge: 'Solution Product'
+      title: 'Solve Specific Problem',
+      description: 'Build analytics or predictions',
+      type: 'solution'
+    },
+    {
+      id: 'template',
+      icon: FileText,
+      title: 'Use Template',
+      description: 'Start from proven patterns',
+      type: 'template'
     }
   ];
 
+  const examples = [
+    'Connect to our MySQL e-commerce database',
+    'Create a unified customer profile from CRM and orders',
+    'Build a customer churn prediction model',
+    'Track real-time inventory levels across warehouses'
+  ];
+
+  const handleStartBuilding = async () => {
+    if (!input.trim()) {
+      router.push('/build/new/define');
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    // Simulate AI classification (will integrate with backend later)
+    setTimeout(() => {
+      const params = new URLSearchParams({
+        input: input,
+        detected: 'auto'
+      });
+      router.push(`/build/new/define?${params.toString()}`);
+    }, 1500);
+  };
+
+  const handleQuickAction = (type: string) => {
+    const params = new URLSearchParams({
+      type: type
+    });
+    router.push(`/build/new/define?${params.toString()}`);
+  };
+
   return (
     <div className="flex-1 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto space-y-12">
+      <div className="max-w-5xl mx-auto space-y-12">
 
-        {/* Header */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Workflow className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight">Build</h1>
-              <p className="text-muted-foreground text-lg mt-1">
-                Choose what you'd like to create
-              </p>
-            </div>
+        {/* Hero Section */}
+        <div className="text-center space-y-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-4">
+            <Rocket className="w-10 h-10 text-primary" />
+          </div>
+
+          <div className="space-y-3">
+            <h1 className="text-5xl font-bold tracking-tight">
+              Build a Data Product
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              One intelligent workflow that adapts to what you're building
+            </p>
           </div>
         </div>
 
-        {/* Product Type Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {productTypes.map((product) => {
-            const Icon = product.icon;
-            return (
-              <Card
-                key={product.id}
-                className={`group relative overflow-hidden transition-all duration-300 hover:shadow-xl cursor-pointer border-2 ${product.borderColor}`}
-                onClick={() => router.push(product.route)}
-              >
-                <CardContent className="p-8 space-y-6">
+        {/* Primary Input */}
+        <Card className="p-8 space-y-6">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-primary" />
+              <h3 className="text-lg font-semibold">Describe what you want to build</h3>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Tell us in plain language, or skip ahead with quick actions below
+            </p>
+          </div>
 
-                  {/* Icon and Badge */}
-                  <div className="flex items-start justify-between">
-                    <div className={`w-16 h-16 rounded-2xl ${product.bgColor} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                      <Icon className={`w-8 h-8 ${product.iconColor}`} />
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Example: I need to connect our Salesforce data and combine it with transaction history to analyze customer lifetime value..."
+            className="min-h-[120px] text-base resize-none"
+            disabled={isAnalyzing}
+          />
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Our AI will understand your intent and guide you through the right steps
+            </div>
+            <Button
+              size="lg"
+              onClick={handleStartBuilding}
+              disabled={isAnalyzing}
+              className="min-w-[160px]"
+            >
+              {isAnalyzing ? (
+                <>Analyzing...</>
+              ) : (
+                <>
+                  Start Building
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </>
+              )}
+            </Button>
+          </div>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Or choose a quick start</h3>
+            <Badge variant="outline" className="text-xs">
+              Same process, different starting points
+            </Badge>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Card
+                  key={action.id}
+                  className="p-6 cursor-pointer transition-all hover:shadow-lg hover:border-primary/50 group"
+                  onClick={() => handleQuickAction(action.type)}
+                >
+                  <div className="space-y-4">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Icon className="w-6 h-6 text-primary" />
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {product.badge}
-                    </Badge>
+                    <div>
+                      <h4 className="font-semibold text-sm mb-1 group-hover:text-primary transition-colors">
+                        {action.title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {action.description}
+                      </p>
+                    </div>
                   </div>
-
-                  {/* Title and Description */}
-                  <div className="space-y-2">
-                    <h3 className="text-2xl font-bold group-hover:text-primary transition-colors">
-                      {product.title}
-                    </h3>
-                    <p className="text-muted-foreground">
-                      {product.description}
-                    </p>
-                  </div>
-
-                  {/* Time Estimate */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    <span>Typical time: {product.time}</span>
-                  </div>
-
-                  {/* Features */}
-                  <div className="space-y-2">
-                    {product.features.map((feature, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm">
-                        <div className={`w-1.5 h-1.5 rounded-full ${product.bgColor} ${product.iconColor}`} />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* CTA Button */}
-                  <Button
-                    className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all"
-                    variant="outline"
-                  >
-                    Get Started
-                    <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-
-                </CardContent>
-              </Card>
-            );
-          })}
+                </Card>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Help Section */}
-        <Card className="p-6 bg-muted/30 border-muted">
-          <div className="flex items-start gap-4">
-            <Database className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
-            <div className="space-y-2">
-              <h3 className="font-semibold">Not sure which to choose?</h3>
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p><strong>Foundation</strong>: Start here when connecting a new database, API, or file source</p>
-                <p><strong>Domain</strong>: Create canonical business entities like Customer, Order, or Product</p>
-                <p><strong>Solution</strong>: Solve specific business problems by combining existing products</p>
-              </div>
+        {/* Examples */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-medium text-muted-foreground">Example requests:</h3>
+          <div className="grid gap-2">
+            {examples.map((example, idx) => (
+              <button
+                key={idx}
+                onClick={() => setInput(example)}
+                className="text-left p-3 rounded-lg border bg-card hover:bg-accent transition-colors text-sm"
+              >
+                <span className="text-muted-foreground">"{example}"</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Stats Footer */}
+        <Card className="p-6 bg-muted/30">
+          <div className="grid grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">127</div>
+              <div className="text-xs text-muted-foreground mt-1">Active Products</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">4</div>
+              <div className="text-xs text-muted-foreground mt-1">Unified Steps</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">~45m</div>
+              <div className="text-xs text-muted-foreground mt-1">Average Build Time</div>
             </div>
           </div>
         </Card>
 
-        {/* Stats Footer */}
-        <div className="grid grid-cols-3 gap-6 pt-6 border-t">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-primary">127</div>
-            <div className="text-sm text-muted-foreground mt-1">Active Products</div>
+        {/* Process Preview */}
+        <Card className="p-6 border-primary/20">
+          <div className="flex items-start gap-4">
+            <Database className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+            <div className="space-y-2">
+              <h3 className="font-semibold">How it works</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Our unified build process adapts to what you're creating. Whether you're connecting a
+                new data source, modeling a business entity, or solving a complex problem, you'll follow
+                the same four steps: <strong>Define</strong> what you're building, <strong>Source</strong> your data,
+                <strong>Transform</strong> it, and choose how to <strong>Deliver</strong> it. The system intelligently
+                adjusts each step based on your needs.
+              </p>
+              <div className="flex items-center gap-2 pt-2">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-xs">
+                  <span className="font-medium">Define</span>
+                </div>
+                <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-xs">
+                  <span className="font-medium">Source</span>
+                </div>
+                <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-xs">
+                  <span className="font-medium">Transform</span>
+                </div>
+                <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-xs">
+                  <span className="font-medium">Deliver</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-primary">1,249</div>
-            <div className="text-sm text-muted-foreground mt-1">Queries This Week</div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold text-primary">98.7%</div>
-            <div className="text-sm text-muted-foreground mt-1">Pipeline Success</div>
-          </div>
-        </div>
+        </Card>
 
       </div>
     </div>
