@@ -96,16 +96,10 @@ export function Navigation() {
     },
     {
       href: '/build',
-      label: 'Build & Deploy',
+      label: 'Build',
       icon: Hammer,
-      hasDropdown: true,
-      isEmphasized: false,
-      dropdownItems: [
-        { href: '/build', label: 'Pipeline Studio', icon: Wrench },
-        { href: '/query', label: 'Query Library', icon: Database },
-        { href: '/build?tab=templates', label: 'Templates', icon: Layers },
-        { href: '/build?tab=deploy', label: 'Deployment', icon: Play }
-      ]
+      hasDropdown: false,
+      isEmphasized: false
     },
     {
       href: '/govern',
