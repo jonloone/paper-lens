@@ -15,6 +15,7 @@ from contextlib import asynccontextmanager
 from .api.routes import router
 from .api.overview_routes import router as overview_router
 from .api.kag_routes import router as kag_router
+from .api.sources_routes import router as sources_router
 from .models import schemas  # Import to register models
 
 # Configure logging
@@ -42,7 +43,7 @@ async def lifespan(app: FastAPI):
     logger.info("  ✓ Great Expectations for quality validation")
     logger.info("Smart infrastructure mocking enabled:")
     logger.info("  ✓ Airflow DAG generation")
-    logger.info("  ✓ dbt model templates")
+    logger.info("  ✓ SQLMesh transformation models")
     logger.info("  ✓ Trino API schemas")
     logger.info("  ✓ Iceberg table simulation")
 
@@ -66,7 +67,7 @@ app = FastAPI(
 
     **Smart Infrastructure Mocking:**
     - Realistic Airflow DAG generation
-    - Production-ready dbt model templates
+    - Production-ready SQLMesh transformation models
     - Complete API schema generation
     - Iceberg table simulation
 
@@ -102,6 +103,7 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(overview_router)
 app.include_router(kag_router)
+app.include_router(sources_router)
 
 # Global exception handler
 @app.exception_handler(Exception)
@@ -139,7 +141,7 @@ async def root():
             ],
             "smart_mocking": [
                 "Airflow DAG generation",
-                "dbt model templates",
+                "SQLMesh transformation models",
                 "API schema creation",
                 "Deployment simulation"
             ]
