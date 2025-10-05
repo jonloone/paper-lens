@@ -16,6 +16,7 @@ from .api.routes import router
 from .api.overview_routes import router as overview_router
 from .api.kag_routes import router as kag_router
 from .api.sources_routes import router as sources_router
+from .api.build_routes import router as build_router
 from .models import schemas  # Import to register models
 
 # Configure logging
@@ -104,6 +105,7 @@ app.include_router(router)
 app.include_router(overview_router)
 app.include_router(kag_router)
 app.include_router(sources_router)
+app.include_router(build_router)
 
 # Global exception handler
 @app.exception_handler(Exception)
