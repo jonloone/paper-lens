@@ -17,6 +17,8 @@ from .api.overview_routes import router as overview_router
 from .api.kag_routes import router as kag_router
 from .api.sources_routes import router as sources_router
 from .api.build_routes import router as build_router
+from .api.governance_routes import router as governance_router
+from .api.tisql_routes import router as tisql_router
 from .models import schemas  # Import to register models
 
 # Configure logging
@@ -42,6 +44,7 @@ async def lifespan(app: FastAPI):
     logger.info("  ✓ ydata-profiling for data analysis")
     logger.info("  ✓ CrewAI for intelligent recommendations")
     logger.info("  ✓ Great Expectations for quality validation")
+    logger.info("  ✓ tiSQL AI-powered SQL assistance")
     logger.info("Smart infrastructure mocking enabled:")
     logger.info("  ✓ Airflow DAG generation")
     logger.info("  ✓ SQLMesh transformation models")
@@ -106,6 +109,8 @@ app.include_router(overview_router)
 app.include_router(kag_router)
 app.include_router(sources_router)
 app.include_router(build_router)
+app.include_router(governance_router)
+app.include_router(tisql_router)
 
 # Global exception handler
 @app.exception_handler(Exception)
