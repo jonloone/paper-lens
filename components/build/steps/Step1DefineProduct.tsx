@@ -124,7 +124,7 @@ export function Step1DefineProduct({ initialData, onComplete }: Step1DefineProdu
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto p-8">
+    <div className="space-y-6 max-w-7xl mx-auto p-8">
       {/* Header */}
       <div className="space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Define Data Product</h2>

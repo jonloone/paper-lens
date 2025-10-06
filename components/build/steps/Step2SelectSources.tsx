@@ -7,17 +7,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowRight, ArrowLeft, Search, Database, Table as TableIcon, Eye } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowRight, ArrowLeft, Search, Database, Table as TableIcon, Key, ChevronDown, ChevronRight, X } from 'lucide-react';
 import { fetchSources } from '@/lib/api/build-api';
+import { cn } from '@/lib/utils';
+import { QualityBreakdown, SampleDataPreview as SampleDataType } from '@/lib/types/source-quality';
+import { QualityBreakdownCard } from '@/components/build/QualityBreakdownCard';
+import { SampleDataPreview } from '@/components/build/SampleDataPreview';
 
-// Source metadata from DataHub
+// Source metadata from DataHub (Phase 1: Enhanced with quality and samples)
 export interface Source {
   id: string;                // DataHub URN
   name: string;
   schema: string;
   database: string;
-  qualityScore: number;
+  qualityScore: number;      // Legacy - kept for backwards compat
+  quality?: QualityBreakdown; // Phase 1: Detailed quality metrics
+  sampleData?: SampleDataType; // Phase 1: Sample data preview
   rowCount: number;
   columns: ColumnMetadata[];
   lastUpdated: string;
@@ -28,6 +34,7 @@ export interface ColumnMetadata {
   name: string;
   type: string;
   description?: string;
+  isPrimaryKey?: boolean;
 }
 
 export interface Step2Data {
@@ -47,7 +54,8 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
   const [availableSources, setAvailableSources] = useState<Source[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [previewSource, setPreviewSource] = useState<Source | null>(null);
+  const [focusedSource, setFocusedSource] = useState<Source | null>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   // Fetch available sources from DataHub on mount and when search changes
   useEffect(() => {
@@ -57,6 +65,15 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Auto-focus first selected source when selections change
+  useEffect(() => {
+    if (selectedSources.length > 0 && !focusedSource) {
+      setFocusedSource(selectedSources[0]);
+    } else if (selectedSources.length === 0) {
+      setFocusedSource(null);
+    }
+  }, [selectedSources.length]);
+
   async function fetchAvailableSources() {
     setIsLoading(true);
     try {
@@ -65,7 +82,11 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
       setAvailableSources(data.sources);
     } catch (error) {
       console.error('Error fetching sources:', error);
-      // Fallback to mock data on error
+      // Fallback to Phase 1 enhanced mock data on error
+      const { mockSourcesPhase1 } = await import('@/lib/data/mock-sources-phase1');
+      setAvailableSources(mockSourcesPhase1);
+      setIsLoading(false);
+      return;
       const mockSources: Source[] = [
         {
           id: 'urn:li:dataset:(urn:li:dataPlatform:iceberg,analytics.customer_360,PROD)',
@@ -77,11 +98,16 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
           lastUpdated: '2 hours ago',
           description: 'Unified customer profile with demographics and behavior',
           columns: [
-            { name: 'customer_id', type: 'string', description: 'Unique customer identifier' },
+            { name: 'customer_id', type: 'string', description: 'Unique customer identifier', isPrimaryKey: true },
             { name: 'email', type: 'string', description: 'Customer email address' },
             { name: 'signup_date', type: 'date', description: 'Account creation date' },
             { name: 'total_revenue', type: 'decimal', description: 'Lifetime revenue' },
-            { name: 'last_activity', type: 'timestamp', description: 'Last product interaction' }
+            { name: 'last_activity', type: 'timestamp', description: 'Last product interaction' },
+            { name: 'country', type: 'string', description: 'Customer country' },
+            { name: 'state', type: 'string', description: 'Customer state/region' },
+            { name: 'city', type: 'string', description: 'Customer city' },
+            { name: 'zipcode', type: 'string', description: 'Postal code' },
+            { name: 'account_status', type: 'string', description: 'Active, suspended, or closed' }
           ]
         },
         {
@@ -94,11 +120,14 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
           lastUpdated: 'Hourly',
           description: 'Customer support tickets and resolutions',
           columns: [
-            { name: 'ticket_id', type: 'string', description: 'Unique ticket ID' },
+            { name: 'ticket_id', type: 'string', description: 'Unique ticket ID', isPrimaryKey: true },
             { name: 'customer_id', type: 'string', description: 'Customer who created ticket' },
             { name: 'created_at', type: 'timestamp', description: 'Ticket creation time' },
             { name: 'resolved_at', type: 'timestamp', description: 'Ticket resolution time' },
-            { name: 'resolution_time_hours', type: 'decimal', description: 'Time to resolve' }
+            { name: 'resolution_time_hours', type: 'decimal', description: 'Time to resolve' },
+            { name: 'category', type: 'string', description: 'Issue category' },
+            { name: 'priority', type: 'string', description: 'Ticket priority level' },
+            { name: 'status', type: 'string', description: 'Current ticket status' }
           ]
         },
         {
@@ -111,16 +140,18 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
           lastUpdated: 'Real-time',
           description: 'All customer orders and transactions',
           columns: [
-            { name: 'order_id', type: 'string', description: 'Unique order ID' },
+            { name: 'order_id', type: 'string', description: 'Unique order ID', isPrimaryKey: true },
             { name: 'customer_id', type: 'string', description: 'Customer who placed order' },
             { name: 'order_date', type: 'timestamp', description: 'Order placement time' },
             { name: 'total', type: 'decimal', description: 'Order total amount' },
-            { name: 'status', type: 'string', description: 'Order status' }
+            { name: 'status', type: 'string', description: 'Order status' },
+            { name: 'items_count', type: 'integer', description: 'Number of items' },
+            { name: 'shipping_method', type: 'string', description: 'Delivery method' },
+            { name: 'payment_method', type: 'string', description: 'Payment type' }
           ]
-        }
+        },
       ];
       setAvailableSources(mockSources);
-      }
     } finally {
       setIsLoading(false);
     }
@@ -130,8 +161,15 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
     const isSelected = selectedSources.some(s => s.id === source.id);
     if (isSelected) {
       setSelectedSources(selectedSources.filter(s => s.id !== source.id));
+      // If we're removing the focused source, focus on another
+      if (focusedSource?.id === source.id) {
+        const remaining = selectedSources.filter(s => s.id !== source.id);
+        setFocusedSource(remaining.length > 0 ? remaining[0] : null);
+      }
     } else {
       setSelectedSources([...selectedSources, source]);
+      // Auto-focus newly added source
+      setFocusedSource(source);
     }
   }
 
@@ -139,10 +177,27 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
     return selectedSources.some(s => s.id === sourceId);
   }
 
-  const filteredSources = availableSources.filter(source =>
-    source.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    source.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  function toggleCardExpansion(sourceId: string) {
+    const newExpanded = new Set(expandedCards);
+    if (newExpanded.has(sourceId)) {
+      newExpanded.delete(sourceId);
+    } else {
+      newExpanded.add(sourceId);
+    }
+    setExpandedCards(newExpanded);
+  }
+
+  const filteredSources = availableSources.filter(source => {
+    const query = searchQuery.toLowerCase();
+    return (
+      source.name.toLowerCase().includes(query) ||
+      source.description?.toLowerCase().includes(query) ||
+      source.columns.some(col =>
+        col.name.toLowerCase().includes(query) ||
+        col.description?.toLowerCase().includes(query)
+      )
+    );
+  });
 
   const isValid = selectedSources.length > 0;
 
@@ -154,56 +209,46 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
 
   // Calculate estimated metrics
   const totalRows = selectedSources.reduce((sum, s) => sum + s.rowCount, 0);
-  const estimatedOutputSize = Math.round(totalRows * 0.1 / 1024); // Assuming 10:1 aggregation, rough estimate
+
+  // Detect potential join keys
+  function findPotentialJoins(source1: Source, source2: Source): string[] {
+    const commonColumns: string[] = [];
+    source1.columns.forEach(col1 => {
+      source2.columns.forEach(col2 => {
+        if (col1.name === col2.name && col1.type === col2.type) {
+          commonColumns.push(col1.name);
+        }
+      });
+    });
+    return commonColumns;
+  }
+
+  // The source to display in detail panel (only on click)
+  const detailSource = focusedSource;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto p-8">
+    <div className="max-w-7xl mx-auto py-8 flex flex-col h-full">
       {/* Header */}
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Select Source Data</h2>
-        <p className="text-muted-foreground text-lg">
-          Choose the source data for your transformation.
-        </p>
-      </div>
-
-      {/* Selection Status */}
-      {selectedSources.length > 0 ? (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-primary">
-                  {selectedSources.length} table{selectedSources.length !== 1 ? 's' : ''} selected
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  We'll automatically figure out what columns you need from these
-                </p>
-              </div>
-              <div className="text-right text-sm text-muted-foreground">
-                <p>📊 Estimated Input Size:</p>
-                <p className="font-medium">~{(totalRows / 1000000).toFixed(1)}M rows across {selectedSources.length} source{selectedSources.length !== 1 ? 's' : ''}</p>
-                <p className="text-xs mt-1">💾 Output: ~{estimatedOutputSize}MB compressed</p>
-                <p className="text-xs">(assuming 10:1 aggregation)</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card className="bg-muted/30 border-border">
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
-              No tables selected yet. Browse and add tables below.
+      <div className="space-y-4 pb-6 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Select Source Data</h2>
+            <p className="text-muted-foreground text-lg">
+              Browse and select tables for your data product
             </p>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+          {selectedSources.length > 0 && (
+            <Badge variant="secondary" className="text-lg px-4 py-2">
+              {selectedSources.length} table{selectedSources.length !== 1 ? 's' : ''} selected
+            </Badge>
+          )}
+        </div>
 
-      {/* Search */}
-      <div className="flex gap-4 items-center">
-        <div className="flex-1 relative">
+        {/* Search */}
+        <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search tables..."
+            placeholder="Search tables, columns, descriptions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -211,258 +256,350 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
         </div>
       </div>
 
-      {/* Available Sources Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        {/* Available Sources Column */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="w-5 h-5" />
-              Available Sources ({filteredSources.length})
-            </CardTitle>
-            <CardDescription>
-              {searchQuery ? 'Search results' : 'All available tables from DataHub'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading sources...
-              </div>
-            ) : (
-              <ScrollArea className="h-[500px] pr-4">
-                <div className="space-y-3">
-                  {filteredSources.map(source => (
-                    <Card
-                      key={source.id}
-                      className={`cursor-pointer transition-colors ${
-                        isSourceSelected(source.id)
-                          ? 'border-primary bg-primary/5'
-                          : 'hover:bg-muted/50'
-                      }`}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <TableIcon className="w-4 h-4" />
-                              <h3 className="font-semibold">{source.name}</h3>
+      {/* Main Split Panel */}
+      <div className="flex-1 grid grid-cols-12 gap-6 min-h-0 mb-6">
+        {/* Left Panel: Browse & Select */}
+        <div className="col-span-5">
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="w-5 h-5" />
+                Available Sources ({filteredSources.length})
+              </CardTitle>
+              <CardDescription>
+                {searchQuery ? 'Search results' : 'Browse all tables'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 min-h-0">
+              {isLoading ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading sources...
+                </div>
+              ) : (
+                <ScrollArea className="h-full pr-4">
+                  <div className="space-y-2">
+                    {filteredSources.map(source => {
+                      const isSelected = isSourceSelected(source.id);
+                      const isExpanded = expandedCards.has(source.id);
+                      const isFocused = focusedSource?.id === source.id;
+
+                      return (
+                        <Card
+                          key={source.id}
+                          className={cn(
+                            "cursor-pointer transition-all",
+                            isSelected && "border-primary bg-primary/5",
+                            isFocused && "ring-2 ring-primary",
+                            !isSelected && "hover:bg-muted/50"
+                          )}
+                          onClick={() => setFocusedSource(source)}
+                        >
+                          <CardContent className="p-4">
+                            {/* Header */}
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <TableIcon className="w-4 h-4" />
+                                  <h3 className="font-semibold">{source.name}</h3>
+                                  <Badge
+                                    variant={source.qualityScore >= 90 ? "default" : "secondary"}
+                                    className="text-xs"
+                                  >
+                                    {source.qualityScore}%
+                                  </Badge>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {source.schema}.{source.name}
+                                </p>
+                              </div>
+                              <Button
+                                variant={isSelected ? "default" : "outline"}
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleSource(source);
+                                }}
+                              >
+                                {isSelected ? <X className="w-4 h-4 mr-1" /> : null}
+                                {isSelected ? 'Remove' : '+ Add'}
+                              </Button>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {source.schema}.{source.name}
-                            </p>
+
+                            {/* Description */}
                             {source.description && (
-                              <p className="text-sm text-muted-foreground mt-2">
+                              <p className="text-sm text-muted-foreground mb-2">
                                 {source.description}
                               </p>
                             )}
-                            <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                              <span>Quality: {source.qualityScore}%</span>
-                              <span>•</span>
+
+                            {/* Metadata */}
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mb-2">
                               <span>{(source.rowCount / 1000000).toFixed(1)}M rows</span>
+                              <span>•</span>
+                              <span>{source.columns.length} columns</span>
                               <span>•</span>
                               <span>{source.lastUpdated}</span>
                             </div>
-                          </div>
-                          <div className="flex gap-2">
+
+                            {/* Expandable Column Preview */}
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="w-full justify-start px-0 h-auto text-xs"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setPreviewSource(source);
+                                toggleCardExpansion(source.id);
                               }}
                             >
-                              <Eye className="w-4 h-4" />
+                              {isExpanded ? (
+                                <ChevronDown className="w-3 h-3 mr-1" />
+                              ) : (
+                                <ChevronRight className="w-3 h-3 mr-1" />
+                              )}
+                              {isExpanded ? 'Hide columns' : `Show ${source.columns.length} columns`}
                             </Button>
-                            <Button
-                              variant={isSourceSelected(source.id) ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => toggleSource(source)}
-                            >
-                              {isSourceSelected(source.id) ? 'Remove' : '+ Add'}
-                            </Button>
+
+                            {/* Expanded Column List */}
+                            {isExpanded && (
+                              <div className="mt-2 space-y-1 pl-4 border-l-2 border-primary/20">
+                                {source.columns.slice(0, 8).map(col => (
+                                  <div key={col.name} className="flex items-center gap-2 text-xs">
+                                    {col.isPrimaryKey && (
+                                      <Key className="w-3 h-3 text-primary" />
+                                    )}
+                                    <span className="font-mono text-foreground">{col.name}</span>
+                                    <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                      {col.type}
+                                    </Badge>
+                                  </div>
+                                ))}
+                                {source.columns.length > 8 && (
+                                  <p className="text-xs text-muted-foreground pl-5">
+                                    +{source.columns.length - 8} more columns
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+
+                    {filteredSources.length === 0 && (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No sources found matching "{searchQuery}"
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Panel: Detail & Context */}
+        <div className="col-span-7">
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                {detailSource ? (
+                  <>
+                    <TableIcon className="w-5 h-5" />
+                    {detailSource.name}
+                    {isSourceSelected(detailSource.id) && (
+                      <Badge variant="default" className="text-xs">Selected</Badge>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Database className="w-5 h-5" />
+                    Schema Details
+                  </>
+                )}
+              </CardTitle>
+              <CardDescription>
+                {detailSource ? (
+                  <>
+                    {detailSource.database}.{detailSource.schema}.{detailSource.name}
+                  </>
+                ) : (
+                  'Select or hover a table to view details'
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 min-h-0">
+              {detailSource ? (
+                <Tabs defaultValue="overview" className="h-full flex flex-col">
+                  <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="sample">Sample Data</TabsTrigger>
+                    <TabsTrigger value="schema">Full Schema</TabsTrigger>
+                  </TabsList>
+
+                  {/* Overview Tab */}
+                  <TabsContent value="overview" className="flex-1 min-h-0">
+                    <ScrollArea className="h-full pr-4">
+                      <div className="space-y-6 p-4">
+                        {/* Description First */}
+                        {detailSource.description && (
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Description</Label>
+                            <p className="text-sm mt-2">{detailSource.description}</p>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        )}
 
-                  {filteredSources.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No sources found matching "{searchQuery}"
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Selected Sources Column */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="w-5 h-5 text-primary" />
-              Selected Sources ({selectedSources.length})
-            </CardTitle>
-            <CardDescription>
-              Tables you've chosen for this data product
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {selectedSources.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                No sources selected yet
-              </div>
-            ) : (
-              <ScrollArea className="h-[500px] pr-4">
-                <div className="space-y-3">
-                  {selectedSources.map((source, index) => (
-                    <Card key={source.id} className="border-primary/20">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {index + 1}
-                              </Badge>
-                              <h3 className="font-semibold">{source.name}</h3>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {source.schema}.{source.name}
+                        {/* Table Info */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Row Count</Label>
+                            <p className="font-medium mt-1">
+                              {detailSource.rowCount.toLocaleString()} rows
                             </p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                              <span>{(source.rowCount / 1000000).toFixed(1)}M rows</span>
-                              <span>•</span>
-                              <span>{source.lastUpdated}</span>
-                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setPreviewSource(source)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleSource(source)}
-                            >
-                              Remove
-                            </Button>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Columns</Label>
+                            <p className="font-medium mt-1">{detailSource.columns.length} columns</p>
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Schema Preview Dialog */}
-      <Dialog open={!!previewSource} onOpenChange={(open) => !open && setPreviewSource(null)}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Schema Preview: {previewSource?.name}</DialogTitle>
-          </DialogHeader>
-          {previewSource && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <Label>Full Path</Label>
-                  <p className="text-muted-foreground">
-                    {previewSource.database}.{previewSource.schema}.{previewSource.name}
-                  </p>
-                </div>
-                <div>
-                  <Label>Quality Score</Label>
-                  <p className="text-muted-foreground">{previewSource.qualityScore}%</p>
-                </div>
-                <div>
-                  <Label>Row Count</Label>
-                  <p className="text-muted-foreground">
-                    {previewSource.rowCount.toLocaleString()} rows
-                  </p>
-                </div>
-                <div>
-                  <Label>Last Updated</Label>
-                  <p className="text-muted-foreground">{previewSource.lastUpdated}</p>
-                </div>
-              </div>
+                        {/* Quality Breakdown */}
+                        {detailSource.quality && (
+                          <div>
+                            <QualityBreakdownCard quality={detailSource.quality} />
+                          </div>
+                        )}
 
-              {previewSource.description && (
-                <div>
-                  <Label>Description</Label>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {previewSource.description}
-                  </p>
+                    {/* Relationship Detection */}
+                    {selectedSources.length > 1 && isSourceSelected(detailSource.id) && (
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-2 block">
+                          Detected Relationships
+                        </Label>
+                        {selectedSources
+                          .filter(s => s.id !== detailSource.id)
+                          .map(otherSource => {
+                            const joins = findPotentialJoins(detailSource, otherSource);
+                            if (joins.length === 0) return null;
+
+                            return (
+                              <Card key={otherSource.id} className="p-3 mb-2 bg-muted/30">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <TableIcon className="w-4 h-4" />
+                                  <span className="font-medium text-sm">{otherSource.name}</span>
+                                </div>
+                                <div className="space-y-1">
+                                  {joins.map(joinCol => (
+                                    <div key={joinCol} className="flex items-center gap-2 text-xs">
+                                      <Key className="w-3 h-3 text-green-600" />
+                                      <span className="font-mono">{joinCol}</span>
+                                      <Badge variant="outline" className="text-[10px]">
+                                        Join Key
+                                      </Badge>
+                                    </div>
+                                  ))}
+                                </div>
+                              </Card>
+                            );
+                          })}
+                      </div>
+                    )}
+
+                        {/* Quick Action */}
+                        {!isSourceSelected(detailSource.id) && (
+                          <Button
+                            onClick={() => toggleSource(detailSource)}
+                            className="w-full"
+                            size="lg"
+                          >
+                            Add to Selection
+                          </Button>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+
+                  {/* Sample Data Tab */}
+                  <TabsContent value="sample" className="flex-1 min-h-0 mt-0">
+                    {detailSource.sampleData ? (
+                      <SampleDataPreview sample={detailSource.sampleData} />
+                    ) : (
+                      <div className="h-full flex items-center justify-center">
+                        <div className="text-center text-muted-foreground">
+                          <p>Sample data not available</p>
+                          <p className="text-xs mt-1">Profiling may be in progress</p>
+                        </div>
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  {/* Full Schema Tab */}
+                  <TabsContent value="schema" className="flex-1 min-h-0 mt-0">
+                    <ScrollArea className="h-full pr-4">
+                      <div className="space-y-2 p-4">
+                        <Label className="text-xs text-muted-foreground mb-3 block">
+                          {detailSource.columns.length} columns
+                        </Label>
+                        {detailSource.columns.map(col => (
+                          <Card key={col.name} className="p-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  {col.isPrimaryKey && (
+                                    <Key className="w-4 h-4 text-primary" />
+                                  )}
+                                  <span className="font-mono font-medium text-sm">
+                                    {col.name}
+                                  </span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {col.type}
+                                  </Badge>
+                                </div>
+                                {col.description && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {col.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center text-muted-foreground space-y-2">
+                    <Database className="w-12 h-12 mx-auto opacity-20" />
+                    <p>Select a table to view its schema</p>
+                    <p className="text-xs">Click any table card on the left</p>
+                  </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-              <div>
-                <Label className="mb-3 block">Columns ({previewSource.columns.length})</Label>
-                <ScrollArea className="h-[300px]">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-background border-b">
-                      <tr>
-                        <th className="text-left p-2">Column</th>
-                        <th className="text-left p-2">Type</th>
-                        <th className="text-left p-2">Description</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {previewSource.columns.map(col => (
-                        <tr key={col.name} className="border-b">
-                          <td className="p-2 font-mono text-xs">{col.name}</td>
-                          <td className="p-2 text-xs">
-                            <Badge variant="secondary">{col.type}</Badge>
-                          </td>
-                          <td className="p-2 text-xs text-muted-foreground">
-                            {col.description || '-'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </ScrollArea>
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setPreviewSource(null)}>
-                  Close
-                </Button>
-                {!isSourceSelected(previewSource.id) && (
-                  <Button
-                    onClick={() => {
-                      toggleSource(previewSource);
-                      setPreviewSource(null);
-                    }}
-                  >
-                    Add to Selection
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Navigation */}
-      <div className="flex justify-between pt-4 border-t">
+      {/* Bottom Bar: Summary & Navigation */}
+      <div className="flex items-center justify-between pt-6 border-t flex-shrink-0">
         <Button onClick={onBack} variant="outline" size="lg">
           <ArrowLeft className="mr-2 w-4 h-4" />
-          Back to Product Definition
+          Back
         </Button>
-        <Button onClick={handleContinue} disabled={!isValid} size="lg" className="min-w-[200px]">
-          Continue to Transform
-          <ArrowRight className="ml-2 w-4 h-4" />
-        </Button>
+
+        <div className="flex items-center gap-4">
+          {selectedSources.length > 0 && (
+            <div className="text-sm text-muted-foreground">
+              {selectedSources.length} table{selectedSources.length !== 1 ? 's' : ''} · {' '}
+              {(totalRows / 1000000).toFixed(1)}M rows
+            </div>
+          )}
+          <Button onClick={handleContinue} disabled={!isValid} size="lg" className="min-w-[200px]">
+            Continue to Transform
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </Button>
+        </div>
       </div>
     </div>
   );

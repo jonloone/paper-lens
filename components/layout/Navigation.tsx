@@ -99,7 +99,7 @@ export function Navigation() {
       label: 'Build',
       icon: Hammer,
       hasDropdown: false,
-      isEmphasized: false
+      isEmphasized: true
     },
     {
       href: '/govern',
@@ -118,7 +118,8 @@ export function Navigation() {
   
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-      <div className="header-nav h-14">
+      <div className="max-w-7xl mx-auto">
+        <div className="header-nav h-14">
         <Link href="/" className="nav-logo">
           {mounted && (theme === 'one-dark-pro' || theme === 'gruvbox' || theme === 'dracula' || theme === 'solarized-light') ? (
             <IDELogo className={cn(
@@ -268,6 +269,7 @@ export function Navigation() {
 
         <div className="nav-user">
           <ThemeSwitcher />
+        </div>
         </div>
       </div>
     </header>
