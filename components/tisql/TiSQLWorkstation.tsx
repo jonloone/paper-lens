@@ -16,10 +16,6 @@ import {
   CheckCircle2,
   ArrowLeft,
   Save,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
   ChevronRight,
   Code2,
   Bot
@@ -58,6 +54,7 @@ interface TiSQLWorkstationProps {
   // Actions
   onRun: () => void;
   onValidate: () => void;
+  onAnalyze?: () => void;
   onSave?: () => void;
   onBack?: () => void;
   onContinue?: () => void;
@@ -66,8 +63,10 @@ interface TiSQLWorkstationProps {
   // Results
   validationResult?: ValidationResult | null;
   testResult?: TestResult | null;
+  analysisResult?: any; // QueryAnalysisResult from types
   isValidating?: boolean;
   isTesting?: boolean;
+  isAnalyzing?: boolean;
 
   // Theme
   theme?: 'dark' | 'light';
@@ -83,14 +82,17 @@ export function TiSQLWorkstation({
   environment = 'development',
   onRun,
   onValidate,
+  onAnalyze,
   onSave,
   onBack,
   onContinue,
   continueButtonText = 'Continue',
   validationResult,
   testResult,
+  analysisResult,
   isValidating = false,
   isTesting = false,
+  isAnalyzing = false,
   theme = 'dark'
 }: TiSQLWorkstationProps) {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
@@ -213,22 +215,6 @@ export function TiSQLWorkstation({
 
         {/* Center: Actions */}
         <div className="flex items-center gap-2">
-          {/* Panel Toggles */}
-          <Button
-            onClick={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
-            variant="ghost"
-            size="sm"
-            title="Toggle context panel (⌘B)"
-          >
-            {leftPanelCollapsed ? (
-              <PanelLeftOpen className="w-4 h-4" />
-            ) : (
-              <PanelLeftClose className="w-4 h-4" />
-            )}
-          </Button>
-
-          <div className="h-6 w-px bg-border" />
-
           {/* Center View Toggle - Material Style */}
           <div className="relative inline-flex items-center bg-muted rounded-full p-1 border border-border">
             {/* Sliding Background Indicator - Different colors per mode */}
@@ -308,6 +294,30 @@ export function TiSQLWorkstation({
             )}
           </Button>
 
+          {onAnalyze && (
+            <Button
+              onClick={onAnalyze}
+              disabled={isAnalyzing || !sql.trim()}
+              variant="outline"
+              size="sm"
+              className="gap-2 bg-purple-600/10 border-purple-500/30 hover:bg-purple-600/20"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-sm">Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span className="text-sm">Analyze</span>
+                </>
+              )}
+            </Button>
+          )}
+
           {onSave && (
             <Button
               onClick={onSave}
@@ -319,21 +329,6 @@ export function TiSQLWorkstation({
               <span className="text-sm">Save</span>
             </Button>
           )}
-
-          <div className="h-6 w-px bg-border" />
-
-          <Button
-            onClick={() => setRightPanelCollapsed(!rightPanelCollapsed)}
-            variant="ghost"
-            size="sm"
-            title="Toggle results panel (⌘J)"
-          >
-            {rightPanelCollapsed ? (
-              <PanelRightOpen className="w-4 h-4" />
-            ) : (
-              <PanelRightClose className="w-4 h-4" />
-            )}
-          </Button>
         </div>
 
         {/* Right: Continue Button */}
@@ -370,7 +365,7 @@ export function TiSQLWorkstation({
                     outputSchema={outputSchema}
                     catalog={catalog}
                     environment={environment}
-                    theme={theme}
+                    onCollapse={() => setLeftPanelCollapsed(true)}
                   />
                 </div>
               </Panel>
@@ -400,6 +395,8 @@ export function TiSQLWorkstation({
                   catalog={catalog}
                   schema={selectedSources[0]?.schema || 'production'}
                   environment={environment}
+                  selectedSources={selectedSources}
+                  onInsertSQL={(sql) => onSQLChange(sql)}
                 />
               )}
             </div>
@@ -420,8 +417,11 @@ export function TiSQLWorkstation({
                   <TiSQLResultsPanel
                     validationResult={validationResult}
                     testResult={testResult}
+                    analysisResult={analysisResult}
                     isValidating={isValidating}
                     isTesting={isTesting}
+                    isAnalyzing={isAnalyzing}
+                    onCollapse={() => setRightPanelCollapsed(true)}
                     theme={theme}
                   />
                 </div>
