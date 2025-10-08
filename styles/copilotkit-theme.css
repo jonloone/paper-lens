@@ -1,0 +1,509 @@
+/* CopilotKit Theme Overrides for NexusOne Design System */
+/* This file provides comprehensive styling to integrate CopilotKit with NexusOne's design tokens */
+
+/* =============================================================================
+   Hide Default CopilotKit Floating Button
+   ============================================================================= */
+
+/* Hide any default CopilotKit floating button/popup trigger */
+.copilotKitButton[style*="position: fixed"],
+.copilotKitButton[style*="bottom"],
+[class*="copilot-popup-button"],
+[class*="copilotkit-popup"] {
+  display: none !important;
+}
+
+/* =============================================================================
+   Base CopilotKit Variable Overrides
+   ============================================================================= */
+
+:root {
+  /* Typography Integration */
+  --copilotkit-font-family: 'Roobert', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --copilotkit-font-display: 'Reckless', serif;
+
+  /* Color System Integration - Map to NexusOne Variables */
+  --copilot-kit-primary-color: hsl(var(--foreground));
+  --copilot-kit-contrast-color: hsl(var(--background));
+  --copilot-kit-background-color: hsl(var(--background));
+  --copilot-kit-input-background-color: hsl(var(--input));
+  --copilot-kit-secondary-color: hsl(var(--muted));
+  --copilot-kit-secondary-contrast-color: hsl(var(--muted-foreground));
+  --copilot-kit-separator-color: hsl(var(--border));
+  --copilot-kit-muted-color: hsl(var(--muted));
+  --copilot-kit-accent-color: hsl(var(--accent));
+  --copilot-kit-accent-foreground: hsl(var(--accent-foreground));
+
+  /* Error State Integration */
+  --copilot-kit-error-background: hsl(var(--destructive) / 0.1);
+  --copilot-kit-error-border: hsl(var(--destructive) / 0.5);
+  --copilot-kit-error-text: hsl(var(--destructive-foreground));
+
+  /* Shadows - Use NexusOne Shadow System */
+  --copilot-kit-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --copilot-kit-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+  --copilot-kit-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+
+  /* Border Radius */
+  --copilot-kit-radius: var(--radius);
+}
+
+/* =============================================================================
+   Theme-Specific Overrides
+   ============================================================================= */
+
+/* Dark Theme */
+.dark {
+  --copilot-kit-primary-color: hsl(var(--foreground));
+  --copilot-kit-contrast-color: hsl(var(--background));
+  --copilot-kit-background-color: hsl(var(--background));
+  --copilot-kit-input-background-color: hsl(var(--input));
+  --copilot-kit-secondary-color: hsl(var(--muted));
+  --copilot-kit-secondary-contrast-color: hsl(var(--muted-foreground));
+  --copilot-kit-separator-color: hsl(var(--border));
+  --copilot-kit-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --copilot-kit-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -1px rgb(0 0 0 / 0.3);
+  --copilot-kit-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -2px rgb(0 0 0 / 0.3);
+}
+
+/* Windows 98 Theme Special Styling */
+.win98 {
+  --copilot-kit-primary-color: #000000;
+  --copilot-kit-contrast-color: #c0c0c0;
+  --copilot-kit-background-color: #c0c0c0;
+  --copilot-kit-input-background-color: #ffffff;
+  --copilot-kit-secondary-color: #dfdfdf;
+  --copilot-kit-secondary-contrast-color: #000000;
+  --copilot-kit-separator-color: #808080;
+  --copilot-kit-muted-color: #808080;
+  --copilot-kit-shadow-sm: none;
+  --copilot-kit-shadow-md: none;
+  --copilot-kit-shadow-lg: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Dracula Theme */
+.dracula {
+  --copilot-kit-primary-color: #f8f8f2;
+  --copilot-kit-contrast-color: #282a36;
+  --copilot-kit-background-color: #282a36;
+  --copilot-kit-input-background-color: #44475a;
+  --copilot-kit-secondary-color: #44475a;
+  --copilot-kit-secondary-contrast-color: #f8f8f2;
+  --copilot-kit-separator-color: #6272a4;
+  --copilot-kit-accent-color: #bd93f9;
+}
+
+/* Solarized Light Theme */
+.solarized-light {
+  --copilot-kit-primary-color: #002b36;
+  --copilot-kit-contrast-color: #fdf6e3;
+  --copilot-kit-background-color: #fdf6e3;
+  --copilot-kit-input-background-color: #eee8d5;
+  --copilot-kit-secondary-color: #eee8d5;
+  --copilot-kit-secondary-contrast-color: #002b36;
+  --copilot-kit-separator-color: #93a1a1;
+  --copilot-kit-accent-color: #268bd2;
+}
+
+/* Solarized Dark Theme */
+.solarized-dark {
+  --copilot-kit-primary-color: #839496;
+  --copilot-kit-contrast-color: #002b36;
+  --copilot-kit-background-color: #002b36;
+  --copilot-kit-input-background-color: #073642;
+  --copilot-kit-secondary-color: #073642;
+  --copilot-kit-secondary-contrast-color: #839496;
+  --copilot-kit-separator-color: #586e75;
+  --copilot-kit-accent-color: #268bd2;
+}
+
+/* One Dark Pro Theme */
+.one-dark-pro {
+  --copilot-kit-primary-color: #abb2bf;
+  --copilot-kit-contrast-color: #282c34;
+  --copilot-kit-background-color: #282c34;
+  --copilot-kit-input-background-color: #21252b;
+  --copilot-kit-secondary-color: #21252b;
+  --copilot-kit-secondary-contrast-color: #abb2bf;
+  --copilot-kit-separator-color: #3e4451;
+  --copilot-kit-accent-color: #61afef;
+}
+
+/* Gruvbox Light Theme */
+.gruvbox-light {
+  --copilot-kit-primary-color: #3c3836;
+  --copilot-kit-contrast-color: #fbf1c7;
+  --copilot-kit-background-color: #fbf1c7;
+  --copilot-kit-input-background-color: #f2e5bc;
+  --copilot-kit-secondary-color: #f2e5bc;
+  --copilot-kit-secondary-contrast-color: #3c3836;
+  --copilot-kit-separator-color: #a89984;
+  --copilot-kit-accent-color: #458588;
+}
+
+/* Gruvbox Dark Theme */
+.gruvbox-dark {
+  --copilot-kit-primary-color: #ebdbb2;
+  --copilot-kit-contrast-color: #282828;
+  --copilot-kit-background-color: #282828;
+  --copilot-kit-input-background-color: #1d2021;
+  --copilot-kit-secondary-color: #1d2021;
+  --copilot-kit-secondary-contrast-color: #ebdbb2;
+  --copilot-kit-separator-color: #504945;
+  --copilot-kit-accent-color: #83a598;
+}
+
+/* Nature Light Theme */
+.nature-light {
+  --copilot-kit-primary-color: #2d5016;
+  --copilot-kit-contrast-color: #f7f9f3;
+  --copilot-kit-background-color: #f7f9f3;
+  --copilot-kit-input-background-color: #ebf0e6;
+  --copilot-kit-secondary-color: #ebf0e6;
+  --copilot-kit-secondary-contrast-color: #2d5016;
+  --copilot-kit-separator-color: #7a8471;
+  --copilot-kit-accent-color: #4a7c59;
+}
+
+/* Nature Dark Theme */
+.nature-dark {
+  --copilot-kit-primary-color: #c7d2cc;
+  --copilot-kit-contrast-color: #1a2e23;
+  --copilot-kit-background-color: #1a2e23;
+  --copilot-kit-input-background-color: #0f1f16;
+  --copilot-kit-secondary-color: #0f1f16;
+  --copilot-kit-secondary-contrast-color: #c7d2cc;
+  --copilot-kit-separator-color: #3a4f3f;
+  --copilot-kit-accent-color: #6b8e7a;
+}
+
+/* Amethyst Haze Light Theme */
+.amethyst-haze-light {
+  --copilot-kit-primary-color: #4a1d5a;
+  --copilot-kit-contrast-color: #faf7fb;
+  --copilot-kit-background-color: #faf7fb;
+  --copilot-kit-input-background-color: #f0ebf3;
+  --copilot-kit-secondary-color: #f0ebf3;
+  --copilot-kit-secondary-contrast-color: #4a1d5a;
+  --copilot-kit-separator-color: #9d7ba3;
+  --copilot-kit-accent-color: #8b5a9f;
+}
+
+/* Amethyst Haze Dark Theme */
+.amethyst-haze-dark {
+  --copilot-kit-primary-color: #d4c4d9;
+  --copilot-kit-contrast-color: #2a1d3a;
+  --copilot-kit-background-color: #2a1d3a;
+  --copilot-kit-input-background-color: #1f1429;
+  --copilot-kit-secondary-color: #1f1429;
+  --copilot-kit-secondary-contrast-color: #d4c4d9;
+  --copilot-kit-separator-color: #4a3d5a;
+  --copilot-kit-accent-color: #a67fb5;
+}
+
+/* Modus Theme */
+.modus {
+  --copilot-kit-primary-color: #000000;
+  --copilot-kit-contrast-color: #ffffff;
+  --copilot-kit-background-color: #ffffff;
+  --copilot-kit-input-background-color: #f8f8f8;
+  --copilot-kit-secondary-color: #f8f8f8;
+  --copilot-kit-secondary-contrast-color: #000000;
+  --copilot-kit-separator-color: #a8a8a8;
+  --copilot-kit-accent-color: #0031a9;
+}
+
+/* Modus Light Theme */
+.modus-light {
+  --copilot-kit-primary-color: #000000;
+  --copilot-kit-contrast-color: #ffffff;
+  --copilot-kit-background-color: #ffffff;
+  --copilot-kit-input-background-color: #f2f2f2;
+  --copilot-kit-secondary-color: #f2f2f2;
+  --copilot-kit-secondary-contrast-color: #000000;
+  --copilot-kit-separator-color: #b0b0b0;
+  --copilot-kit-accent-color: #0031a9;
+}
+
+/* =============================================================================
+   Component-Specific Styling
+   ============================================================================= */
+
+/* Sidebar Styling */
+.copilotKitSidebar {
+  font-family: var(--copilotkit-font-family) !important;
+  border-radius: calc(var(--copilot-kit-radius)) !important;
+  box-shadow: var(--copilot-kit-shadow-lg) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--card)) !important;
+}
+
+/* Windows 98 Sidebar Styling */
+.win98 .copilotKitSidebar {
+  border-radius: 0 !important;
+  border: 2px outset #c0c0c0 !important;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5) !important;
+  background: #c0c0c0 !important;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif !important;
+  font-size: 11px !important;
+}
+
+/* Chat Container */
+.copilotKitChat {
+  font-family: var(--copilotkit-font-family) !important;
+  background: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Message Bubbles */
+.copilotKitMessage {
+  border-radius: calc(var(--copilot-kit-radius) - 2px) !important;
+  font-family: var(--copilotkit-font-family) !important;
+}
+
+/* User Messages */
+.copilotKitMessage[data-role="user"] {
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: 1px solid hsl(var(--primary) / 0.2) !important;
+}
+
+/* Assistant Messages */
+.copilotKitMessage[data-role="assistant"] {
+  background: hsl(var(--muted)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* Assistant Message Headers */
+.copilotKitMessage[data-role="assistant"] h1,
+.copilotKitMessage[data-role="assistant"] h2,
+.copilotKitMessage[data-role="assistant"] h3,
+.copilotKitMessage[data-role="assistant"] h4,
+.copilotKitMessage[data-role="assistant"] h5,
+.copilotKitMessage[data-role="assistant"] h6 {
+  font-family: var(--copilotkit-font-display) !important;
+  font-weight: 300 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Windows 98 Message Styling */
+.win98 .copilotKitMessage {
+  border-radius: 0 !important;
+  border: 1px solid #808080 !important;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif !important;
+  font-size: 11px !important;
+}
+
+.win98 .copilotKitMessage[data-role="user"] {
+  background: #dfdfdf !important;
+  color: #000000 !important;
+  border: 2px inset #c0c0c0 !important;
+}
+
+.win98 .copilotKitMessage[data-role="assistant"] {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 2px inset #c0c0c0 !important;
+}
+
+/* Input Field Styling */
+.copilotKitInput,
+.copilotKitTextarea {
+  font-family: var(--copilotkit-font-family) !important;
+  background: hsl(var(--input)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: calc(var(--copilot-kit-radius) - 2px) !important;
+}
+
+.copilotKitInput:focus,
+.copilotKitTextarea:focus {
+  border-color: hsl(var(--ring)) !important;
+  outline: 2px solid hsl(var(--ring) / 0.3) !important;
+  outline-offset: 2px !important;
+}
+
+/* Windows 98 Input Styling */
+.win98 .copilotKitInput,
+.win98 .copilotKitTextarea {
+  border-radius: 0 !important;
+  border: 2px inset #c0c0c0 !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif !important;
+  font-size: 11px !important;
+}
+
+/* Button Styling */
+.copilotKitButton {
+  font-family: var(--copilotkit-font-family) !important;
+  background: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border: 1px solid hsl(var(--primary)) !important;
+  border-radius: calc(var(--copilot-kit-radius) - 2px) !important;
+  transition: all 0.2s ease !important;
+}
+
+.copilotKitButton:hover {
+  background: hsl(var(--primary) / 0.9) !important;
+}
+
+.copilotKitButton:active {
+  background: hsl(var(--primary) / 0.8) !important;
+  transform: translateY(1px) !important;
+}
+
+/* Windows 98 Button Styling */
+.win98 .copilotKitButton {
+  border-radius: 0 !important;
+  border: 2px outset #c0c0c0 !important;
+  background: #c0c0c0 !important;
+  color: #000000 !important;
+  font-family: 'MS Sans Serif', Tahoma, sans-serif !important;
+  font-size: 11px !important;
+  padding: 2px 8px !important;
+}
+
+.win98 .copilotKitButton:hover {
+  background: #dfdfdf !important;
+}
+
+.win98 .copilotKitButton:active {
+  border: 2px inset #c0c0c0 !important;
+  background: #dfdfdf !important;
+}
+
+/* Header and Title Styling */
+.copilotKitHeader,
+.copilotKitTitle {
+  font-family: var(--copilotkit-font-display) !important;
+  font-weight: 300 !important;
+  letter-spacing: -0.01em !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Windows 98 Header Styling */
+.win98 .copilotKitHeader,
+.win98 .copilotKitTitle {
+  font-family: 'MS Sans Serif', Tahoma, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: bold !important;
+  background: #0a246a !important;
+  color: #ffffff !important;
+  padding: 2px 4px !important;
+}
+
+/* Loading Spinner */
+.copilotKitSpinner {
+  color: hsl(var(--primary)) !important;
+}
+
+/* Scrollbar Styling */
+.copilotKitScrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.copilotKitScrollable::-webkit-scrollbar-track {
+  background: hsl(var(--muted) / 0.3);
+  border-radius: 4px;
+}
+
+.copilotKitScrollable::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.5);
+  border-radius: 4px;
+}
+
+.copilotKitScrollable::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.7);
+}
+
+/* Windows 98 Scrollbar */
+.win98 .copilotKitScrollable::-webkit-scrollbar {
+  width: 16px;
+}
+
+.win98 .copilotKitScrollable::-webkit-scrollbar-track {
+  background: #c0c0c0;
+  border: 2px inset #c0c0c0;
+}
+
+.win98 .copilotKitScrollable::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border: 2px outset #c0c0c0;
+}
+
+/* =============================================================================
+   Responsive Design
+   ============================================================================= */
+
+@media (max-width: 768px) {
+  .copilotKitSidebar {
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    border-radius: 0 !important;
+    z-index: 50 !important;
+  }
+
+  .copilotKitMessage {
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+  }
+}
+
+/* =============================================================================
+   Accessibility Enhancements
+   ============================================================================= */
+
+.copilotKitButton:focus-visible,
+.copilotKitInput:focus-visible,
+.copilotKitTextarea:focus-visible {
+  outline: 2px solid hsl(var(--ring)) !important;
+  outline-offset: 2px !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .copilotKitMessage {
+    border: 2px solid hsl(var(--border)) !important;
+  }
+
+  .copilotKitButton {
+    border: 2px solid hsl(var(--primary)) !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .copilotKitButton,
+  .copilotKitMessage,
+  .copilotKitSidebar {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* =============================================================================
+   Print Styles
+   ============================================================================= */
+
+@media print {
+  .copilotKitSidebar {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    box-shadow: none !important;
+    border: 1px solid #000 !important;
+  }
+
+  .copilotKitMessage {
+    background: transparent !important;
+    color: #000 !important;
+    border: 1px solid #000 !important;
+  }
+}
