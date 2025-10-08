@@ -68,6 +68,25 @@ class DetectIntentRequest(BaseModel):
     context: Optional[Dict[str, Any]] = Field(default=None, description="Additional context")
 
 
+class TableSuggestionsRequest(BaseModel):
+    """Request for table-based product suggestions"""
+    table_id: str = Field(..., description="Table identifier to find suggestions for")
+    domain: Optional[str] = Field(default=None, description="Optional domain filter")
+    limit: int = Field(default=10, description="Maximum number of suggestions")
+
+
+class TableCombinationRequest(BaseModel):
+    """Request for finding products using multiple tables"""
+    table_ids: List[str] = Field(..., description="List of table IDs to search for")
+    min_tables: int = Field(default=2, description="Minimum tables product must use")
+    limit: int = Field(default=10, description="Maximum number of results")
+
+
+class TableUsageSummaryRequest(BaseModel):
+    """Request for table usage statistics"""
+    table_id: str = Field(..., description="Table identifier to get summary for")
+
+
 # ============================================================================
 # Enhanced Request Parsing
 # ============================================================================
@@ -436,6 +455,132 @@ async def load_domain_accelerator(domain: str) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Domain loading failed: {e}")
         raise HTTPException(status_code=500, detail=f"Domain loading error: {str(e)}")
+
+
+# ============================================================================
+# Table-Based Product Suggestions
+# ============================================================================
+
+@router.post("/tables/suggestions")
+async def get_table_suggestions(request: TableSuggestionsRequest) -> Dict[str, Any]:
+    """
+    Get product suggestions based on a table
+
+    Finds all products that have successfully used this table,
+    showing what can be built with it
+    """
+    try:
+        kg = get_knowledge_graph()
+
+        # Find products using this table
+        products = kg.find_products_using_table(
+            table_id=request.table_id,
+            domain=request.domain,
+            limit=request.limit
+        )
+
+        # Get usage summary
+        summary = kg.get_table_usage_summary(table_id=request.table_id)
+
+        return {
+            "success": True,
+            "table_id": request.table_id,
+            "table_name": summary.get("full_name", ""),
+            "suggestions": [
+                {
+                    "product_id": p["product_id"],
+                    "product_name": p["product_name"],
+                    "domain": p["domain"],
+                    "status": p["status"],
+                    "usage_type": p["usage_type"],
+                    "pattern": p["pattern_name"],
+                    "pattern_description": p["pattern_description"],
+                    "usage_date": p["usage_date"]
+                }
+                for p in products
+            ],
+            "summary": {
+                "total_products_using": summary.get("total_products_using", 0),
+                "successful_uses": summary.get("successful_uses", 0),
+                "success_rate": summary.get("success_rate", 0),
+                "common_patterns": summary.get("common_patterns", []),
+                "quality_score": summary.get("quality_score", 0)
+            },
+            "total_found": len(products)
+        }
+
+    except Exception as e:
+        logger.error(f"Table suggestions failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Table suggestions error: {str(e)}")
+
+
+@router.post("/tables/combinations")
+async def get_table_combinations(request: TableCombinationRequest) -> Dict[str, Any]:
+    """
+    Find products that used multiple tables together
+
+    Shows successful patterns of combining these tables
+    """
+    try:
+        kg = get_knowledge_graph()
+
+        # Find products using these table combinations
+        combinations = kg.find_common_table_combinations(
+            table_ids=request.table_ids,
+            min_tables=request.min_tables,
+            limit=request.limit
+        )
+
+        return {
+            "success": True,
+            "table_ids": request.table_ids,
+            "combinations": [
+                {
+                    "product_id": c["product_id"],
+                    "product_name": c["product_name"],
+                    "domain": c["domain"],
+                    "status": c["status"],
+                    "used_tables": c["used_table_names"],
+                    "table_count": c["table_count"],
+                    "pattern": c["pattern_name"],
+                    "pattern_description": c["pattern_description"]
+                }
+                for c in combinations
+            ],
+            "total_found": len(combinations),
+            "min_tables_used": request.min_tables
+        }
+
+    except Exception as e:
+        logger.error(f"Table combinations failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Table combinations error: {str(e)}")
+
+
+@router.post("/tables/summary")
+async def get_table_summary(request: TableUsageSummaryRequest) -> Dict[str, Any]:
+    """
+    Get comprehensive usage summary for a table
+
+    Provides statistics, success rates, and common patterns
+    """
+    try:
+        kg = get_knowledge_graph()
+
+        summary = kg.get_table_usage_summary(table_id=request.table_id)
+
+        if "error" in summary:
+            raise HTTPException(status_code=404, detail=summary["error"])
+
+        return {
+            "success": True,
+            **summary
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Table summary failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Table summary error: {str(e)}")
 
 
 # ============================================================================

@@ -19,6 +19,9 @@ from .api.sources_routes import router as sources_router
 from .api.build_routes import router as build_router
 from .api.governance_routes import router as governance_router
 from .api.tisql_routes import router as tisql_router
+from .api.operations_routes import router as operations_router
+from .api.monitor_routes import router as monitor_router
+from .api.glossary_routes import router as glossary_router
 from .models import schemas  # Import to register models
 
 # Configure logging
@@ -111,6 +114,9 @@ app.include_router(sources_router)
 app.include_router(build_router)
 app.include_router(governance_router)
 app.include_router(tisql_router)
+app.include_router(operations_router)
+app.include_router(monitor_router)
+app.include_router(glossary_router)
 
 # Global exception handler
 @app.exception_handler(Exception)

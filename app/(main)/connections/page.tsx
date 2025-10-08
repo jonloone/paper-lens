@@ -479,7 +479,7 @@ export default function ConnectionsPage() {
   const TabIcon = tabContext.icon;
 
   return (
-    <div className="container mx-auto py-4 space-y-4">
+    <div className="max-w-7xl mx-auto py-4 space-y-4">
       {/* Compact Header with Tab Context */}
       <div className="bg-background border-b sticky top-14 z-30 -mx-4 px-4 pb-3">
         <div className="flex items-center justify-between pt-4">

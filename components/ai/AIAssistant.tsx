@@ -281,7 +281,7 @@ What specific aspect would you like to explore?`
             "p-0 flex flex-col",
             isWin98
               ? "w-full h-[400px] win98-window border-t-[3px] border-l-[3px] border-r-[3px] bottom-0"
-              : "w-[400px] sm:w-[540px]"
+              : "w-[400px] sm:w-[32rem]"
           )}
         >
           <SheetHeader className={cn(

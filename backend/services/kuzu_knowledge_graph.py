@@ -169,6 +169,22 @@ class KuzuKnowledgeGraph:
         """)
         logger.info("Created QualityRule node table")
 
+        # DataTable node - represents physical tables/datasets
+        self.conn.execute("""
+            CREATE NODE TABLE DataTable(
+                id STRING,
+                full_name STRING,
+                domain STRING,
+                row_count INT64,
+                completeness DOUBLE,
+                last_profiled_at TIMESTAMP,
+                quality_score DOUBLE,
+                metadata STRING,
+                PRIMARY KEY(id)
+            )
+        """)
+        logger.info("Created DataTable node table")
+
     def _create_relationship_tables(self):
         """Create relationship type tables"""
 
@@ -240,6 +256,19 @@ class KuzuKnowledgeGraph:
             )
         """)
         logger.info("Created USES_QUALITY_RULE relationship table")
+
+        # Product uses Table (for tracking table usage in products)
+        self.conn.execute("""
+            CREATE REL TABLE USES_TABLE(
+                FROM DataProduct TO DataTable,
+                usage_type STRING,
+                selection_method STRING,
+                success BOOL,
+                usage_date TIMESTAMP,
+                metadata STRING
+            )
+        """)
+        logger.info("Created USES_TABLE relationship table")
 
     # ========================================================================
     # Data Contract Operations
@@ -637,6 +666,361 @@ class KuzuKnowledgeGraph:
         except Exception as e:
             logger.error(f"Failed to get graph statistics: {e}")
             return {}
+
+    # ========================================================================
+    # DataTable Operations
+    # ========================================================================
+
+    def create_or_update_table(
+        self,
+        table_id: str,
+        full_name: str,
+        domain: str,
+        row_count: int,
+        completeness: float,
+        quality_score: float,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Create or update a DataTable node"""
+        try:
+            # Check if table already exists
+            check_query = "MATCH (t:DataTable {id: $table_id}) RETURN t"
+            result = self.conn.execute(check_query, {"table_id": table_id})
+
+            if result.has_next():
+                # Update existing table
+                update_query = """
+                    MATCH (t:DataTable {id: $table_id})
+                    SET t.row_count = $row_count,
+                        t.completeness = $completeness,
+                        t.quality_score = $quality_score,
+                        t.last_profiled_at = $timestamp,
+                        t.metadata = $metadata
+                    RETURN t
+                """
+                self.conn.execute(update_query, {
+                    "table_id": table_id,
+                    "row_count": row_count,
+                    "completeness": completeness,
+                    "quality_score": quality_score,
+                    "timestamp": datetime.now(),
+                    "metadata": json.dumps(metadata or {})
+                })
+                logger.info(f"✅ Updated table: {table_id}")
+            else:
+                # Create new table
+                create_query = """
+                    CREATE (t:DataTable {
+                        id: $table_id,
+                        full_name: $full_name,
+                        domain: $domain,
+                        row_count: $row_count,
+                        completeness: $completeness,
+                        quality_score: $quality_score,
+                        last_profiled_at: $timestamp,
+                        metadata: $metadata
+                    })
+                    RETURN t
+                """
+                self.conn.execute(create_query, {
+                    "table_id": table_id,
+                    "full_name": full_name,
+                    "domain": domain,
+                    "row_count": row_count,
+                    "completeness": completeness,
+                    "quality_score": quality_score,
+                    "timestamp": datetime.now(),
+                    "metadata": json.dumps(metadata or {})
+                })
+                logger.info(f"✅ Created table: {table_id}")
+
+            return {
+                "success": True,
+                "table_id": table_id,
+                "full_name": full_name
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to create/update table: {e}")
+            return {"success": False, "error": str(e)}
+
+    def record_table_usage(
+        self,
+        product_id: str,
+        table_ids: List[str],
+        usage_type: str = "source",
+        selection_method: str = "manual",
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """Record that a product uses specific tables"""
+        try:
+            created_relationships = []
+
+            for table_id in table_ids:
+                # Check if relationship already exists
+                check_query = """
+                    MATCH (p:DataProduct {id: $product_id})
+                    MATCH (t:DataTable {id: $table_id})
+                    MATCH (p)-[u:USES_TABLE]->(t)
+                    RETURN u
+                """
+                result = self.conn.execute(check_query, {
+                    "product_id": product_id,
+                    "table_id": table_id
+                })
+
+                if not result.has_next():
+                    # Create new relationship
+                    create_query = """
+                        MATCH (p:DataProduct {id: $product_id})
+                        MATCH (t:DataTable {id: $table_id})
+                        CREATE (p)-[u:USES_TABLE {
+                            usage_type: $usage_type,
+                            selection_method: $selection_method,
+                            success: true,
+                            usage_date: $timestamp,
+                            metadata: $metadata
+                        }]->(t)
+                        RETURN u
+                    """
+                    self.conn.execute(create_query, {
+                        "product_id": product_id,
+                        "table_id": table_id,
+                        "usage_type": usage_type,
+                        "selection_method": selection_method,
+                        "timestamp": datetime.now(),
+                        "metadata": json.dumps(metadata or {})
+                    })
+                    created_relationships.append(table_id)
+                    logger.info(f"✅ Recorded table usage: {product_id} -> {table_id}")
+
+            return {
+                "success": True,
+                "product_id": product_id,
+                "tables_linked": created_relationships
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to record table usage: {e}")
+            return {"success": False, "error": str(e)}
+
+    def find_products_using_table(
+        self,
+        table_id: str,
+        domain: Optional[str] = None,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Find all products that successfully used this table
+
+        Args:
+            table_id: ID of the table to search for
+            domain: Optional domain filter
+            limit: Maximum number of products to return
+
+        Returns:
+            List of products with usage details and patterns
+        """
+        try:
+            query = """
+                MATCH (t:DataTable {id: $table_id})
+                MATCH (p:DataProduct)-[u:USES_TABLE]->(t)
+                WHERE u.success = true
+            """
+
+            # Add domain filter if specified
+            if domain:
+                query += " AND p.domain = $domain"
+
+            query += """
+                OPTIONAL MATCH (p)-[pat:USES_PATTERN]->(pattern:Pattern)
+                RETURN
+                    p.id as product_id,
+                    p.name as product_name,
+                    p.status as status,
+                    p.domain as domain,
+                    p.metadata as product_metadata,
+                    u.usage_type as usage_type,
+                    u.selection_method as selection_method,
+                    u.usage_date as usage_date,
+                    pattern.name as pattern_name,
+                    pattern.description as pattern_description
+                ORDER BY u.usage_date DESC
+                LIMIT $limit
+            """
+
+            params = {"table_id": table_id, "limit": limit}
+            if domain:
+                params["domain"] = domain
+
+            result = self.conn.execute(query, params)
+
+            products = []
+            while result.has_next():
+                row = result.get_next()
+                products.append({
+                    "product_id": row[0],
+                    "product_name": row[1],
+                    "status": row[2],
+                    "domain": row[3],
+                    "product_metadata": json.loads(row[4]) if row[4] else {},
+                    "usage_type": row[5],
+                    "selection_method": row[6],
+                    "usage_date": row[7].strftime("%Y-%m-%d %H:%M:%S") if row[7] else None,
+                    "pattern_name": row[8],
+                    "pattern_description": row[9]
+                })
+
+            logger.info(f"✅ Found {len(products)} products using table {table_id}")
+            return products
+
+        except Exception as e:
+            logger.error(f"Failed to find products using table: {e}")
+            return []
+
+    def find_common_table_combinations(
+        self,
+        table_ids: List[str],
+        min_tables: int = 2,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Find products that used multiple tables together
+
+        Args:
+            table_ids: List of table IDs to search for
+            min_tables: Minimum number of these tables product must use
+            limit: Maximum number of products to return
+
+        Returns:
+            List of products with table combination details
+        """
+        try:
+            query = """
+                MATCH (p:DataProduct)-[u:USES_TABLE]->(t:DataTable)
+                WHERE t.id IN $table_ids AND u.success = true
+                WITH p, collect(DISTINCT t.id) as used_tables, collect(DISTINCT t.full_name) as table_names
+                WHERE size(used_tables) >= $min_tables
+                OPTIONAL MATCH (p)-[:USES_PATTERN]->(pattern:Pattern)
+                RETURN
+                    p.id as product_id,
+                    p.name as product_name,
+                    p.domain as domain,
+                    p.status as status,
+                    used_tables,
+                    table_names,
+                    pattern.name as pattern_name,
+                    pattern.description as pattern_description,
+                    p.metadata as product_metadata
+                ORDER BY size(used_tables) DESC
+                LIMIT $limit
+            """
+
+            result = self.conn.execute(query, {
+                "table_ids": table_ids,
+                "min_tables": min_tables,
+                "limit": limit
+            })
+
+            combinations = []
+            while result.has_next():
+                row = result.get_next()
+                combinations.append({
+                    "product_id": row[0],
+                    "product_name": row[1],
+                    "domain": row[2],
+                    "status": row[3],
+                    "used_table_ids": row[4],
+                    "used_table_names": row[5],
+                    "table_count": len(row[4]),
+                    "pattern_name": row[6],
+                    "pattern_description": row[7],
+                    "product_metadata": json.loads(row[8]) if row[8] else {}
+                })
+
+            logger.info(f"✅ Found {len(combinations)} products using {min_tables}+ tables from selection")
+            return combinations
+
+        except Exception as e:
+            logger.error(f"Failed to find table combinations: {e}")
+            return []
+
+    def get_table_usage_summary(
+        self,
+        table_id: str
+    ) -> Dict[str, Any]:
+        """
+        Get summary statistics about how a table has been used
+
+        Args:
+            table_id: ID of the table
+
+        Returns:
+            Summary with usage counts, success rates, common patterns
+        """
+        try:
+            # Get basic table info
+            table_query = """
+                MATCH (t:DataTable {id: $table_id})
+                RETURN t.full_name, t.domain, t.row_count, t.quality_score
+            """
+            table_result = self.conn.execute(table_query, {"table_id": table_id})
+
+            if not table_result.has_next():
+                return {"error": "Table not found"}
+
+            table_row = table_result.get_next()
+
+            # Get usage statistics
+            usage_query = """
+                MATCH (t:DataTable {id: $table_id})
+                MATCH (p:DataProduct)-[u:USES_TABLE]->(t)
+                RETURN
+                    count(DISTINCT p) as total_products,
+                    count(CASE WHEN u.success = true THEN 1 END) as successful_uses,
+                    count(CASE WHEN p.status = 'deployed' THEN 1 END) as deployed_products
+            """
+            usage_result = self.conn.execute(usage_query, {"table_id": table_id})
+            usage_row = usage_result.get_next()
+
+            # Get common patterns
+            pattern_query = """
+                MATCH (t:DataTable {id: $table_id})
+                MATCH (p:DataProduct)-[:USES_TABLE]->(t)
+                MATCH (p)-[:USES_PATTERN]->(pattern:Pattern)
+                RETURN pattern.name, count(*) as pattern_count
+                ORDER BY pattern_count DESC
+                LIMIT 5
+            """
+            pattern_result = self.conn.execute(pattern_query, {"table_id": table_id})
+
+            common_patterns = []
+            while pattern_result.has_next():
+                p_row = pattern_result.get_next()
+                common_patterns.append({
+                    "pattern_name": p_row[0],
+                    "usage_count": p_row[1]
+                })
+
+            summary = {
+                "table_id": table_id,
+                "full_name": table_row[0],
+                "domain": table_row[1],
+                "row_count": table_row[2],
+                "quality_score": table_row[3],
+                "total_products_using": usage_row[0],
+                "successful_uses": usage_row[1],
+                "deployed_products": usage_row[2],
+                "success_rate": round(usage_row[1] / usage_row[0] * 100, 1) if usage_row[0] > 0 else 0,
+                "common_patterns": common_patterns
+            }
+
+            logger.info(f"✅ Generated usage summary for table {table_id}")
+            return summary
+
+        except Exception as e:
+            logger.error(f"Failed to get table usage summary: {e}")
+            return {"error": str(e)}
 
     def close(self):
         """Close database connection and release resources"""

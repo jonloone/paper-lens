@@ -329,25 +329,27 @@ export default function UnifiedDevelopPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <div className="border-b bg-muted/30 px-8 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-light">Develop</h1>
-            <p className="text-muted-foreground mt-1">
-              Build pipelines, queries, and data products
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">Default view:</span>
-            <ViewModeSelector />
+      <div className="border-b bg-muted/30">
+        <div className="max-w-7xl mx-auto px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-light">Develop</h1>
+              <p className="text-muted-foreground mt-1">
+                Build pipelines, queries, and data products
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">Default view:</span>
+              <ViewModeSelector />
+            </div>
           </div>
         </div>
       </div>
-      
+
       <div className="flex-1 flex">
         {/* Main Content */}
-        <div className="flex-1 p-8">
-          <div className="max-w-4xl space-y-8">
+        <div className="flex-1">
+          <div className="max-w-7xl mx-auto p-8 space-y-8">
           
           {/* Quick Actions - Featured actions at top */}
           {!selectedPath && (

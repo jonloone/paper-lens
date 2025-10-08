@@ -31,7 +31,14 @@ RETAIL_PATTERNS = {
         ],
         "success_rate": 0.89,
         "implementations": 45,
-        "avg_build_time_hours": 24
+        "avg_build_time_hours": 24,
+        "sqlmesh_config": {
+            "model_kind": "INCREMENTAL_BY_TIME_RANGE",
+            "time_column": "updated_at",
+            "lookback_days": 3,
+            "partitioned_by": "date(updated_at)",
+            "clustered_by": ["customer_id"]
+        }
     },
 
     "churn_prediction": {
@@ -54,7 +61,14 @@ RETAIL_PATTERNS = {
         ],
         "success_rate": 0.84,
         "implementations": 23,
-        "avg_build_time_hours": 32
+        "avg_build_time_hours": 32,
+        "sqlmesh_config": {
+            "model_kind": "INCREMENTAL_BY_TIME_RANGE",
+            "time_column": "prediction_date",
+            "lookback_days": 1,
+            "partitioned_by": "date(prediction_date)",
+            "clustered_by": ["customer_id"]
+        }
     },
 
     "product_recommendation": {
@@ -77,7 +91,14 @@ RETAIL_PATTERNS = {
         ],
         "success_rate": 0.81,
         "implementations": 18,
-        "avg_build_time_hours": 40
+        "avg_build_time_hours": 40,
+        "sqlmesh_config": {
+            "model_kind": "INCREMENTAL_BY_TIME_RANGE",
+            "time_column": "generated_at",
+            "lookback_days": 1,
+            "partitioned_by": "date(generated_at)",
+            "clustered_by": ["customer_id"]
+        }
     },
 
     "inventory_optimization": {
@@ -100,7 +121,14 @@ RETAIL_PATTERNS = {
         ],
         "success_rate": 0.86,
         "implementations": 15,
-        "avg_build_time_hours": 36
+        "avg_build_time_hours": 36,
+        "sqlmesh_config": {
+            "model_kind": "INCREMENTAL_BY_TIME_RANGE",
+            "time_column": "forecast_updated",
+            "lookback_days": 2,
+            "partitioned_by": "date(forecast_updated)",
+            "clustered_by": ["product_id"]
+        }
     },
 
     "customer_segmentation": {
@@ -122,7 +150,14 @@ RETAIL_PATTERNS = {
         ],
         "success_rate": 0.88,
         "implementations": 31,
-        "avg_build_time_hours": 20
+        "avg_build_time_hours": 20,
+        "sqlmesh_config": {
+            "model_kind": "INCREMENTAL_BY_TIME_RANGE",
+            "time_column": "segmentation_date",
+            "lookback_days": 7,
+            "partitioned_by": "date(segmentation_date)",
+            "clustered_by": ["customer_id", "segment"]
+        }
     }
 }
 

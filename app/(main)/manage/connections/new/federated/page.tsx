@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,11 @@ import type {
   SecretStorageType,
   SecretReference
 } from '@/lib/types/source-connections';
+import {
+  generateTrinoCatalog,
+  catalogPropertiesToFile,
+  generateConfigMapForCatalog
+} from '@/lib/services/trino-catalog-generator';
 
 interface FederatedSourceData {
   // Step 1: Basic Connection
@@ -79,6 +84,9 @@ type DeploymentTarget = 'self-hosted' | 'kubernetes' | 'cloud-managed';
 
 export default function FederatedSourceWizard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const connectorType = searchParams?.get('connector') as DatabaseType | null;
+
   const [currentStep, setCurrentStep] = useState(0); // Start with prerequisites
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<{
@@ -90,16 +98,40 @@ export default function FederatedSourceWizard() {
   const [secretReference, setSecretReference] = useState('');
   const [deploymentTarget, setDeploymentTarget] = useState<DeploymentTarget>('kubernetes');
 
+  const getDefaultPort = (type: DatabaseType): number => {
+    const ports: Record<DatabaseType, number> = {
+      postgresql: 5432,
+      mysql: 3306,
+      mariadb: 3306,
+      oracle: 1521,
+      sqlserver: 1433,
+      mongodb: 27017,
+      snowflake: 443,
+      bigquery: 443,
+      redshift: 5439,
+      synapse: 1433,
+      iceberg: 9083,
+      delta_lake: 9083,
+      hudi: 9083,
+      kafka: 9092,
+      kinesis: 443,
+      elasticsearch: 9200,
+      cassandra: 9042,
+      druid: 8082,
+    };
+    return ports[type] || 5432;
+  };
+
   const [formData, setFormData] = useState<FederatedSourceData>({
     name: '',
     description: '',
-    type: 'postgresql',
+    type: connectorType || 'postgresql',
     team: '',
     owner: '',
     tags: [],
     connection: {
       host: '',
-      port: 5432,
+      port: getDefaultPort(connectorType || 'postgresql'),
       database: '',
       username: '',
       password: '', // Will be deprecated in favor of password_secret
@@ -107,7 +139,7 @@ export default function FederatedSourceWizard() {
     },
     trino: {
       catalog_name: '',
-      connector_type: 'postgresql',
+      connector_type: connectorType || 'postgresql',
       schema_mapping: {},
       connection_pool_size: 10,
       query_timeout_seconds: 60,
@@ -129,6 +161,24 @@ export default function FederatedSourceWizard() {
       allowRenameTable: false,
     },
   });
+
+  // Update form data when connector type changes from query param
+  useEffect(() => {
+    if (connectorType) {
+      setFormData(prev => ({
+        ...prev,
+        type: connectorType,
+        connection: {
+          ...prev.connection,
+          port: getDefaultPort(connectorType),
+        },
+        trino: {
+          ...prev.trino,
+          connector_type: connectorType,
+        },
+      }));
+    }
+  }, [connectorType]);
 
   const totalSteps = 5; // Added prerequisites step
 
@@ -186,14 +236,14 @@ export default function FederatedSourceWizard() {
     };
 
     try {
-      const response = await fetch('/api/manage/sources', {
+      const response = await fetch('/api/manage/connections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        router.push('/manage/sources');
+        router.push('/manage/connections');
       } else {
         alert('Failed to create source');
       }
@@ -333,153 +383,216 @@ export default function FederatedSourceWizard() {
 
   const renderStep1 = () => (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="name">Source Name *</Label>
-          <Input
-            id="name"
-            placeholder="e.g., Product Catalog"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          />
+      {/* Basic Information */}
+      <div className="space-y-4">
+        <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          Basic Information
+        </Label>
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="name">Source Name *</Label>
+            <Input
+              id="name"
+              placeholder="e.g., Product Catalog"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="catalogName">Trino Catalog Name *</Label>
+            <Input
+              id="catalogName"
+              placeholder="e.g., product_catalog"
+              value={formData.trino.catalog_name}
+              onChange={(e) => setFormData({
+                ...formData,
+                trino: { ...formData.trino, catalog_name: e.target.value }
+              })}
+            />
+          </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="catalogName">Trino Catalog Name *</Label>
-          <Input
-            id="catalogName"
-            placeholder="e.g., product_catalog"
-            value={formData.trino.catalog_name}
-            onChange={(e) => setFormData({
-              ...formData,
-              trino: { ...formData.trino, catalog_name: e.target.value }
-            })}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea
-          id="description"
-          placeholder="Describe the purpose of this source"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          rows={3}
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="type">Database Type *</Label>
-          <Select
-            value={formData.type}
-            onValueChange={(value: DatabaseType) => setFormData({
-              ...formData,
-              type: value,
-              trino: { ...formData.trino, connector_type: value as any }
-            })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="postgresql">PostgreSQL</SelectItem>
-              <SelectItem value="mysql">MySQL</SelectItem>
-              <SelectItem value="oracle">Oracle</SelectItem>
-              <SelectItem value="sqlserver">SQL Server</SelectItem>
-              <SelectItem value="mongodb">MongoDB</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="team">Team *</Label>
-          <Input
-            id="team"
-            placeholder="e.g., Data Platform"
-            value={formData.team}
-            onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="owner">Owner Email *</Label>
-          <Input
-            id="owner"
-            type="email"
-            placeholder="owner@company.com"
-            value={formData.owner}
-            onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            placeholder="Describe the purpose of this source"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
           />
         </div>
       </div>
 
-      <Separator />
+      {/* Metadata - Secondary card */}
+      <Card className="border border-border/50 bg-muted/20">
+        <CardContent className="p-6 space-y-4">
+          <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            Metadata & Ownership
+          </Label>
+          <div className="grid grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="type">Database Type *</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value: DatabaseType) => setFormData({
+                  ...formData,
+                  type: value,
+                  connection: { ...formData.connection, port: getDefaultPort(value) },
+                  trino: { ...formData.trino, connector_type: value as any }
+                })}
+                disabled={!!connectorType}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <optgroup label="JDBC Databases">
+                    <SelectItem value="postgresql">PostgreSQL</SelectItem>
+                    <SelectItem value="mysql">MySQL</SelectItem>
+                    <SelectItem value="mariadb">MariaDB</SelectItem>
+                    <SelectItem value="oracle">Oracle</SelectItem>
+                    <SelectItem value="sqlserver">SQL Server</SelectItem>
+                    <SelectItem value="mongodb">MongoDB</SelectItem>
+                  </optgroup>
+                  <optgroup label="Cloud Warehouses">
+                    <SelectItem value="snowflake">Snowflake</SelectItem>
+                    <SelectItem value="bigquery">Google BigQuery</SelectItem>
+                    <SelectItem value="redshift">AWS Redshift</SelectItem>
+                    <SelectItem value="synapse">Azure Synapse</SelectItem>
+                  </optgroup>
+                  <optgroup label="Lakehouses">
+                    <SelectItem value="iceberg">Apache Iceberg</SelectItem>
+                    <SelectItem value="delta_lake">Delta Lake</SelectItem>
+                    <SelectItem value="hudi">Apache Hudi</SelectItem>
+                  </optgroup>
+                  <optgroup label="Streaming">
+                    <SelectItem value="kafka">Apache Kafka</SelectItem>
+                    <SelectItem value="kinesis">AWS Kinesis</SelectItem>
+                  </optgroup>
+                  <optgroup label="Analytics/Search">
+                    <SelectItem value="elasticsearch">Elasticsearch</SelectItem>
+                    <SelectItem value="cassandra">Apache Cassandra</SelectItem>
+                    <SelectItem value="druid">Apache Druid</SelectItem>
+                  </optgroup>
+                </SelectContent>
+              </Select>
+              {connectorType && (
+                <p className="text-xs text-muted-foreground">
+                  Connector type selected from previous step
+                </p>
+              )}
+            </div>
 
-      <h3 className="text-lg font-semibold">Connection Details</h3>
+            <div className="space-y-2">
+              <Label htmlFor="team">Team *</Label>
+              <Input
+                id="team"
+                placeholder="e.g., Data Platform"
+                value={formData.team}
+                onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+              />
+            </div>
 
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-2">
-          <Label htmlFor="host">Host *</Label>
-          <Input
-            id="host"
-            placeholder="database.company.com"
-            value={formData.connection.host}
-            onChange={(e) => setFormData({
-              ...formData,
-              connection: { ...formData.connection, host: e.target.value }
-            })}
-          />
+            <div className="space-y-2">
+              <Label htmlFor="owner">Owner Email *</Label>
+              <Input
+                id="owner"
+                type="email"
+                placeholder="owner@company.com"
+                value={formData.owner}
+                onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Connection Details */}
+      <div className="space-y-4">
+        <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          Connection Details
+        </Label>
+
+        <div className="grid grid-cols-3 gap-6">
+          <div className="col-span-2 space-y-2">
+            <Label htmlFor="host">Host *</Label>
+            <Input
+              id="host"
+              placeholder="database.company.com"
+              value={formData.connection.host}
+              onChange={(e) => setFormData({
+                ...formData,
+                connection: { ...formData.connection, host: e.target.value }
+              })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="port">Port *</Label>
+            <Input
+              id="port"
+              type="number"
+              placeholder="5432"
+              value={formData.connection.port}
+              onChange={(e) => setFormData({
+                ...formData,
+                connection: { ...formData.connection, port: parseInt(e.target.value) || 5432 }
+              })}
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="port">Port *</Label>
-          <Input
-            id="port"
-            type="number"
-            placeholder="5432"
-            value={formData.connection.port}
-            onChange={(e) => setFormData({
+        <div className="grid grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="database">Database Name *</Label>
+            <Input
+              id="database"
+              placeholder="production_db"
+              value={formData.connection.database}
+              onChange={(e) => setFormData({
+                ...formData,
+                connection: { ...formData.connection, database: e.target.value }
+              })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="username">Username *</Label>
+            <Input
+              id="username"
+              placeholder="trino_readonly"
+              value={formData.connection.username}
+              onChange={(e) => setFormData({
+                ...formData,
+                connection: { ...formData.connection, username: e.target.value }
+              })}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="ssl"
+            checked={formData.connection.ssl}
+            onCheckedChange={(checked) => setFormData({
               ...formData,
-              connection: { ...formData.connection, port: parseInt(e.target.value) || 5432 }
+              connection: { ...formData.connection, ssl: checked as boolean }
             })}
           />
+          <Label htmlFor="ssl" className="cursor-pointer">Enable SSL/TLS</Label>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="database">Database Name *</Label>
-          <Input
-            id="database"
-            placeholder="production_db"
-            value={formData.connection.database}
-            onChange={(e) => setFormData({
-              ...formData,
-              connection: { ...formData.connection, database: e.target.value }
-            })}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="username">Username *</Label>
-          <Input
-            id="username"
-            placeholder="trino_readonly"
-            value={formData.connection.username}
-            onChange={(e) => setFormData({
-              ...formData,
-              connection: { ...formData.connection, username: e.target.value }
-            })}
-          />
-        </div>
-      </div>
-
-      {/* Secret Management */}
-      <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-        <div className="space-y-2">
-          <Label htmlFor="secretType">Password Storage *</Label>
+      {/* Secret Management - Secondary card */}
+      <Card className="border border-border/50 bg-muted/20">
+        <CardContent className="p-6 space-y-4">
+          <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            Secret Management
+          </Label>
+          <div className="space-y-2">
+            <Label htmlFor="secretType">Password Storage *</Label>
           <Select
             value={secretStorageType}
             onValueChange={(value: SecretStorageType) => setSecretStorageType(value)}
@@ -581,21 +694,11 @@ export default function FederatedSourceWizard() {
             />
           </div>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="ssl"
-          checked={formData.connection.ssl}
-          onCheckedChange={(checked) => setFormData({
-            ...formData,
-            connection: { ...formData.connection, ssl: checked as boolean }
-          })}
-        />
-        <Label htmlFor="ssl" className="cursor-pointer">Enable SSL/TLS</Label>
-      </div>
-
-      <div className="pt-4">
+      {/* Connection Test */}
+      <div className="space-y-4">
         <Button
           onClick={handleTestConnection}
           variant="outline"
@@ -637,8 +740,11 @@ export default function FederatedSourceWizard() {
 
   const renderStep2 = () => (
     <div className="space-y-6">
+      {/* Schema Mapping */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Schema Mapping</h3>
+        <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          Schema Mapping
+        </Label>
         <p className="text-sm text-muted-foreground">
           Map source database schemas to Trino schemas. Example: 'public' → 'product_data'
         </p>
@@ -661,13 +767,15 @@ export default function FederatedSourceWizard() {
         </div>
       </div>
 
-      <Separator />
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Connection Pool Settings</h3>
-        <p className="text-sm text-muted-foreground">
-          Configure connection pool sizing and lifecycle management
-        </p>
+      {/* Connection Pool - Secondary card */}
+      <Card className="border border-border/50 bg-muted/20">
+        <CardContent className="p-6 space-y-4">
+          <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            Connection Pool Settings
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Configure connection pool sizing and lifecycle management
+          </p>
 
         <div className="grid grid-cols-3 gap-6">
           <div className="space-y-2">
@@ -721,15 +829,18 @@ export default function FederatedSourceWizard() {
             <p className="text-xs text-muted-foreground">Maximum connections allowed</p>
           </div>
         </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <Separator />
-
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Timeout Configuration</h3>
-        <p className="text-sm text-muted-foreground">
-          Configure timeout and lifecycle settings for connections
-        </p>
+      {/* Timeout Configuration - Secondary card */}
+      <Card className="border border-border/50 bg-muted/20">
+        <CardContent className="p-6 space-y-4">
+          <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            Timeout Configuration
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            Configure timeout and lifecycle settings for connections
+          </p>
 
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
@@ -851,14 +962,17 @@ export default function FederatedSourceWizard() {
           />
           <p className="text-xs text-muted-foreground">Query to validate connections before use</p>
         </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Advanced Trino Settings</h3>
+        <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+          Advanced Trino Settings
+        </Label>
 
         <div className="space-y-4">
           <div className="flex items-start space-x-3 p-4 border rounded-lg">
@@ -1061,107 +1175,154 @@ export default function FederatedSourceWizard() {
       </Card>
 
       {/* Configuration Preview */}
-      {deploymentTarget && (
-        <Card className="border-primary/50 bg-muted/30">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Configuration Preview
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-black/90 text-green-400 p-4 rounded-lg font-mono text-xs overflow-x-auto">
-              {deploymentTarget === 'kubernetes' && (
-                <pre>{`apiVersion: v1
+      {deploymentTarget && (() => {
+        try {
+          // Build secret reference
+          const passwordSecret: SecretReference = secretStorageType === 'plaintext'
+            ? { type: 'plaintext', reference: '', plaintext_value: formData.connection.password }
+            : { type: secretStorageType, reference: secretReference };
+
+          // Build connection details with secret
+          const connectionWithSecret: ConnectionDetails = {
+            ...formData.connection,
+            password_secret: passwordSecret,
+          };
+
+          // Build TrinoConfig with all settings
+          const trinoConfig: TrinoConfig = {
+            catalog_name: formData.trino.catalog_name || '',
+            connector_type: formData.type,
+            schema_mapping: formData.schemaMapping,
+            connection_pool_size: formData.advancedSettings.connectionPoolSize,
+            connection_pool_min_size: formData.advancedSettings.connectionPoolMinSize,
+            connection_pool_max_size: formData.advancedSettings.connectionPoolMaxSize,
+            query_timeout_seconds: formData.advancedSettings.queryTimeoutSeconds,
+            case_insensitive_name_matching: formData.advancedSettings.caseInsensitiveNameMatching,
+            allow_drop_table: formData.advancedSettings.allowDropTable,
+            allow_rename_table: formData.advancedSettings.allowRenameTable,
+          };
+
+          // Generate catalog configuration
+          const catalog = generateTrinoCatalog(
+            formData.type,
+            formData.trino.catalog_name || 'catalog',
+            connectionWithSecret,
+            trinoConfig
+          );
+
+          const propertiesFile = catalogPropertiesToFile(catalog);
+          const configMapDeployment = generateConfigMapForCatalog(catalog, 'trino');
+
+          return (
+            <Card className="border-primary/50 bg-muted/30">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Configuration Preview
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-black/90 text-green-400 p-4 rounded-lg font-mono text-xs overflow-x-auto">
+                  {deploymentTarget === 'kubernetes' && (
+                    <pre>{`apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: trino-catalog-${formData.trino.catalog_name || 'catalog'}
+  name: ${configMapDeployment.configMapName}
   namespace: trino
 data:
-  ${formData.trino.catalog_name || 'catalog'}.properties: |
-    connector.name=${formData.type}
-    connection-url=jdbc:${formData.type}://${formData.connection.host || 'host'}:${formData.connection.port}/${formData.connection.database || 'db'}
-    connection-user=${formData.connection.username || 'username'}
-    connection-password=\${ENV:${secretReference || 'DB_PASSWORD'}}
-    connection-pool.max-size=${formData.advancedSettings.connectionPoolMaxSize}
-    connection-pool.min-size=${formData.advancedSettings.connectionPoolMinSize}`}</pre>
-              )}
-              {deploymentTarget === 'self-hosted' && (
-                <pre>{`# ${formData.trino.catalog_name || 'catalog'}.properties
+  ${catalog.catalogName}.properties: |
+${propertiesFile.split('\n').map(line => `    ${line}`).join('\n')}`}</pre>
+                  )}
+                  {deploymentTarget === 'self-hosted' && (
+                    <pre>{`# ${catalog.catalogName}.properties
 # Place this file in /etc/trino/catalog/ directory
 
-connector.name=${formData.type}
-connection-url=jdbc:${formData.type}://${formData.connection.host || 'host'}:${formData.connection.port}/${formData.connection.database || 'db'}
-connection-user=${formData.connection.username || 'username'}
-connection-password=\${ENV:${secretReference || 'DB_PASSWORD'}}
-connection-pool.max-size=${formData.advancedSettings.connectionPoolMaxSize}
-connection-pool.min-size=${formData.advancedSettings.connectionPoolMinSize}
+${propertiesFile}
 
 # Restart Trino coordinator after deployment:
 # systemctl restart trino-coordinator`}</pre>
-              )}
-              {deploymentTarget === 'cloud-managed' && (
-                <pre>{`# Cloud-managed deployment
+                  )}
+                  {deploymentTarget === 'cloud-managed' && (
+                    <pre>{`# Cloud-managed deployment
 # This feature is coming soon.
 # Configuration will be deployed via cloud provider APIs.`}</pre>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        } catch (error) {
+          return (
+            <Card className="border-red-500/50 bg-red-50/30">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2 text-red-700">
+                  <AlertCircle className="h-4 w-4" />
+                  Configuration Error
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-red-600">
+                  {error instanceof Error ? error.message : 'Failed to generate catalog configuration'}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        }
+      })()}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Database className="h-4 w-4" />
-            <span>Federated Query Source</span>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight">Configure Trino Catalog</h1>
-          <p className="text-muted-foreground">
-            Set up a direct query connection to your source database
-          </p>
+    <div className="max-w-7xl mx-auto p-8 space-y-8">
+      {/* Header - Outside card for clear hierarchy */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Database className="h-4 w-4" />
+          <span>Federated Query Source</span>
         </div>
+        <h1 className="text-3xl font-display tracking-tight">Configure Trino Catalog</h1>
+        <p className="text-muted-foreground text-base">
+          Set up a direct query connection to your source database
+        </p>
+      </div>
 
-        {/* Step Indicator */}
-        {renderStepIndicator()}
+      {/* Step Indicator */}
+      {renderStepIndicator()}
 
-        {/* Step Content */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              {currentStep === 0 && 'Infrastructure Prerequisites'}
-              {currentStep === 1 && 'Connection Details'}
-              {currentStep === 2 && 'Trino Configuration'}
-              {currentStep === 3 && 'Advanced Settings'}
-              {currentStep === 4 && 'Review & Deploy'}
-            </CardTitle>
-            <CardDescription>
-              {currentStep === 0 && 'Ensure prerequisites are met before continuing'}
-              {currentStep === 1 && 'Enter your database connection information'}
-              {currentStep === 2 && 'Configure schema mapping and connection pool'}
-              {currentStep === 3 && 'Optional advanced Trino settings'}
-              {currentStep === 4 && 'Review and deploy your source connection'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {currentStep === 0 && renderStep0()}
-            {currentStep === 1 && renderStep1()}
-            {currentStep === 2 && renderStep2()}
-            {currentStep === 3 && renderStep3()}
-            {currentStep === 4 && renderStep4()}
-          </CardContent>
-        </Card>
+      {/* Step Header */}
+      <div className="space-y-1">
+        <h2 className="text-2xl font-display tracking-tight">
+          {currentStep === 0 && 'Infrastructure Prerequisites'}
+          {currentStep === 1 && 'Connection Details'}
+          {currentStep === 2 && 'Trino Configuration'}
+          {currentStep === 3 && 'Advanced Settings'}
+          {currentStep === 4 && 'Review & Deploy'}
+        </h2>
+        <p className="text-muted-foreground text-base">
+          {currentStep === 0 && 'Ensure prerequisites are met before continuing'}
+          {currentStep === 1 && 'Enter your database connection information'}
+          {currentStep === 2 && 'Configure schema mapping and connection pool'}
+          {currentStep === 3 && 'Optional advanced Trino settings'}
+          {currentStep === 4 && 'Review and deploy your source connection'}
+        </p>
+      </div>
+
+      {/* Step Content - Primary card */}
+      <Card className="border-2 shadow-lg">
+        <CardContent className="p-8">
+          {currentStep === 0 && renderStep0()}
+          {currentStep === 1 && renderStep1()}
+          {currentStep === 2 && renderStep2()}
+          {currentStep === 3 && renderStep3()}
+          {currentStep === 4 && renderStep4()}
+        </CardContent>
+      </Card>
 
         {/* Navigation */}
         <div className="flex items-center justify-between pt-6 border-t">
           <Button
             variant="outline"
-            onClick={currentStep === 0 ? () => router.push('/manage/sources/new/federated/select-connector') : handlePrevious}
+            onClick={currentStep === 0 ? () => router.push('/manage/connections/new/federated/select-connector') : handlePrevious}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />

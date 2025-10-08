@@ -71,16 +71,16 @@ export function Navigation() {
   }, []);
   
   const navItems: NavItem[] = [
-    { 
-      href: '/connections', 
-      label: 'Connections & Sources', 
+    {
+      href: '/manage/connections',
+      label: 'Manage',
       icon: Cable,
       hasDropdown: true,
       isEmphasized: false,
       dropdownItems: [
-        { href: '/connections', label: 'Connection Health', icon: Activity },
-        { href: '/connections?tab=add', label: 'Add New Connection', icon: Settings },
-        { href: '/connections?tab=troubleshoot', label: 'Troubleshooting', icon: AlertTriangle }
+        { href: '/manage/connections', label: 'Connections', icon: Cable },
+        { href: '/manage/pipelines', label: 'Pipelines', icon: GitBranch },
+        { href: '/manage/connections?tab=add', label: 'Add Connection', icon: Settings }
       ]
     },
     {
@@ -91,7 +91,7 @@ export function Navigation() {
       isEmphasized: false,
       dropdownItems: [
         { href: '/monitor', label: 'System Status', icon: Gauge },
-        { href: '/monitor/pipelines', label: 'Pipelines', icon: GitBranch }
+        { href: '/monitor/pipelines', label: 'Monitor Pipelines', icon: GitBranch }
       ]
     },
     {

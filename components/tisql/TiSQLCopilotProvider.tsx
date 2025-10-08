@@ -366,7 +366,7 @@ export function TiSQLCopilotProvider({
     <CopilotKit
       runtimeUrl="/api/copilotkit"
       agent="sql_agent"
-      showDevConsole={process.env.NODE_ENV === 'development'}
+      showDevConsole={false}
     >
       <TiSQLCopilotActions context={context} actions={actions} />
       {children}

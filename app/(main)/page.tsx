@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,12 @@ import {
   GitBranch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DebugAgentPanel } from '@/components/operations/DebugAgentPanel';
+import {
+  analyzeFailure,
+  submitFeedback,
+  type DebugAnalysis,
+} from '@/lib/services/debug-agent-service';
 
 // ============================================================================
 // Types
@@ -165,18 +171,67 @@ export default function OverviewPage() {
   const degradedCount = 5;
   const healthyCount = 135;
 
+  // Debug Agent state
+  const [debugAnalysis, setDebugAnalysis] = useState<DebugAnalysis | null>(null);
+  const [debugPanelOpen, setDebugPanelOpen] = useState(false);
+  const [analyzingIssue, setAnalyzingIssue] = useState<string | null>(null);
+
+  // Debug Agent handlers
+  const handleAnalyzeIssue = async (issueId: string, pipelineName: string, errorMessage: string) => {
+    setAnalyzingIssue(issueId);
+    setDebugPanelOpen(true);
+
+    try {
+      const analysis = await analyzeFailure(issueId, {
+        error_message: errorMessage,
+        task_id: pipelineName,
+        execution_date: new Date().toISOString(),
+        context: {
+          status: 'failed',
+          blockedPipelines: mockCriticalIssues.find(i => i.id === issueId)?.blockedPipelines
+        }
+      });
+
+      setDebugAnalysis(analysis);
+    } catch (error) {
+      console.error('Failed to analyze issue:', error);
+    } finally {
+      setAnalyzingIssue(null);
+    }
+  };
+
+  const handleApplyFix = (recommendation: any) => {
+    console.log('Applying fix:', recommendation);
+    alert('Fix application coming soon');
+  };
+
+  const handleFeedback = async (helpful: boolean) => {
+    if (!debugAnalysis || !analyzingIssue) return;
+
+    try {
+      await submitFeedback(analyzingIssue, {
+        helpful,
+        analysis_id: debugAnalysis.metadata.generated_at,
+      });
+      console.log('Feedback submitted:', helpful);
+    } catch (error) {
+      console.error('Failed to submit feedback:', error);
+    }
+  };
+
   return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      {/* Header */}
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Overview</h2>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
+    <div className="flex-1">
+      <div className="max-w-7xl mx-auto space-y-4 p-4 md:p-8 pt-6">
+        {/* Header */}
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Overview</h2>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm">
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
-      </div>
 
       {/* Status Alert Bar */}
       <Alert variant={criticalCount > 0 ? "destructive" : "default"}>
@@ -218,8 +273,23 @@ export default function OverviewPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button size="sm" className="h-7 text-xs">
-                      Apply Fix
+                    <Button
+                      size="sm"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => handleAnalyzeIssue(issue.id, issue.pipeline, issue.error)}
+                      disabled={analyzingIssue === issue.id}
+                    >
+                      {analyzingIssue === issue.id ? (
+                        <>
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-3 w-3" />
+                          AI Debug
+                        </>
+                      )}
                     </Button>
                     <Button variant="outline" size="sm" className="h-7 text-xs">
                       Details
@@ -380,6 +450,20 @@ export default function OverviewPage() {
           icon={<GitBranch className="h-4 w-4" />}
         />
       </div>
+      </div>
+
+      {/* Debug Agent Panel */}
+      <DebugAgentPanel
+        analysis={debugAnalysis}
+        isOpen={debugPanelOpen}
+        isLoading={analyzingIssue !== null}
+        onClose={() => {
+          setDebugPanelOpen(false);
+          setDebugAnalysis(null);
+        }}
+        onApplyFix={handleApplyFix}
+        onFeedback={handleFeedback}
+      />
     </div>
   );
 }

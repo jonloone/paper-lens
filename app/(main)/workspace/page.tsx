@@ -221,7 +221,7 @@ export default function DataEngineeringWorkspace() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-8 pb-24">
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-24">
         {/* Main Workspace Content */}
         <Tabs value={activeTab} className="space-y-6">
 

@@ -6,8 +6,10 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { QualityRulesBuilder } from '@/components/build/QualityRulesBuilder';
-import { ArrowRight, ArrowLeft, Shield, Clock } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Shield, Clock, Lock, FileCheck, ChevronDown, ChevronRight } from 'lucide-react';
+import type { GovernanceConfig } from '@/lib/schemas/odcs-contract';
 
 export interface QualityRule {
   id: string;
@@ -28,6 +30,8 @@ export interface SLAConfig {
 export interface Step4Data {
   qualityRules: QualityRule[];
   slaConfig: SLAConfig;
+  governance?: GovernanceConfig;
+  dataClassification?: 'public' | 'internal' | 'confidential' | 'restricted';
 }
 
 interface Step4QualityProps {
@@ -50,8 +54,35 @@ export function Step4Quality({ initialData, schema, onComplete, onBack }: Step4Q
     }
   );
 
+  const [showGovernance, setShowGovernance] = useState(false);
+  const [dataClassification, setDataClassification] = useState<'public' | 'internal' | 'confidential' | 'restricted'>(
+    initialData?.dataClassification || 'internal'
+  );
+  const [governance, setGovernance] = useState<GovernanceConfig>(
+    initialData?.governance || {
+      security: {
+        encryption_required: false,
+        pii_fields: [],
+      },
+      compliance: {
+        frameworks: [],
+        requires_approval: false,
+        audit_required: false,
+      },
+      access_control: {
+        default_policy: 'deny',
+        allowed_groups: [],
+      },
+    }
+  );
+
   const handleContinue = () => {
-    onComplete({ qualityRules, slaConfig });
+    onComplete({
+      qualityRules,
+      slaConfig,
+      dataClassification,
+      governance: showGovernance ? governance : undefined,
+    });
   };
 
   return (
@@ -171,6 +202,252 @@ export function Step4Quality({ initialData, schema, onComplete, onBack }: Step4Q
           onChange={setQualityRules}
           availableFields={schema.map(f => f.name)}
         />
+      </Card>
+
+      {/* Data Governance */}
+      <Card className="p-6">
+        <button
+          onClick={() => setShowGovernance(!showGovernance)}
+          className="w-full flex items-center justify-between mb-4 hover:opacity-80 transition-opacity"
+        >
+          <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-primary" />
+            <h3 className="font-semibold text-lg">Data Governance & Security</h3>
+          </div>
+          {showGovernance ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+        </button>
+
+        {showGovernance && (
+          <div className="space-y-6 pt-4 border-t">
+            {/* Data Classification */}
+            <div className="space-y-2">
+              <Label>Data Classification Level</Label>
+              <Select
+                value={dataClassification}
+                onValueChange={(value: any) => setDataClassification(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="public">Public - Unrestricted access</SelectItem>
+                  <SelectItem value="internal">Internal - Company employees only</SelectItem>
+                  <SelectItem value="confidential">Confidential - Need-to-know basis</SelectItem>
+                  <SelectItem value="restricted">Restricted - Highly sensitive</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Determines default access controls and encryption requirements
+              </p>
+            </div>
+
+            {/* Security Configuration */}
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Security Settings
+              </h4>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="encryption"
+                  checked={governance.security.encryption_required}
+                  onCheckedChange={(checked) =>
+                    setGovernance({
+                      ...governance,
+                      security: {
+                        ...governance.security,
+                        encryption_required: checked as boolean,
+                      },
+                    })
+                  }
+                />
+                <label htmlFor="encryption" className="text-sm cursor-pointer">
+                  Require encryption at rest
+                </label>
+              </div>
+
+              <div className="space-y-2">
+                <Label>PII/Sensitive Fields (Select fields containing personal data)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {schema.map((field) => (
+                    <div key={field.name} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`pii-${field.name}`}
+                        checked={governance.security.pii_fields.includes(field.name)}
+                        onCheckedChange={(checked) => {
+                          const newPiiFields = checked
+                            ? [...governance.security.pii_fields, field.name]
+                            : governance.security.pii_fields.filter((f) => f !== field.name);
+                          setGovernance({
+                            ...governance,
+                            security: {
+                              ...governance.security,
+                              pii_fields: newPiiFields,
+                            },
+                          });
+                        }}
+                      />
+                      <label htmlFor={`pii-${field.name}`} className="text-sm cursor-pointer">
+                        {field.name} ({field.type})
+                      </label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  These fields will be automatically masked for unauthorized users
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Data Retention (days)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={governance.security.retention_days || ''}
+                  onChange={(e) =>
+                    setGovernance({
+                      ...governance,
+                      security: {
+                        ...governance.security,
+                        retention_days: e.target.value ? Number(e.target.value) : undefined,
+                      },
+                    })
+                  }
+                  placeholder="365"
+                  className="w-32"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Data older than this will be automatically archived or deleted
+                </p>
+              </div>
+            </div>
+
+            {/* Compliance Frameworks */}
+            <div className="space-y-4">
+              <h4 className="font-medium flex items-center gap-2">
+                <FileCheck className="w-4 h-4" />
+                Compliance Requirements
+              </h4>
+
+              <div className="space-y-2">
+                <Label>Applicable Frameworks (Select all that apply)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['GDPR', 'HIPAA', 'SOC2', 'PCI-DSS', 'CCPA'] as const).map((framework) => (
+                    <div key={framework} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`framework-${framework}`}
+                        checked={governance.compliance.frameworks.includes(framework)}
+                        onCheckedChange={(checked) => {
+                          const newFrameworks = checked
+                            ? [...governance.compliance.frameworks, framework]
+                            : governance.compliance.frameworks.filter((f) => f !== framework);
+                          setGovernance({
+                            ...governance,
+                            compliance: {
+                              ...governance.compliance,
+                              frameworks: newFrameworks,
+                            },
+                          });
+                        }}
+                      />
+                      <label htmlFor={`framework-${framework}`} className="text-sm cursor-pointer">
+                        {framework}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="approval"
+                  checked={governance.compliance.requires_approval}
+                  onCheckedChange={(checked) =>
+                    setGovernance({
+                      ...governance,
+                      compliance: {
+                        ...governance.compliance,
+                        requires_approval: checked as boolean,
+                      },
+                    })
+                  }
+                />
+                <label htmlFor="approval" className="text-sm cursor-pointer">
+                  Require manual approval before deployment
+                </label>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="audit"
+                  checked={governance.compliance.audit_required}
+                  onCheckedChange={(checked) =>
+                    setGovernance({
+                      ...governance,
+                      compliance: {
+                        ...governance.compliance,
+                        audit_required: checked as boolean,
+                      },
+                    })
+                  }
+                />
+                <label htmlFor="audit" className="text-sm cursor-pointer">
+                  Enable comprehensive audit logging
+                </label>
+              </div>
+            </div>
+
+            {/* Access Control */}
+            <div className="space-y-4">
+              <h4 className="font-medium">Access Control</h4>
+
+              <div className="space-y-2">
+                <Label>Default Access Policy</Label>
+                <Select
+                  value={governance.access_control.default_policy}
+                  onValueChange={(value: 'deny' | 'allow') =>
+                    setGovernance({
+                      ...governance,
+                      access_control: {
+                        ...governance.access_control,
+                        default_policy: value,
+                      },
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="deny">Deny by default (recommended)</SelectItem>
+                    <SelectItem value="allow">Allow by default</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Allowed Groups (comma-separated)</Label>
+                <Input
+                  placeholder="data-engineers, analysts, data-science"
+                  value={governance.access_control.allowed_groups.join(', ')}
+                  onChange={(e) =>
+                    setGovernance({
+                      ...governance,
+                      access_control: {
+                        ...governance.access_control,
+                        allowed_groups: e.target.value.split(',').map((g) => g.trim()).filter(Boolean),
+                      },
+                    })
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  User groups that will have access to this data product
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Navigation */}

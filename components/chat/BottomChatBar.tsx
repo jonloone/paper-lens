@@ -28,13 +28,29 @@ interface Message {
   content: string;
   timestamp: Date;
   agentRole?: string;
+  quickActions?: Array<{
+    label: string;
+    action: string;
+  }>;
 }
 
 interface BottomChatBarProps {
   className?: string;
+  hasPendingInsight?: boolean;
+  contextData?: {
+    selectedTables?: string[];
+    currentStep?: string;
+    productIntent?: string;
+  };
+  onInsightDismiss?: () => void;
 }
 
-export function BottomChatBar({ className }: BottomChatBarProps) {
+export function BottomChatBar({
+  className,
+  hasPendingInsight = false,
+  contextData,
+  onInsightDismiss
+}: BottomChatBarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMinimized, setIsMinimized] = useState(true);
   const [input, setInput] = useState('');
@@ -81,7 +97,11 @@ export function BottomChatBar({ className }: BottomChatBarProps) {
           context: {
             workspaceId: 'workspace-1',
             userId: 'user-1',
-            sessionId: `session-${Date.now()}`
+            sessionId: `session-${Date.now()}`,
+            // Include Step2Discover context
+            selectedTables: contextData?.selectedTables || [],
+            currentStep: contextData?.currentStep || 'unknown',
+            productIntent: contextData?.productIntent || ''
           }
         })
       });
@@ -115,19 +135,39 @@ export function BottomChatBar({ className }: BottomChatBarProps) {
           responseContent = `👋 I'm ready to help! I can assist with:
 
 🔍 **SQL Generation** - "Generate a query to find top customers"
-📊 **Data Quality** - "Create quality rules for my orders table"  
+📊 **Data Quality** - "Create quality rules for my orders table"
 🔄 **Pipeline Design** - "Design a pipeline for real-time data"
 
 What would you like to work on?`;
         }
       }
-      
+
+      // Generate contextual quick actions
+      const quickActions: Array<{ label: string; action: string }> = [];
+      if (contextData?.selectedTables && contextData.selectedTables.length > 0) {
+        quickActions.push({
+          label: '🔗 Analyze join patterns',
+          action: `Analyze common join patterns for ${contextData.selectedTables.join(', ')}`
+        });
+        quickActions.push({
+          label: '📊 Check data quality',
+          action: `Review data quality for selected tables`
+        });
+      }
+      if (contextData?.currentStep === 'discover') {
+        quickActions.push({
+          label: '💡 Recommend tables',
+          action: 'Suggest additional tables based on my current selection'
+        });
+      }
+
       // Add assistant response
       const assistantMessage: Message = {
         id: `assistant-${Date.now()}`,
         role: 'assistant',
         content: responseContent,
-        timestamp: new Date()
+        timestamp: new Date(),
+        quickActions: quickActions.length > 0 ? quickActions : undefined
       };
       
       setMessages(prev => [...prev, assistantMessage]);
@@ -195,13 +235,24 @@ What would you like to work on?`;
         >
           <div className="flex items-center gap-3">
             <div className={cn(
-              "p-2 rounded-md transition-all",
+              "p-2 rounded-md transition-all relative",
               isMinimized ? "bg-primary/20" : "hover:bg-muted/50"
             )}>
               {isMinimized ? (
                 <>
-                  <MessageSquare className="h-5 w-5 text-blue-400 animate-pulse" />
-                  <span className="sr-only">Click to open AI Console</span>
+                  <MessageSquare className={cn(
+                    "h-5 w-5 text-blue-400",
+                    hasPendingInsight && "animate-pulse"
+                  )} />
+                  {hasPendingInsight && (
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-purple-500"></span>
+                    </span>
+                  )}
+                  <span className="sr-only">
+                    {hasPendingInsight ? 'AI has insights - Click to open' : 'Click to open AI Console'}
+                  </span>
                 </>
               ) : (
                 <Button
@@ -221,13 +272,20 @@ What would you like to work on?`;
             <div className="flex items-center gap-2 select-none">
               <Terminal className="h-4 w-4 text-green-400" />
               <span className="text-sm font-medium">AI Console</span>
-              <Badge variant="outline" className="text-green-400 border-green-400/30 text-xs">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1 animate-pulse"></span>
-                Ready
-              </Badge>
+              {hasPendingInsight ? (
+                <Badge variant="outline" className="text-purple-400 border-purple-400/30 text-xs">
+                  <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-1 animate-pulse"></span>
+                  Insights Available
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-green-400 border-green-400/30 text-xs">
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1 animate-pulse"></span>
+                  Ready
+                </Badge>
+              )}
               {isMinimized && (
                 <span className="text-xs text-muted-foreground ml-2">
-                  Click to open
+                  {hasPendingInsight ? 'AI has insights' : 'Click to open'}
                 </span>
               )}
             </div>
@@ -326,21 +384,40 @@ What would you like to work on?`;
                         </div>
                       )}
                       
-                      <div
-                        className={cn(
-                          "max-w-[70%] rounded-lg px-4 py-2",
-                          message.role === 'user' 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-muted text-muted-foreground'
-                        )}
-                      >
-                        {message.agentRole && (
-                          <div className="text-xs text-muted-foreground mb-1">{message.agentRole}</div>
-                        )}
-                        <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                        <div className="text-xs text-muted-foreground/60 mt-1">
-                          {message.timestamp.toLocaleTimeString()}
+                      <div className="max-w-[70%] space-y-2">
+                        <div
+                          className={cn(
+                            "rounded-lg px-4 py-2",
+                            message.role === 'user'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground'
+                          )}
+                        >
+                          {message.agentRole && (
+                            <div className="text-xs text-muted-foreground mb-1">{message.agentRole}</div>
+                          )}
+                          <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                          <div className="text-xs text-muted-foreground/60 mt-1">
+                            {message.timestamp.toLocaleTimeString()}
+                          </div>
                         </div>
+
+                        {/* Quick Action Buttons */}
+                        {message.quickActions && message.quickActions.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {message.quickActions.map((action, idx) => (
+                              <Button
+                                key={idx}
+                                variant="outline"
+                                size="sm"
+                                className="text-xs h-7"
+                                onClick={() => setInput(action.action)}
+                              >
+                                {action.label}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       
                       {message.role === 'user' && (

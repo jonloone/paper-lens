@@ -209,21 +209,20 @@ export const TopNavigation = () => {
       hasDropdown: true,
       dropdownItems: [
         { href: '/monitor', label: 'System Status', icon: 'Gauge' },
+        { href: '/manage/connections', label: 'Connections', icon: 'Database' },
         { href: '/monitor/pipelines', label: 'Pipelines', icon: 'GitBranch' },
-        { href: '/monitor/connections', label: 'Connection Health', icon: 'Cable' }
+        { href: '/manage', label: 'Data Products', icon: 'Package' }
       ]
     },
     {
-      href: '/manage',
-      label: 'Manage',
-      icon: 'Package',
+      href: '/govern',
+      label: 'Govern',
+      icon: 'Shield',
       hasDropdown: true,
       dropdownItems: [
-        { href: '/manage', label: 'Data Products', icon: 'Package' },
-        { href: '/manage/sources', label: 'Sources', icon: 'Database' },
         { href: '/manage/access', label: 'Access Control', icon: 'Key' },
         { href: '/manage/quality', label: 'Quality Rules', icon: 'CheckCircle' },
-        { href: '/manage/compliance', label: 'Compliance', icon: 'FileCheck' },
+        { href: '/manage/compliance', label: 'Compliance', icon: 'FileCheck' }
       ]
     }
   ];

@@ -104,12 +104,12 @@ export function SettingsSheet() {
             size="md"
             theme={theme}
           />
-          <span className="text-[11px] font-medium leading-tight text-center font-reckless">
+          <span className="text-xs font-medium leading-tight text-center font-reckless">
             Settings
           </span>
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-[400px] sm:w-[540px]">
+      <SheetContent className="w-96 sm:w-[32rem]">
         <SheetHeader>
           <SheetTitle>Settings</SheetTitle>
           <SheetDescription>

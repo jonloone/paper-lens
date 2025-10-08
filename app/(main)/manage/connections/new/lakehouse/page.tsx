@@ -213,14 +213,14 @@ export default function LakehouseWizard() {
     };
 
     try {
-      const response = await fetch('/api/manage/sources', {
+      const response = await fetch('/api/manage/connections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        router.push('/manage/sources');
+        router.push('/manage/connections');
       } else {
         alert('Failed to create source');
       }
@@ -1109,7 +1109,7 @@ export default function LakehouseWizard() {
         <div className="flex items-center justify-between pt-6 border-t">
           <Button
             variant="outline"
-            onClick={currentStep === 1 ? () => router.push('/manage/sources/new') : handlePrevious}
+            onClick={currentStep === 1 ? () => router.push('/manage/connections/new') : handlePrevious}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />

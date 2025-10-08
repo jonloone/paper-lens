@@ -4,278 +4,425 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { TechIcon } from '@/components/ui/tech-icon';
 import {
-  Database,
-  Workflow,
-  GitBranch,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Zap,
-  Shield,
-  TrendingUp,
-  Clock,
-  HardDrive,
-  ArrowRight,
   CheckCircle2,
   AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  Search,
+  Database,
+  Cloud,
+  FileText,
+  Workflow,
+  MessageSquare,
+  Table2,
+  Server,
+  Globe,
+  ChevronDown,
 } from 'lucide-react';
-import type { IngestionMode } from '@/lib/types/source-connections';
 
-interface ModeOption {
-  value: IngestionMode;
+type SourceCategory = 'database' | 'file_storage' | 'api_saas' | 'messaging' | 'lakehouse' | 'files';
+type IngestionMethod = 'cdc' | 'batch_nifi' | 'federated_trino' | 'spark' | 'airflow';
+
+interface SourceCategoryOption {
+  id: SourceCategory;
   title: string;
   description: string;
-  icon: React.ElementType;
-  characteristics: {
-    label: string;
-    value: string;
-    icon: React.ElementType;
-  }[];
-  tradeoffs: {
-    pros: string[];
-    cons: string[];
-  };
-  useCases: string[];
+  icon: typeof Database;
+  examples: string[];
+  connectorCount: number;
 }
 
-const modeOptions: ModeOption[] = [
+interface IngestionMethodOption {
+  id: IngestionMethod;
+  title: string;
+  description: string;
+  logoTech: string; // TechIcon logo key
+  bestFor: string[];
+  latency: string;
+  complexity: 'simple' | 'moderate' | 'complex';
+  supportedSources: SourceCategory[];
+}
+
+const sourceCategories: SourceCategoryOption[] = [
   {
-    value: 'federated',
-    title: 'Federated Query',
-    description: 'Query source databases directly through Trino without copying data',
+    id: 'database',
+    title: 'Databases & Data Warehouses',
+    description: 'Relational, NoSQL, and analytical databases',
     icon: Database,
-    characteristics: [
-      { label: 'Latency', value: 'Real-time', icon: Zap },
-      { label: 'Storage Cost', value: '$0', icon: HardDrive },
-      { label: 'Ops Complexity', value: 'Low', icon: Shield },
-    ],
-    tradeoffs: {
-      pros: [
-        'Zero storage costs',
-        'Always fresh data',
-        'Simple operational model',
-      ],
-      cons: [
-        'Source DB load impact',
-        'Query latency varies',
-        'No historical snapshots',
-      ],
-    },
-    useCases: [
-      'Dimension tables <100GB',
-      'Lookup/reference data',
-      'Low query frequency (<100 qps)',
-    ],
+    examples: ['postgresql', 'mysql', 'oracle', 'sqlserver', 'mongodb', 'elasticsearch', 'cassandra', 'snowflake', 'bigquery', 'redshift', 'synapse'],
+    connectorCount: 50,
   },
   {
-    value: 'lakehouse',
-    title: 'Lakehouse Pipeline',
-    description: 'Ingest data into Iceberg tables for high-performance analytics and time-travel',
-    icon: Workflow,
-    characteristics: [
-      { label: 'Latency', value: '1-5 min', icon: TrendingUp },
-      { label: 'Storage Cost', value: '$$', icon: HardDrive },
-      { label: 'Ops Complexity', value: 'Medium', icon: Shield },
-    ],
-    tradeoffs: {
-      pros: [
-        'Fast analytical queries',
-        'Isolates source DB load',
-        'Time-travel & snapshots',
-      ],
-      cons: [
-        'Storage costs',
-        'CDC pipeline to maintain',
-        'Minutes of latency',
-      ],
-    },
-    useCases: [
-      'Fact tables >100GB',
-      'High query frequency (>100 qps)',
-      'Time-series/event data',
-    ],
+    id: 'file_storage',
+    title: 'Cloud Storage & Data Lakes',
+    description: 'Object storage and distributed file systems',
+    icon: Cloud,
+    examples: ['aws', 'azure', 'gcp', 's3', 'blob'],
+    connectorCount: 15,
   },
   {
-    value: 'hybrid',
-    title: 'Hybrid Approach',
-    description: 'Combine federated and lakehouse modes for optimal performance',
-    icon: GitBranch,
-    characteristics: [
-      { label: 'Flexibility', value: 'Maximum', icon: GitBranch },
-      { label: 'Storage Cost', value: '$-$$', icon: HardDrive },
-      { label: 'Ops Complexity', value: 'High', icon: AlertCircle },
-    ],
-    tradeoffs: {
-      pros: [
-        'Optimize per table',
-        'Balance cost & performance',
-        'Maximum flexibility',
-      ],
-      cons: [
-        'More complexity',
-        'Requires planning',
-        'Two systems to manage',
-      ],
-    },
-    useCases: [
-      'Large databases (50+ tables)',
-      'Mixed dim/fact patterns',
-      'Cost optimization priority',
-    ],
+    id: 'api_saas',
+    title: 'APIs & SaaS Applications',
+    description: 'REST APIs, GraphQL, and enterprise SaaS platforms',
+    icon: Globe,
+    examples: ['salesforce', 'slack', 'stripe', 'shopify', 'zendesk', 'github'],
+    connectorCount: 100,
+  },
+  {
+    id: 'messaging',
+    title: 'Message Queues & Event Streams',
+    description: 'Real-time messaging and event platforms',
+    icon: MessageSquare,
+    examples: ['kafka', 'kinesis'],
+    connectorCount: 20,
+  },
+  {
+    id: 'lakehouse',
+    title: 'Data Lakehouses',
+    description: 'Open table formats for analytics',
+    icon: Table2,
+    examples: ['iceberg', 'delta-lake', 'hudi'],
+    connectorCount: 3,
+  },
+  {
+    id: 'files',
+    title: 'Files & FTP',
+    description: 'Local files, FTP, SFTP, and network shares',
+    icon: FileText,
+    examples: ['json', 'csv', 'xml', 'parquet', 'avro'],
+    connectorCount: 50,
   },
 ];
 
+const ingestionMethods: IngestionMethodOption[] = [
+  {
+    id: 'cdc',
+    title: 'Real-time CDC',
+    description: 'Debezium: Capture database changes in real-time with change data capture',
+    logoTech: 'debezium',
+    bestFor: ['Real-time sync', 'Event streaming', 'Continuous replication', 'Low latency updates'],
+    latency: '< 1 second',
+    complexity: 'moderate',
+    supportedSources: ['database', 'messaging'],
+  },
+  {
+    id: 'batch_nifi',
+    title: 'Batch Ingestion',
+    description: 'Apache NiFi: Flexible data flow with 400+ processors for any source',
+    logoTech: 'nifi',
+    bestFor: ['Scheduled loads', 'Large volumes', 'Complex transformations', 'File processing'],
+    latency: 'Minutes to hours',
+    complexity: 'simple',
+    supportedSources: ['database', 'file_storage', 'api_saas', 'messaging', 'files'],
+  },
+  {
+    id: 'federated_trino',
+    title: 'Federated Query',
+    description: 'Trino: Query data in-place without copying or moving',
+    logoTech: 'trino',
+    bestFor: ['On-demand queries', 'No data movement', 'Cross-source joins', 'Exploratory analytics'],
+    latency: 'Query-time only',
+    complexity: 'simple',
+    supportedSources: ['database', 'file_storage', 'lakehouse'],
+  },
+  {
+    id: 'spark',
+    title: 'Large-scale Processing',
+    description: 'Apache Spark: Distributed processing for massive datasets and complex transformations',
+    logoTech: 'spark',
+    bestFor: ['Big data processing', 'Complex transformations', 'ML pipelines', 'Petabyte-scale'],
+    latency: 'Minutes to hours',
+    complexity: 'complex',
+    supportedSources: ['database', 'file_storage', 'lakehouse', 'files'],
+  },
+  {
+    id: 'airflow',
+    title: 'Orchestrated Workflows',
+    description: 'Apache Airflow: Schedule and monitor data pipelines with DAGs',
+    logoTech: 'airflow',
+    bestFor: ['Scheduled pipelines', 'Multi-step workflows', 'Dependencies', 'Monitoring'],
+    latency: 'Configurable',
+    complexity: 'moderate',
+    supportedSources: ['database', 'file_storage', 'api_saas', 'messaging', 'lakehouse', 'files'],
+  },
+];
+
+// Connector mapping: category -> available connectors
+const connectorsByCategory: Record<SourceCategory, Array<{id: string; name: string; tech: string}>> = {
+  database: [
+    { id: 'postgresql', name: 'PostgreSQL', tech: 'postgresql' },
+    { id: 'mysql', name: 'MySQL', tech: 'mysql' },
+    { id: 'oracle', name: 'Oracle Database', tech: 'oracle' },
+    { id: 'sqlserver', name: 'SQL Server', tech: 'sqlserver' },
+    { id: 'mongodb', name: 'MongoDB', tech: 'mongodb' },
+    { id: 'elasticsearch', name: 'Elasticsearch', tech: 'elasticsearch' },
+    { id: 'cassandra', name: 'Apache Cassandra', tech: 'cassandra' },
+    { id: 'snowflake', name: 'Snowflake', tech: 'snowflake' },
+    { id: 'bigquery', name: 'BigQuery', tech: 'bigquery' },
+    { id: 'redshift', name: 'Amazon Redshift', tech: 'redshift' },
+    { id: 'synapse', name: 'Azure Synapse', tech: 'synapse' },
+  ],
+  file_storage: [
+    { id: 's3', name: 'Amazon S3', tech: 's3' },
+    { id: 'gcs', name: 'Google Cloud Storage', tech: 'gcp' },
+    { id: 'azure_blob', name: 'Azure Blob Storage', tech: 'blob' },
+    { id: 'hdfs', name: 'HDFS', tech: 'hdfs' },
+  ],
+  api_saas: [
+    { id: 'salesforce', name: 'Salesforce', tech: 'salesforce' },
+    { id: 'slack', name: 'Slack', tech: 'slack' },
+    { id: 'stripe', name: 'Stripe', tech: 'stripe' },
+    { id: 'shopify', name: 'Shopify', tech: 'shopify' },
+    { id: 'zendesk', name: 'Zendesk', tech: 'zendesk' },
+    { id: 'github', name: 'GitHub', tech: 'github' },
+  ],
+  messaging: [
+    { id: 'kafka', name: 'Apache Kafka', tech: 'kafka' },
+    { id: 'kinesis', name: 'AWS Kinesis', tech: 'kinesis' },
+  ],
+  lakehouse: [
+    { id: 'iceberg', name: 'Apache Iceberg', tech: 'iceberg' },
+    { id: 'delta_lake', name: 'Delta Lake', tech: 'delta-lake' },
+    { id: 'hudi', name: 'Apache Hudi', tech: 'hudi' },
+  ],
+  files: [
+    { id: 'json', name: 'JSON Files', tech: 'json' },
+    { id: 'csv', name: 'CSV Files', tech: 'csv' },
+    { id: 'xml', name: 'XML Files', tech: 'xml' },
+    { id: 'parquet', name: 'Parquet Files', tech: 'parquet' },
+    { id: 'avro', name: 'Avro Files', tech: 'avro' },
+  ],
+};
+
 export default function NewSourcePage() {
   const router = useRouter();
-  const [selectedMode, setSelectedMode] = useState<IngestionMode>('lakehouse');
+  const [selectedCategory, setSelectedCategory] = useState<SourceCategory | null>(null);
+  const [selectedConnector, setSelectedConnector] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleCategorySelect = (category: SourceCategory) => {
+    setSelectedCategory(category);
+    setSelectedConnector(null); // Reset connector when category changes
+  };
+
+  const handleConnectorSelect = (connectorId: string) => {
+    setSelectedConnector(connectorId);
+  };
 
   const handleContinue = () => {
-    if (selectedMode === 'federated') {
-      router.push('/manage/sources/new/federated/select-connector');
-    } else if (selectedMode === 'lakehouse') {
-      router.push('/manage/sources/new/lakehouse');
-    } else if (selectedMode === 'hybrid') {
-      router.push('/manage/sources/new/hybrid');
+    if (!selectedCategory || !selectedConnector) return;
+    router.push(`/manage/connections/new/connect?category=${selectedCategory}&connector=${selectedConnector}`);
+  };
+
+  const handleBack = () => {
+    if (selectedCategory) {
+      setSelectedCategory(null);
+      setSelectedConnector(null);
+    } else {
+      router.push('/manage/connections');
     }
   };
 
-  const selectedOption = modeOptions.find(opt => opt.value === selectedMode);
+  const filteredCategories = searchQuery
+    ? sourceCategories.filter(cat =>
+        cat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cat.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cat.examples.some(ex => ex.toLowerCase().includes(searchQuery.toLowerCase()))
+      )
+    : sourceCategories;
 
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="space-y-1">
-          <h1 className="text-xl font-medium">Add Source Connection</h1>
-          <p className="text-sm text-muted-foreground">
-            Choose how to ingest data from your source database into the lakehouse
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">
+            {!selectedCategory ? 'What are you connecting to?' : 'Select your connector'}
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            {!selectedCategory
+              ? 'Select the type of data source you want to connect. We support 238+ connectors across all major platforms.'
+              : `Choose the specific ${sourceCategories.find(c => c.id === selectedCategory)?.title.toLowerCase()} connector you want to use.`}
           </p>
         </div>
 
-        {/* Mode Selection */}
-        <RadioGroup value={selectedMode} onValueChange={(value) => setSelectedMode(value as IngestionMode)}>
-          <div className="grid gap-6 md:grid-cols-3">
-            {modeOptions.map((option) => {
-              const Icon = option.icon;
-              const isSelected = selectedMode === option.value;
+        {/* Category or Connector Selection */}
+        {!selectedCategory ? (
+          <>
+            {/* Search */}
+            <div className="relative max-w-2xl">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search by source type (e.g., Postgres, S3, Kafka)..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
 
-              return (
-                <Card
-                  key={option.value}
-                  className={`cursor-pointer transition-all ${
-                    isSelected
-                      ? 'ring-2 ring-primary shadow-lg'
-                      : 'hover:shadow-md'
-                  }`}
-                >
-                  <div onClick={() => setSelectedMode(option.value)}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <RadioGroupItem value={option.value} id={option.value} className="mt-1" />
-                        <Icon className="h-8 w-8 text-primary" />
+            {/* Source Category Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredCategories.map((category) => {
+                const Icon = category.icon;
+
+                return (
+                  <Card
+                    key={category.id}
+                    className="cursor-pointer transition-all hover:border-primary hover:shadow-md group"
+                    onClick={() => handleCategorySelect(category.id)}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 rounded-lg bg-muted group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{category.title}</h3>
+                          <p className="text-sm text-muted-foreground">{category.description}</p>
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
-                      <CardTitle className="text-lg">
-                        <Label htmlFor={option.value} className="cursor-pointer">
-                          {option.title}
-                        </Label>
-                      </CardTitle>
-                      <CardDescription>{option.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Characteristics */}
-                      <div className="space-y-2">
-                        {option.characteristics.map((char) => {
-                          const CharIcon = char.icon;
-                          return (
-                            <div key={char.label} className="flex items-center gap-2 text-sm">
-                              <CharIcon className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">{char.label}:</span>
-                              <span className="font-medium">{char.value}</span>
+
+                      {category.examples.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pt-2 border-t">
+                          {category.examples.map((logoTech, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center justify-center w-10 h-10 rounded bg-muted/50 hover:bg-muted transition-colors"
+                              title={logoTech}
+                            >
+                              <TechIcon
+                                technology={logoTech}
+                                size="md"
+                                variant="branded"
+                                className="h-6 w-6"
+                              />
                             </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Use Cases */}
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">Common use cases:</p>
-                        <ul className="space-y-1">
-                          {option.useCases.map((useCase, idx) => (
-                            <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
-                              <span className="text-primary">•</span>
-                              <span>{useCase}</span>
-                            </li>
                           ))}
-                        </ul>
+                          {category.connectorCount > category.examples.length && (
+                            <div className="flex items-center justify-center w-10 h-10 rounded bg-muted/50 text-xs text-muted-foreground font-medium">
+                              +{category.connectorCount - category.examples.length}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Category Selector */}
+            <Card className="bg-muted/50">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="space-y-1 flex-shrink-0">
+                    <p className="text-sm text-muted-foreground">Source Type</p>
+                  </div>
+                  <Select
+                    value={selectedCategory}
+                    onValueChange={(value) => {
+                      setSelectedCategory(value as SourceCategory);
+                      setSelectedConnector(null);
+                    }}
+                  >
+                    <SelectTrigger className="w-[280px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sourceCategories.map((category) => {
+                        const Icon = category.icon;
+                        return (
+                          <SelectItem key={category.id} value={category.id}>
+                            <div className="flex items-center gap-2">
+                              <Icon className="h-4 w-4" />
+                              <span>{category.title}</span>
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Connector Selection Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {connectorsByCategory[selectedCategory].map((connector) => {
+                const isSelected = selectedConnector === connector.id;
+
+                return (
+                  <Card
+                    key={connector.id}
+                    className={`cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-primary bg-primary/5'
+                        : 'hover:border-primary/50 hover:shadow-sm'
+                    }`}
+                    onClick={() => handleConnectorSelect(connector.id)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="p-3 rounded-lg bg-muted">
+                          <TechIcon
+                            technology={connector.tech}
+                            size="lg"
+                            variant="branded"
+                          />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium text-sm">{connector.name}</p>
+                        </div>
+                        {isSelected && (
+                          <CheckCircle2 className="h-5 w-5 text-primary" />
+                        )}
                       </div>
                     </CardContent>
-                  </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </>
+        )}
 
-                  {/* Tradeoffs - Only show for selected card */}
-                  {isSelected && (
-                    <div>
-                      <Separator />
-                      <div className="px-6 pb-6 pt-4 bg-muted/30 space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Pros */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <CheckCircle2 className="h-3.5 w-3.5 text-green-600/80" />
-                              <p className="text-xs font-medium text-muted-foreground">Advantages</p>
-                            </div>
-                            <ul className="space-y-1">
-                              {option.tradeoffs.pros.map((item, idx) => (
-                                <li key={idx} className="text-xs text-muted-foreground/90 flex items-start gap-1.5">
-                                  <span className="text-green-600">+</span>
-                                  <span>{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
 
-                          {/* Cons */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <AlertCircle className="h-3.5 w-3.5 text-amber-600/80" />
-                              <p className="text-xs font-medium text-muted-foreground">Limitations</p>
-                            </div>
-                            <ul className="space-y-1">
-                              {option.tradeoffs.cons.map((item, idx) => (
-                                <li key={idx} className="text-xs text-muted-foreground/90 flex items-start gap-1.5">
-                                  <span className="text-amber-600">-</span>
-                                  <span>{item}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-        </RadioGroup>
-
-        {/* Action Buttons */}
+        {/* Navigation */}
         <div className="flex items-center justify-between pt-6 border-t">
           <Button
             variant="outline"
-            onClick={() => router.push('/manage/sources')}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleContinue}
-            size="lg"
+            onClick={handleBack}
             className="gap-2"
           >
-            Continue with {selectedOption?.title}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" />
+            {!selectedCategory ? 'Back to Sources' : 'Back to Categories'}
           </Button>
+
+          {selectedConnector && (
+            <Button
+              onClick={handleContinue}
+              className="gap-2"
+              size="lg"
+            >
+              Continue to Connect & Browse
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

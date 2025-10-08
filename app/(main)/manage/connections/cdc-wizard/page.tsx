@@ -110,7 +110,7 @@ export default function CDCWizardPage() {
   };
 
   const handleCancel = () => {
-    router.push('/manage/sources');
+    router.push('/manage/connections');
   };
 
   // Step data handlers

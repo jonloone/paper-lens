@@ -117,7 +117,7 @@ export default function ResourcesDashboard() {
   };
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="max-w-7xl mx-auto py-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>

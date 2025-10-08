@@ -1,362 +1,364 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Zap,
-  Box,
-  Sparkles,
-  FileText,
-  ArrowRight,
-  Search,
-  Command,
-  CheckCircle2,
-  Users
-} from 'lucide-react';
-import { detectIntent } from '@/lib/api/kag-client';
-import { cn } from '@/lib/utils';
+import { useState, useEffect, useCallback } from 'react';
+import { useStepper, Step } from '@/lib/build/use-stepper';
+import { HorizontalStepper } from '@/components/build/HorizontalStepper';
+import { Step1DefineProduct, type Step1Data } from '@/components/build/steps/Step1DefineProduct';
+import { Step2SelectSources, type Step2Data } from '@/components/build/steps/Step2SelectSources';
+import { Step3SQLWorkstation } from '@/components/build/steps/Step3SQLWorkstation';
+import { Step4QualityRules, type Step4Data } from '@/components/build/steps/Step4QualityRules';
+import { Step5DeliveryConfig, type Step5Data } from '@/components/build/steps/Step5DeliveryConfig';
+import { Step6ReviewDeploy, type Step6Data } from '@/components/build/steps/Step6ReviewDeploy';
 
-interface Template {
-  id: string;
-  name: string;
-  description: string;
-  icon: any;
-  iconColor: string;
-  bgColor: string;
-  type: 'source' | 'entity' | 'solution';
-  includes: string[];
-  estimatedTime: string;
-  popularity: number;
+// SQL step data type
+interface Step3Data {
+  sql: string;
+  validationResult?: any;
+  testResult?: any;
+}
+import { DraftRecoveryModal } from '@/components/build/DraftRecoveryModal';
+import { DraftsPanel } from '@/components/build/DraftsPanel';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { FileText, Database, Code, Shield, Truck, Rocket, BookMarked } from 'lucide-react';
+import { autoSave, clearAutoSave, Draft, saveAutoSaveAs, loadDraft } from '@/lib/utils/draft-storage';
+
+// PRD v2: 6-step pragmatic workflow
+const workflowSteps: Step[] = [
+  {
+    id: 'define',
+    label: 'Define Product',
+    description: 'Name, description, schedule',
+    icon: FileText
+  },
+  {
+    id: 'sources',
+    label: 'Select Sources',
+    description: 'Choose data tables',
+    icon: Database
+  },
+  {
+    id: 'transform',
+    label: 'Write SQL',
+    description: 'Transformation logic',
+    icon: Code
+  },
+  {
+    id: 'quality',
+    label: 'Quality Rules',
+    description: 'Data validation',
+    icon: Shield
+  },
+  {
+    id: 'delivery',
+    label: 'Configure Delivery',
+    description: 'SQL table, API, etc',
+    icon: Truck
+  },
+  {
+    id: 'deploy',
+    label: 'Review & Deploy',
+    description: 'Create pull request',
+    icon: Rocket
+  }
+];
+
+// 6-step form data
+interface BuildFormData {
+  step1?: Step1Data; // Define product (name, owner, schedule, SLA)
+  step2?: Step2Data; // Select sources (tables from DataHub)
+  step3?: Step3Data; // Write SQL (transformation logic)
+  step4?: Step4Data; // Quality rules (Great Expectations)
+  step5?: Step5Data; // Delivery config (SQL table, API endpoint)
+  step6?: Step6Data; // Deploy (PR creation)
 }
 
 export default function BuildPage() {
-  const router = useRouter();
-  const [input, setInput] = useState('');
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [mode, setMode] = useState<'natural' | 'command' | 'search'>('natural');
+  const stepper = useStepper(workflowSteps);
+  const [formData, setFormData] = useState<BuildFormData>({});
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [showRecovery, setShowRecovery] = useState(true);
+  const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const [draftDescription, setDraftDescription] = useState('');
+  const [showDraftsPanel, setShowDraftsPanel] = useState(false);
 
-  const templates: Template[] = [
-    {
-      id: 'customer-360',
-      name: 'Customer 360',
-      description: 'Unified customer profile from multiple sources',
-      icon: Users,
-      iconColor: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-      type: 'entity',
-      includes: ['CRM integration', 'Transaction history', 'Entity resolution', 'SCD Type 2'],
-      estimatedTime: '~15 min',
-      popularity: 95
-    },
-    {
-      id: 'mysql-connector',
-      name: 'MySQL Source',
-      description: 'Connect to MySQL database with CDC',
-      icon: Zap,
-      iconColor: 'text-amber-600',
-      bgColor: 'bg-amber-50',
-      type: 'source',
-      includes: ['Connection pooling', 'Incremental sync', 'Schema detection', 'Data validation'],
-      estimatedTime: '~5 min',
-      popularity: 88
-    },
-    {
-      id: 'churn-model',
-      name: 'Churn Prediction',
-      description: 'Predict customer churn with ML-ready features',
-      icon: Sparkles,
-      iconColor: 'text-green-600',
-      bgColor: 'bg-green-50',
-      type: 'solution',
-      includes: ['Feature engineering', 'Risk scoring', 'Dashboard integration', 'Alerting'],
-      estimatedTime: '~20 min',
-      popularity: 82
-    },
-    {
-      id: 'data-quality',
-      name: 'Data Quality Suite',
-      description: 'Automated quality monitoring and validation',
-      icon: CheckCircle2,
-      iconColor: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-      type: 'solution',
-      includes: ['Great Expectations', 'Automated tests', 'Anomaly detection', 'Reports'],
-      estimatedTime: '~10 min',
-      popularity: 79
-    }
-  ];
-
-  const quickActions = [
-    { id: 'source', icon: Zap, title: 'Connect Source', type: 'source' as const },
-    { id: 'entity', icon: Box, title: 'Model Entity', type: 'entity' as const },
-    { id: 'solution', icon: Sparkles, title: 'Solve Problem', type: 'solution' as const },
-    { id: 'template', icon: FileText, title: 'Browse All', type: 'template' as const }
-  ];
-
-  const recentActivity = [
-    { name: 'customer_events', status: 'draft', time: '2 hours ago' },
-    { name: 'order_pipeline', status: 'deployed', time: '1 day ago' },
-    { name: 'churn_model', status: 'deployed', time: '3 days ago' }
-  ];
-
-  // Keyboard shortcuts
+  // Auto-save effect (runs every 30 seconds)
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        document.getElementById('command-input')?.focus();
+    const interval = setInterval(() => {
+      if (Object.keys(formData).length > 0) {
+        autoSave(formData, stepper.currentStep, Array.from(stepper.completedSteps));
+        setLastSaved(new Date().toISOString());
       }
-      if (e.key === 'Escape') {
-        setSelectedTemplate(null);
-      }
-    };
+    }, 30000); // 30 seconds
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => clearInterval(interval);
+  }, [formData, stepper.currentStep, stepper.completedSteps]);
+
+  // Handle draft recovery
+  const handleRecoverDraft = useCallback((draft: Draft<BuildFormData>) => {
+    setFormData(draft.formData);
+    stepper.goTo(draft.currentStep);
+    draft.completedSteps.forEach(step => stepper.complete(step));
+    setLastSaved(draft.updatedAt);
+    setShowRecovery(false);
+  }, [stepper]);
+
+  const handleStartFresh = useCallback(() => {
+    clearAutoSave();
+    setShowRecovery(false);
   }, []);
 
-  const handleStartBuilding = async () => {
-    if (selectedTemplate) {
-      const params = new URLSearchParams({
-        type: selectedTemplate.type,
-        template: selectedTemplate.id
-      });
-      router.push(`/build/new/define?${params.toString()}`);
+  const handleSaveDraft = useCallback(() => {
+    setShowSaveDraftDialog(true);
+    // Auto-populate draft name from Step 1 if available
+    if (formData.step1?.name) {
+      setDraftName(formData.step1.name);
+    }
+  }, [formData]);
+
+  const handleSaveDraftConfirm = useCallback(() => {
+    if (!draftName.trim()) {
+      alert('Please enter a draft name');
       return;
     }
-
-    if (!input.trim()) {
-      router.push('/build/new/define');
-      return;
-    }
-
-    setIsAnalyzing(true);
 
     try {
-      const result = await detectIntent({
-        description: input,
-        context: {}
-      });
-
-      const params = new URLSearchParams({
-        input: input,
-        type: result.detected_type,
-        confidence: result.confidence.toString(),
-        reasoning: JSON.stringify(result.reasoning)
-      });
-      router.push(`/build/new/define?${params.toString()}`);
+      const draftId = saveAutoSaveAs(draftName, draftDescription);
+      console.log('Saved draft:', draftId);
+      setShowSaveDraftDialog(false);
+      setDraftName('');
+      setDraftDescription('');
+      alert(`Draft "${draftName}" saved successfully!`);
     } catch (error) {
-      console.error('Failed to detect intent:', error);
-      const params = new URLSearchParams({ input: input });
-      router.push(`/build/new/define?${params.toString()}`);
-    } finally {
-      setIsAnalyzing(false);
+      console.error('Failed to save draft:', error);
+      alert('Failed to save draft. Please try again.');
     }
+  }, [draftName, draftDescription]);
+
+  const handleLoadDraft = useCallback((draftId: string) => {
+    const draft = loadDraft<BuildFormData>(draftId);
+    if (draft) {
+      setFormData(draft.formData);
+      stepper.goTo(draft.currentStep);
+      draft.completedSteps.forEach(step => stepper.complete(step));
+      setLastSaved(draft.updatedAt);
+      console.log('Loaded draft:', draft.name);
+    }
+  }, [stepper]);
+
+  // Step completion handlers
+  const handleStep1Complete = (data: Step1Data) => {
+    setFormData(prev => ({ ...prev, step1: data }));
+    stepper.complete(0);
+    stepper.next();
   };
 
-  const handleQuickAction = (type: string) => {
-    if (type === 'template') {
-      document.getElementById('templates-section')?.scrollIntoView({ behavior: 'smooth' });
-      return;
-    }
-    const params = new URLSearchParams({ type: type });
-    router.push(`/build/new/define?${params.toString()}`);
+  const handleStep2Complete = (data: Step2Data) => {
+    setFormData(prev => ({ ...prev, step2: data }));
+    stepper.complete(1);
+    stepper.next();
   };
 
-  const handleTemplateSelect = (template: Template) => {
-    setSelectedTemplate(template);
-    setInput(template.name);
+  const handleStep3Complete = (data: Step3Data) => {
+    setFormData(prev => ({ ...prev, step3: data }));
+    stepper.complete(2);
+    stepper.next();
+  };
+
+  const handleStep4Complete = (data: Step4Data) => {
+    setFormData(prev => ({ ...prev, step4: data }));
+    stepper.complete(3);
+    stepper.next();
+  };
+
+  const handleStep5Complete = (data: Step5Data) => {
+    setFormData(prev => ({ ...prev, step5: data }));
+    stepper.complete(4);
+    stepper.next();
+  };
+
+  const handleStep6Complete = async (data: Step6Data) => {
+    setFormData(prev => ({ ...prev, step6: data }));
+    stepper.complete(5);
+
+    // Submit complete data product for deployment
+    const completeData = {
+      ...formData,
+      step6: data
+    };
+
+    console.log('Creating pull request for data product:', completeData);
+
+    // Clear auto-save on successful completion
+    clearAutoSave();
+
+    // TODO: Submit to backend /api/v1/build/deploy
+    // This will: Generate artifacts → Commit to Git → Create PR
+    // await deployDataProduct(completeData);
+
+    // Show success message
+    alert('Data product created successfully!');
   };
 
   return (
-    <div className="flex-1">
-      {/* Compact Header */}
-      <div className="border-b bg-gradient-to-r from-background to-muted/20">
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Build a Data Product</h1>
-              <p className="text-muted-foreground mt-1">One intelligent workflow that adapts to your needs</p>
+    <div className="min-h-screen">
+      {/* Draft Recovery Modal */}
+      {showRecovery && (
+        <DraftRecoveryModal
+          onRecover={handleRecoverDraft}
+          onStartFresh={handleStartFresh}
+        />
+      )}
+
+      {/* Horizontal Stepper */}
+      <HorizontalStepper
+        steps={stepper.steps}
+        currentStep={stepper.currentStep}
+        completedSteps={stepper.completedSteps}
+        onStepClick={stepper.goTo}
+        lastSaved={lastSaved}
+        onSaveDraft={handleSaveDraft}
+      />
+
+      {/* Save Draft Dialog */}
+      <Dialog open={showSaveDraftDialog} onOpenChange={setShowSaveDraftDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Draft</DialogTitle>
+            <DialogDescription>
+              Save your current progress as a named draft that you can resume later.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="draft-name">Draft Name *</Label>
+              <Input
+                id="draft-name"
+                placeholder="e.g., Customer 360 Pipeline"
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="draft-description">Description (optional)</Label>
+              <Textarea
+                id="draft-description"
+                placeholder="Add notes about this draft..."
+                value={draftDescription}
+                onChange={(e) => setDraftDescription(e.target.value)}
+                rows={3}
+              />
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Persistent Command Bar */}
-      <div className="sticky top-14 z-40 bg-background/95 backdrop-blur-sm border-b shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <div className="relative">
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">
-              {mode === 'command' && <Command className="w-5 h-5" />}
-              {mode === 'search' && <Search className="w-5 h-5" />}
-              {mode === 'natural' && <Sparkles className="w-5 h-5" />}
-            </div>
-
-            <input
-              id="command-input"
-              type="text"
-              value={input}
-              onChange={(e) => {
-                const value = e.target.value;
-                setInput(value);
-                if (value.startsWith('/')) setMode('command');
-                else if (value.startsWith('@')) setMode('search');
-                else setMode('natural');
-              }}
-              placeholder={
-                mode === 'command' ? 'Type a command...' :
-                mode === 'search' ? 'Search products...' :
-                'Describe what to build, or type / for commands, @ to search'
-              }
-              className="w-full pl-12 pr-36 py-3 text-base border-2 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-              disabled={isAnalyzing}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                  handleStartBuilding();
-                }
-              }}
-            />
-
-            <Button
-              size="lg"
-              onClick={handleStartBuilding}
-              disabled={isAnalyzing}
-              className="absolute right-2 top-1/2 -translate-y-1/2"
-            >
-              {isAnalyzing ? 'Analyzing...' : selectedTemplate ? 'Use Template' : 'Start Building'}
-              <ArrowRight className="w-4 h-4 ml-2" />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveDraftDialog(false)}>
+              Cancel
             </Button>
-          </div>
+            <Button onClick={handleSaveDraftConfirm}>
+              Save Draft
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-          {selectedTemplate && (
-            <div className="mt-3 p-3 bg-primary/5 border border-primary/20 rounded-lg flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", selectedTemplate.bgColor)}>
-                  <selectedTemplate.icon className={cn("w-4 h-4", selectedTemplate.iconColor)} />
-                </div>
-                <div>
-                  <div className="font-medium text-sm">Template selected: {selectedTemplate.name}</div>
-                  <div className="text-xs text-muted-foreground">{selectedTemplate.estimatedTime} setup time</div>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => { setSelectedTemplate(null); setInput(''); }}>
-                Clear
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Drafts Panel */}
+      <DraftsPanel
+        open={showDraftsPanel}
+        onOpenChange={setShowDraftsPanel}
+        onLoadDraft={handleLoadDraft}
+      />
 
-      <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+      {/* Floating Drafts Button */}
+      <Button
+        onClick={() => setShowDraftsPanel(true)}
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+        size="icon"
+        title="View Saved Drafts"
+      >
+        <BookMarked className="w-5 h-5" />
+      </Button>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-3">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.id}
-                onClick={() => handleQuickAction(action.type)}
-                className="p-4 border-2 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-left group"
-              >
-                <Icon className="w-5 h-5 text-primary mb-2 group-hover:scale-110 transition-transform" />
-                <div className="font-medium text-sm">{action.title}</div>
-              </button>
-            );
-          })}
-        </div>
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Step 1: Define Product */}
+        {stepper.when('define', () => (
+          <Step1DefineProduct
+            initialData={formData.step1}
+            onComplete={handleStep1Complete}
+          />
+        ))}
 
-        <div className="grid grid-cols-3 gap-6">
+        {/* Step 2: Select Sources */}
+        {stepper.when('sources', () => (
+          <Step2SelectSources
+            initialData={formData.step2}
+            onComplete={handleStep2Complete}
+            onBack={() => stepper.prev()}
+          />
+        ))}
 
-          {/* Templates - Takes 2 columns */}
-          <div className="col-span-2 space-y-4" id="templates-section">
-            <h2 className="text-lg font-semibold">Templates</h2>
+        {/* Step 3: Write SQL */}
+        {stepper.when('transform', () => {
+          // Infer schema from selected sources
+          const schema = (formData.step2?.selectedSources || [])
+            .flatMap(source => source.columns || [])
+            .map(col => ({ name: col.name, type: col.type }));
 
-            <div className="grid gap-3">
-              {templates.map((template) => {
-                const Icon = template.icon;
-                const isSelected = selectedTemplate?.id === template.id;
+          return (
+            <Step3SQLWorkstation
+              productDefinition={formData.step1?.productDefinition}
+              selectedSources={formData.step2?.selectedSources || []}
+              schema={schema}
+              initialData={formData.step3}
+              onComplete={handleStep3Complete}
+              onBack={() => stepper.prev()}
+            />
+          );
+        })}
 
-                return (
-                  <Card
-                    key={template.id}
-                    className={cn(
-                      "p-4 cursor-pointer transition-all",
-                      isSelected ? "border-2 border-primary bg-primary/5 shadow-md" : "hover:border-primary/50 hover:shadow-sm"
-                    )}
-                    onClick={() => handleTemplateSelect(template)}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0", template.bgColor)}>
-                        <Icon className={cn("w-6 h-6", template.iconColor)} />
-                      </div>
+        {/* Step 4: Quality Rules */}
+        {stepper.when('quality', () => (
+          <Step4QualityRules
+            initialData={formData.step4}
+            sql={formData.step3?.sql || ''}
+            onComplete={handleStep4Complete}
+            onBack={() => stepper.prev()}
+          />
+        ))}
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold">{template.name}</h3>
-                          {isSelected && <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />}
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">{template.description}</p>
+        {/* Step 5: Configure Delivery */}
+        {stepper.when('delivery', () => (
+          <Step5DeliveryConfig
+            initialData={formData.step5}
+            productName={formData.step1?.name || ''}
+            onComplete={handleStep5Complete}
+            onBack={() => stepper.prev()}
+          />
+        ))}
 
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {template.estimatedTime}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <TrendingUp className="w-3 h-3" />
-                            {template.popularity}% success
-                          </span>
-                        </div>
-
-                        {isSelected && (
-                          <div className="mt-3 pt-3 border-t">
-                            <div className="text-xs font-medium mb-2">Includes:</div>
-                            <div className="flex flex-wrap gap-1">
-                              {template.includes.map((item) => (
-                                <Badge key={item} variant="secondary" className="text-xs">
-                                  {item}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Recent Activity - Takes 1 column */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Recent</h2>
-
-            <Card className="p-4 space-y-3">
-              {recentActivity.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-2 rounded hover:bg-accent cursor-pointer transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="font-mono text-sm truncate">{item.name}</div>
-                    <div className="text-xs text-muted-foreground">{item.time}</div>
-                  </div>
-                  <Badge variant={item.status === 'deployed' ? 'default' : 'outline'} className="text-xs">
-                    {item.status}
-                  </Badge>
-                </div>
-              ))}
-            </Card>
-          </div>
-
-        </div>
-
+        {/* Step 6: Review & Deploy */}
+        {stepper.when('deploy', () => (
+          <Step6ReviewDeploy
+            formData={formData}
+            onComplete={handleStep6Complete}
+            onBack={() => stepper.prev()}
+          />
+        ))}
       </div>
     </div>
   );

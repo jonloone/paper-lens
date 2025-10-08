@@ -22,7 +22,7 @@ function ComposePageContent() {
 
   if (!dataParam) {
     return (
-      <div className="container mx-auto py-16 text-center">
+      <div className="max-w-7xl mx-auto py-16 text-center">
         <p className="text-muted-foreground">No context data found. Please start from the beginning.</p>
         <Button
           onClick={() => router.push('/build/composable/problem')}
@@ -40,7 +40,7 @@ function ComposePageContent() {
     context = JSON.parse(decodeURIComponent(dataParam));
   } catch (error) {
     return (
-      <div className="container mx-auto py-16 text-center">
+      <div className="max-w-7xl mx-auto py-16 text-center">
         <p className="text-destructive">Failed to parse context data. Please try again.</p>
         <Button
           onClick={() => router.push('/build/composable/problem')}

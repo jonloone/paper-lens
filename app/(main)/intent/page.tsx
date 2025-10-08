@@ -193,7 +193,7 @@ export default function IntelligentPipelineBuilder() {
   };
   
   return (
-    <div className="container mx-auto py-6 max-w-7xl">
+    <div className="max-w-7xl mx-auto py-6 max-w-7xl">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl">Intelligent Pipeline Builder</h1>

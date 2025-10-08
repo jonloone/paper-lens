@@ -504,7 +504,7 @@ export default function DataMarketplace() {
       <div className="min-h-screen bg-background">
         {/* Header */}
         <div className="border-b bg-card/50 backdrop-blur-sm">
-          <div className="container mx-auto px-6 py-4">
+          <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <Button
@@ -593,7 +593,7 @@ export default function DataMarketplace() {
         </div>
         
         {/* Product Details */}
-        <div className="container mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="grid grid-cols-12 gap-8">
             {/* Main Content */}
             <div className="col-span-8 space-y-6">
@@ -986,7 +986,7 @@ export default function DataMarketplace() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-14 z-40">
-        <div className="container mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-light flex items-center gap-3">
@@ -1058,7 +1058,7 @@ export default function DataMarketplace() {
       </div>
       
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid grid-cols-12 gap-8">
           {/* Sidebar - Categories */}
           <div className="col-span-3">

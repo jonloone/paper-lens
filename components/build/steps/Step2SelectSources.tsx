@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, ArrowLeft, Search, Database, Table as TableIcon, Key, ChevronDown, ChevronRight, X } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Search, Database, Table as TableIcon, Key, ChevronDown, ChevronRight, X, CheckCircle2 } from 'lucide-react';
 import { fetchSources } from '@/lib/api/build-api';
 import { cn } from '@/lib/utils';
 import { QualityBreakdown, SampleDataPreview as SampleDataType } from '@/lib/types/source-quality';
@@ -230,7 +230,7 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
     <div className="max-w-7xl mx-auto py-8 flex flex-col h-full">
       {/* Header */}
       <div className="space-y-4 pb-6 flex-shrink-0">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Select Source Data</h2>
             <p className="text-muted-foreground text-lg">
@@ -238,9 +238,22 @@ export function Step2SelectSources({ initialData, onComplete, onBack }: Step2Sel
             </p>
           </div>
           {selectedSources.length > 0 && (
-            <Badge variant="secondary" className="text-lg px-4 py-2">
-              {selectedSources.length} table{selectedSources.length !== 1 ? 's' : ''} selected
-            </Badge>
+            <Card className="border-primary/20 bg-primary/5 flex-shrink-0">
+              <CardContent className="p-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-primary" />
+                    <span className="text-sm">{selectedSources.length} table{selectedSources.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {(totalRows / 1000000).toFixed(1)}M rows total
+                  </div>
+                  <div className="max-w-[300px] text-xs text-muted-foreground truncate">
+                    {selectedSources.map(s => s.name).join(', ')}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
 

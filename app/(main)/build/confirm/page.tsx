@@ -11,7 +11,7 @@ function ConfirmPageContent() {
 
   if (!dataParam) {
     return (
-      <div className="container mx-auto py-16 text-center">
+      <div className="max-w-7xl mx-auto py-16 text-center">
         <p className="text-muted-foreground">No context data found. Please start from the beginning.</p>
       </div>
     );
@@ -21,13 +21,13 @@ function ConfirmPageContent() {
     const context = JSON.parse(decodeURIComponent(dataParam));
 
     return (
-      <div className="container mx-auto py-8 px-4">
+      <div className="max-w-7xl mx-auto py-8 px-4">
         <ContextConfirmation context={context} />
       </div>
     );
   } catch (error) {
     return (
-      <div className="container mx-auto py-16 text-center">
+      <div className="max-w-7xl mx-auto py-16 text-center">
         <p className="text-destructive">Failed to parse context data. Please try again.</p>
       </div>
     );

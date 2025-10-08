@@ -225,7 +225,7 @@ export default function PatternsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">

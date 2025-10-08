@@ -7,9 +7,13 @@ export const metadata: Metadata = {
   title: 'NexusOne | Ecosystem Control Platform',
   description: 'Mission control center for enterprise data operations - see everything, fix everything, deploy everything',
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    icon: [
+      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
 };
 

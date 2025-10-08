@@ -330,7 +330,7 @@ export default function PipelineHub() {
       
       {/* Header */}
       <div className="border-b">
-        <div className="container mx-auto px-6 py-6">
+        <div className="max-w-7xl mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-semibold">Pipelines</h1>
@@ -353,7 +353,7 @@ export default function PipelineHub() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-6 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full max-w-md grid-cols-3">
             <TabsTrigger value="pipelines" className="flex items-center gap-2">

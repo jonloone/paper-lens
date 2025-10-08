@@ -106,7 +106,7 @@ export default function SourceDetailPage() {
         const data = await response.json();
         setSource(data);
       } else if (response.status === 404) {
-        router.push('/manage/sources');
+        router.push('/manage/connections');
       }
     } catch (error) {
       console.error('Failed to fetch source:', error);
@@ -137,7 +137,7 @@ export default function SourceDetailPage() {
         method: 'DELETE',
       });
       if (response.ok) {
-        router.push('/manage/sources');
+        router.push('/manage/connections');
       }
     } catch (error) {
       console.error('Failed to delete source:', error);
@@ -198,7 +198,7 @@ export default function SourceDetailPage() {
             <p className="text-sm text-muted-foreground mt-1 mb-4">
               The requested source does not exist or you don't have permission to view it.
             </p>
-            <Button onClick={() => router.push('/manage/sources')}>
+            <Button onClick={() => router.push('/manage/connections')}>
               Back to Sources
             </Button>
           </CardContent>
@@ -215,7 +215,7 @@ export default function SourceDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => router.push('/manage/sources')}
+            onClick={() => router.push('/manage/connections')}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back

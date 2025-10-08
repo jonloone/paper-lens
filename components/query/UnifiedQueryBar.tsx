@@ -390,9 +390,9 @@ export function UnifiedQueryBar({
     <>
       <Card className={cn(
         "relative transition-all duration-300 border-border bg-card/50 backdrop-blur-sm",
-        isExpanded ? "h-[400px]" : "h-[48px]"
+        isExpanded ? "h-96" : "h-12"
       )}>
-      <div className="flex items-center h-[48px] px-4 gap-2">
+      <div className="flex items-center h-12 px-4 gap-2">
         {/* Mode indicator */}
         <Badge variant="outline" className={cn("gap-1", getModeBadgeColor())}>
           {getModeIcon()}

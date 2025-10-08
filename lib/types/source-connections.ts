@@ -9,15 +9,44 @@
 // Core Types
 // ============================================================================
 
+// Legacy mode (deprecated - kept for backward compatibility)
 export type IngestionMode = 'federated' | 'lakehouse' | 'hybrid';
 
+// New unified flow: per-table ingestion methods
+export type IngestionMethod =
+  | 'federated'           // Query in place via Trino
+  | 'incremental_query'   // Spark-based incremental load (no CDC)
+  | 'batch_cdc'          // Debezium snapshot + Spark batch (no Kafka)
+  | 'streaming_cdc';     // Full CDC pipeline (Debezium + Kafka + Spark Streaming)
+
 export type DatabaseType =
+  // Relational JDBC
   | 'postgresql'
   | 'mysql'
+  | 'mariadb'
   | 'oracle'
   | 'sqlserver'
   | 'mongodb'
-  | 'mariadb';
+
+  // Cloud Warehouses
+  | 'snowflake'
+  | 'bigquery'
+  | 'redshift'
+  | 'synapse'
+
+  // Data Lakehouses
+  | 'iceberg'
+  | 'delta_lake'
+  | 'hudi'
+
+  // Streaming
+  | 'kafka'
+  | 'kinesis'
+
+  // Analytics/Search
+  | 'elasticsearch'
+  | 'cassandra'
+  | 'druid';
 
 export type ConnectorType =
   | 'jdbc'         // Traditional JDBC databases (Postgres, MySQL, Oracle, SQL Server)
@@ -27,7 +56,12 @@ export type ConnectorType =
   | 'delta_lake'   // Delta Lake tables
   | 'bigquery'     // Google BigQuery
   | 'redshift'     // AWS Redshift
-  | 'elasticsearch'; // Elasticsearch/OpenSearch
+  | 'elasticsearch' // Elasticsearch/OpenSearch
+  | 'cassandra'    // Apache Cassandra
+  | 'druid'        // Apache Druid
+  | 'kinesis'      // AWS Kinesis
+  | 'hudi'         // Apache Hudi
+  | 'synapse';     // Azure Synapse
 
 export type SourceStatus =
   | 'active'      // Running normally
@@ -94,7 +128,7 @@ export interface SourceConnection {
 
 export interface TrinoConfig {
   catalog_name: string;
-  connector_type: 'postgresql' | 'mysql' | 'oracle' | 'sqlserver' | 'mongodb';
+  connector_type: DatabaseType; // Support all connector types
 
   // Schema mapping: source_schema -> trino_schema
   schema_mapping: Record<string, string>;
@@ -111,6 +145,47 @@ export interface TrinoConfig {
   allow_drop_table?: boolean;
   allow_rename_table?: boolean;
   case_insensitive_name_matching?: boolean;
+
+  // Connector-specific configurations
+  // Cloud warehouse configs
+  snowflake_account?: string;
+  snowflake_warehouse?: string;
+  snowflake_database?: string;
+  snowflake_role?: string;
+
+  bigquery_project_id?: string;
+  bigquery_credentials_key?: string;
+
+  redshift_cluster_id?: string;
+
+  synapse_database_name?: string;
+
+  // Lakehouse configs
+  iceberg_catalog_type?: 'hive' | 'hadoop' | 'nessie' | 'rest';
+  iceberg_warehouse_location?: string;
+
+  delta_lake_metastore_uri?: string;
+
+  hudi_metastore_uri?: string;
+
+  // Streaming configs
+  kafka_bootstrap_servers?: string;
+  kafka_schema_registry_url?: string;
+
+  kinesis_aws_region?: string;
+  kinesis_access_key?: string;
+
+  // Analytics/Search configs
+  elasticsearch_host?: string;
+  elasticsearch_port?: number;
+  elasticsearch_default_schema?: string;
+
+  cassandra_contact_points?: string;
+  cassandra_native_protocol_port?: number;
+
+  druid_broker_url?: string;
+
+  mongodb_connection_url?: string;
 }
 
 export interface FederatedSource extends SourceConnection {
@@ -508,4 +583,153 @@ export interface TableCharacteristics {
   query_frequency: 'rare' | 'occasional' | 'frequent' | 'very_frequent';
   join_complexity: 'simple' | 'moderate' | 'complex';
   business_criticality: 'low' | 'medium' | 'high' | 'critical';
+}
+
+// ============================================================================
+// Unified Source Ingestion Flow (New)
+// ============================================================================
+
+/**
+ * Per-table ingestion configuration
+ * Replaces source-level mode selection with table-level method selection
+ */
+export interface TableIngestionConfig {
+  schema: string;
+  table: string;
+  method: IngestionMethod;
+
+  // Sync state
+  enabled?: boolean; // Default true. If false, table is discovered but not syncing
+
+  // Common to all replicated methods
+  primaryKey?: string[];
+  partitionBy?: string[];
+
+  // Streaming CDC specific
+  streamingConfig?: {
+    kafkaTopic: string;
+    updateFrequency: 'real-time' | '5min' | '15min' | '30min';
+    captureDeletes: boolean;
+    snapshotMode: 'initial' | 'schema_only' | 'never';
+  };
+
+  // Batch CDC specific
+  batchCdcConfig?: {
+    schedule: 'hourly' | 'daily' | 'weekly';
+    scheduleTime?: string; // e.g., "02:00" for 2 AM
+    captureDeletes: boolean;
+    snapshotMode: 'initial' | 'schema_only';
+    batchInterval?: string; // e.g., "5 minutes", "15 minutes"
+  };
+
+  // Incremental Query specific
+  incrementalConfig?: {
+    timestampColumn: string;
+    watermarkOffset: string; // e.g., "1 hour"
+    schedule: 'hourly' | 'every_6_hours' | 'daily';
+    scheduleTime?: string;
+  };
+}
+
+/**
+ * Complete CDC pipeline configuration
+ * Encompasses Debezium, Kafka (optional), Spark, and Iceberg
+ */
+export interface CDCPipelineConfig {
+  pipelineId: string;
+  pipelineName: string;
+
+  // Source database
+  source: ConnectionDetails;
+
+  // Tables with their ingestion configs
+  tables: TableIngestionConfig[];
+
+  // Infrastructure components (conditionally required based on methods)
+  debezium?: DebeziumConfig;   // Required for: batch_cdc, streaming_cdc
+  kafka?: KafkaConfig;          // Required for: streaming_cdc
+  spark: SparkConfig;           // Required for: all replication methods
+  iceberg: IcebergConfig;       // Required for: all replication methods
+
+  // Deployment
+  namespace: string;
+  resourceLimits?: {
+    debeziumMemory?: string;
+    sparkExecutorMemory: string;
+    sparkExecutorCores: number;
+  };
+}
+
+/**
+ * Unified source connection (replaces mode-specific types)
+ */
+export interface UnifiedSourceConnection {
+  id: string;
+  name: string;
+  type: DatabaseType;
+
+  // Connection details
+  connection: ConnectionDetails;
+
+  // Federated query config (Trino catalog)
+  trino?: TrinoConfig;
+
+  // Tables and their ingestion methods
+  tables: TableIngestionConfig[];
+
+  // Ownership & metadata
+  owner: string;
+  team: string;
+  description?: string;
+  tags?: string[];
+
+  // Timestamps
+  created_at: Date;
+  updated_at: Date;
+
+  // Status
+  status: SourceStatus;
+  last_health_check?: Date;
+  error_message?: string;
+}
+
+/**
+ * Smart recommendation for ingestion method per table
+ */
+export interface TableIngestionRecommendation {
+  schema: string;
+  table: string;
+
+  // Primary recommendation
+  recommendedMethod: IngestionMethod;
+  confidence: number; // 0-1
+  reasoning: string[];
+
+  // Alternative methods ranked by suitability
+  alternatives: Array<{
+    method: IngestionMethod;
+    confidence: number;
+    tradeoffs: string[];
+  }>;
+
+  // Estimated costs & performance
+  estimates: {
+    [K in IngestionMethod]?: {
+      latency: string;           // e.g., "< 1 minute", "hourly"
+      infrastructure: string[];  // Required components
+      monthlyCost: number;       // USD estimate
+      complexity: 'low' | 'medium' | 'high';
+    };
+  };
+
+  // Table analysis that informed the recommendation
+  analysis: {
+    rowCount: number;
+    sizeMB: number;
+    hasTimestampColumn: boolean;
+    timestampColumnName?: string;
+    primaryKeys: string[];
+    updatePattern: 'append-only' | 'updates' | 'deletes' | 'unknown';
+    updateFrequency: 'static' | 'hourly' | 'daily' | 'real-time';
+  };
 }

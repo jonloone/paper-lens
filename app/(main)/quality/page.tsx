@@ -151,7 +151,7 @@ export default function QualityMonitoringPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="max-w-7xl mx-auto py-6">
       <div className="grid grid-cols-12 gap-6">
         {/* Main Dashboard (Left 60%) */}
         <div className="col-span-12 lg:col-span-7 space-y-6">
@@ -586,7 +586,7 @@ export default function QualityMonitoringPage() {
 
       {/* Quick Action Bar (Bottom) */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4">
-        <div className="container mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className="text-xs">
               Last Update: {new Date().toLocaleTimeString()}

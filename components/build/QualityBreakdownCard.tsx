@@ -2,9 +2,18 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { QualityBreakdown, getQualityIcon, getQualityColor, formatUpdateFrequency, formatTimestamp } from '@/lib/types/source-quality';
+import { QualityBreakdown, getQualityColor, formatUpdateFrequency, formatTimestamp } from '@/lib/types/source-quality';
 import { CheckCircle2, AlertTriangle, XCircle, Clock, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Local icon helper - replaces emoji with Lucide icons
+function getQualityIconComponent(status: 'high' | 'medium' | 'low') {
+  switch (status) {
+    case 'high': return <CheckCircle2 className="w-4 h-4 text-green-600" />;
+    case 'medium': return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+    case 'low': return <XCircle className="w-4 h-4 text-red-600" />;
+  }
+}
 
 interface QualityBreakdownCardProps {
   quality: QualityBreakdown;
@@ -14,97 +23,74 @@ interface QualityBreakdownCardProps {
 export function QualityBreakdownCard({ quality, className }: QualityBreakdownCardProps) {
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Quality Breakdown</CardTitle>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Quality Metrics</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2">
         {/* Completeness */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between py-2 border-b border-dashed">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{getQualityIcon(quality.completeness.status)}</span>
-            <div>
-              <p className="text-sm font-medium">Completeness</p>
-              {quality.completeness.issues && quality.completeness.issues.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {quality.completeness.issues[0].description}
-                </p>
-              )}
-            </div>
+            {getQualityIconComponent(quality.completeness.status)}
+            <span className="text-sm font-medium">Completeness</span>
           </div>
-          <div className="text-right">
-            <p className={cn("text-sm font-semibold", getQualityColor(quality.completeness.score))}>
+          <div className="flex items-center gap-2">
+            <span className={cn("text-sm font-semibold", getQualityColor(quality.completeness.score))}>
               {quality.completeness.score}%
-            </p>
-            <p className="text-xs text-muted-foreground capitalize">{quality.completeness.status}</p>
+            </span>
           </div>
         </div>
 
         {/* Uniqueness */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between py-2 border-b border-dashed">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{getQualityIcon(quality.uniqueness.status)}</span>
-            <div>
-              <p className="text-sm font-medium">Uniqueness</p>
-              {quality.uniqueness.issues && quality.uniqueness.issues.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {quality.uniqueness.issues[0].description}
-                </p>
-              )}
-            </div>
+            {getQualityIconComponent(quality.uniqueness.status)}
+            <span className="text-sm font-medium">Uniqueness</span>
           </div>
-          <div className="text-right">
-            <p className={cn("text-sm font-semibold", getQualityColor(quality.uniqueness.score))}>
+          <div className="flex items-center gap-2">
+            <span className={cn("text-sm font-semibold", getQualityColor(quality.uniqueness.score))}>
               {quality.uniqueness.score}%
-            </p>
-            <p className="text-xs text-muted-foreground capitalize">{quality.uniqueness.status}</p>
+            </span>
           </div>
         </div>
 
         {/* Freshness */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between py-2 border-b border-dashed">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{getQualityIcon(quality.freshness.status)}</span>
-            <div>
-              <p className="text-sm font-medium">Freshness</p>
-              <p className="text-xs text-muted-foreground">
-                {formatTimestamp(quality.freshness.lastUpdated)} · {formatUpdateFrequency(quality.freshness.expectedFrequency)}
-              </p>
-            </div>
+            <Clock className={cn(
+              "w-4 h-4",
+              quality.freshness.isStale ? "text-yellow-600" : "text-green-600"
+            )} />
+            <span className="text-sm font-medium">Freshness</span>
           </div>
           <div className="text-right">
-            {quality.freshness.isStale ? (
-              <Badge variant="destructive" className="text-xs">Stale</Badge>
-            ) : (
-              <Badge variant="secondary" className="text-xs">Fresh</Badge>
-            )}
-            {quality.freshness.updateHistory && quality.freshness.updateHistory.length > 0 && (
-              <div className="mt-1">
-                <Sparkline data={quality.freshness.updateHistory} />
-              </div>
-            )}
+            <div className="text-sm">{formatTimestamp(quality.freshness.lastUpdated)}</div>
+            <div className="text-xs text-muted-foreground">{formatUpdateFrequency(quality.freshness.expectedFrequency)}</div>
           </div>
         </div>
 
         {/* Validity */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between py-2">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{getQualityIcon(quality.validity.status)}</span>
-            <div>
-              <p className="text-sm font-medium">Validity</p>
-              {quality.validity.issues && quality.validity.issues.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {quality.validity.issues[0].description}
-                </p>
-              )}
-            </div>
+            {getQualityIconComponent(quality.validity.status)}
+            <span className="text-sm font-medium">Validity</span>
           </div>
-          <div className="text-right">
-            <p className={cn("text-sm font-semibold", getQualityColor(quality.validity.score))}>
+          <div className="flex items-center gap-2">
+            <span className={cn("text-sm font-semibold", getQualityColor(quality.validity.score))}>
               {quality.validity.score}%
-            </p>
-            <p className="text-xs text-muted-foreground capitalize">{quality.validity.status}</p>
+            </span>
           </div>
         </div>
+
+        {/* Issues Summary */}
+        {(quality.completeness.issues?.length || quality.uniqueness.issues?.length || quality.validity.issues?.length) ? (
+          <div className="pt-2 mt-2 border-t">
+            <p className="text-xs text-muted-foreground">
+              {quality.completeness.issues?.[0]?.description ||
+               quality.uniqueness.issues?.[0]?.description ||
+               quality.validity.issues?.[0]?.description}
+            </p>
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );

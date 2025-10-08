@@ -122,7 +122,7 @@ function IngestPageContent() {
   // Render different content based on view
   if (view === 'new') {
     return (
-      <div className="container mx-auto py-8 space-y-6">
+      <div className="max-w-7xl mx-auto py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -144,7 +144,7 @@ function IngestPageContent() {
   
   if (view === 'jobs') {
     return (
-      <div className="container mx-auto py-8 space-y-6">
+      <div className="max-w-7xl mx-auto py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -262,7 +262,7 @@ function IngestPageContent() {
   
   if (view === 'history') {
     return (
-      <div className="container mx-auto py-8 space-y-6">
+      <div className="max-w-7xl mx-auto py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -345,7 +345,7 @@ function IngestPageContent() {
   
   // Default fallback
   return (
-    <div className="container mx-auto py-8">
+    <div className="max-w-7xl mx-auto py-8">
       <h1 className="text-2xl">Data Ingest</h1>
     </div>
   );
@@ -354,7 +354,7 @@ function IngestPageContent() {
 export default function IngestPage() {
   return (
     <Suspense fallback={
-      <div className="container mx-auto py-8">
+      <div className="max-w-7xl mx-auto py-8">
         <div className="animate-pulse">
           <div className="h-8 bg-muted rounded w-1/4 mb-2"></div>
           <div className="h-4 bg-muted rounded w-1/2"></div>

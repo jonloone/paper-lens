@@ -1,655 +1,1005 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import {
   Search,
-  Plus,
+  Package,
+  TrendingUp,
   Star,
+  Plus,
   CheckCircle,
-  Zap,
-  Database,
-  Sparkles,
   Clock,
-  GitBranch,
-  Activity,
-  BarChart3,
-  Brain,
-  FileText,
+  Sparkles,
+  X,
+  SlidersHorizontal,
+  ArrowUpDown
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { ProductCardFactory } from '@/components/discover/ProductCardFactory';
+import { RecommendationsSection } from '@/components/discover/RecommendationsSection';
+import { SemanticSearchBar } from '@/components/discover/SemanticSearchBar';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-type ProductType = 'Foundation' | 'Domain' | 'Solution';
-type Latency = 'Real-time' | 'Near Real-time' | 'Batch';
-type Purpose = 'Analytics' | 'Operational' | 'ML/AI' | 'Reporting';
-type DeliveryMethod = 'SQL' | 'API' | 'Stream' | 'Feature Store';
-
+// Enhanced DataProduct interface with Foundation/Domain/Solution taxonomy
 interface DataProduct {
+  // Core Identity
   id: string;
-  title: string;
+  name: string;
   description: string;
+
+  // CRITICAL: Product Type Taxonomy (Foundation → Domain → Solution)
+  productType: 'Foundation' | 'Domain' | 'Solution';
+
+  // Technical Classification (secondary)
+  technicalType: 'Pipeline' | 'ML Model' | 'Dataset' | 'API' | 'Dashboard' | 'Stream';
+
+  // Business Context
   domain: string;
-  productType: ProductType;
-  technicalType: 'Pipeline' | 'ML Model' | 'Dataset' | 'API';
-  author: string;
+  subDomain?: string;
+  useCases?: string[]; // What problems does this solve?
+  businessQuestions?: string[]; // What questions does this answer?
+
+  // Ownership & Governance
+  owner: {
+    team: string;
+    contact?: string;
+  };
+  sla: {
+    uptime: number; // percentage (0-100)
+    freshness: string; // "real-time" | "5 minutes" | "hourly" | "daily"
+    latency?: string; // "p99 <100ms"
+  };
+
+  // Quality Metrics
+  quality: {
+    dataQuality: number; // 0-100
+    documentation: number; // 0-100
+    testCoverage?: number; // 0-100
+    productionReadiness: 'Experimental' | 'Beta' | 'Production' | 'Deprecated';
+  };
+
+  // Dependencies & Lineage
+  dependencies: {
+    upstream: string[]; // IDs of products this depends on
+    downstream: string[]; // IDs of products that depend on this
+  };
+
+  // Usage Analytics
+  usage: {
+    deployments: number;
+    uniqueConsumers: number;
+    queriesPerDay?: number;
+  };
+
+  // Discovery & Social
   rating: number;
-  deployments: number;
-  lastUpdated: string;
-  verified: boolean;
+  reviews?: number;
   tags: string[];
-  latency: Latency;
-  purpose: Purpose;
-  composedFrom?: string[];
-  usedBy?: number;
-  deliveryMethods: DeliveryMethod[];
+  featured?: boolean;
+  trending?: boolean;
+
+  // Metadata
+  lastUpdated: string;
+  version?: string;
+  verified: boolean;
 }
 
-// ============================================================================
-// Product Type Configuration
-// ============================================================================
-
-const productTypeConfig = {
-  Foundation: {
-    icon: Zap,
-    color: 'amber',
-    bgClass: 'bg-amber-50 dark:bg-amber-950/20',
-    textClass: 'text-amber-700 dark:text-amber-400',
-    borderClass: 'border-amber-200 dark:border-amber-800',
-    tagline: 'Essential data streams'
-  },
-  Domain: {
-    icon: Database,
-    color: 'blue',
-    bgClass: 'bg-blue-50 dark:bg-blue-950/20',
-    textClass: 'text-blue-700 dark:text-blue-400',
-    borderClass: 'border-blue-200 dark:border-blue-800',
-    tagline: 'Business building blocks'
-  },
-  Solution: {
-    icon: Sparkles,
-    color: 'green',
-    bgClass: 'bg-green-50 dark:bg-green-950/20',
-    textClass: 'text-green-700 dark:text-green-400',
-    borderClass: 'border-green-200 dark:border-green-800',
-    tagline: 'Ready-to-use solutions'
-  }
-};
-
-// ============================================================================
-// Mock Data
-// ============================================================================
-
+// Mock marketplace data with proper Foundation → Domain → Solution taxonomy
 const mockProducts: DataProduct[] = [
+  // === FOUNDATION PRODUCTS (Raw data ingestion from source systems) ===
   {
-    id: '1',
-    title: 'Order Events Stream',
-    description: 'Real-time order transactions from e-commerce platform with CDC enabled for immediate downstream processing',
-    domain: 'Sales',
+    id: 'f1',
+    name: 'Salesforce CRM Sync',
+    description: 'Real-time replication of Salesforce production database including contacts, accounts, opportunities, and activities',
     productType: 'Foundation',
-    technicalType: 'Pipeline',
-    author: 'Platform Engineering',
-    rating: 4.8,
-    deployments: 234,
-    lastUpdated: '2 days ago',
+    technicalType: 'Stream',
+    domain: 'Customer',
+    owner: { team: 'Data Platform Team', contact: 'platform@company.com' },
+    sla: { uptime: 99.8, freshness: 'real-time', latency: 'p99 <5s' },
+    quality: {
+      dataQuality: 98,
+      documentation: 95,
+      testCoverage: 92,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: [], downstream: ['d1', 'd2'] },
+    usage: { deployments: 156, uniqueConsumers: 23, queriesPerDay: 45000 },
+    rating: 4.9,
+    reviews: 12,
+    tags: ['crm', 'salesforce', 'real-time', 'source-system'],
     verified: true,
-    tags: ['events', 'real-time', 'cdc'],
-    latency: 'Real-time',
-    purpose: 'Operational',
-    usedBy: 8,
-    deliveryMethods: ['Stream', 'API']
+    lastUpdated: '2 minutes ago',
+    version: '2.1.0',
+    featured: true
   },
   {
-    id: '2',
-    title: 'Customer Entity',
-    description: 'Master customer record with unified profile, preferences, and behavioral attributes across all touchpoints',
+    id: 'f2',
+    name: 'PostgreSQL Transaction DB',
+    description: 'Core transactional database containing orders, payments, and fulfillment data with CDC streaming',
+    productType: 'Foundation',
+    technicalType: 'Stream',
+    domain: 'Financial',
+    owner: { team: 'Data Platform Team' },
+    sla: { uptime: 99.9, freshness: 'real-time', latency: 'p99 <3s' },
+    quality: {
+      dataQuality: 99,
+      documentation: 98,
+      testCoverage: 95,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: [], downstream: ['d3', 'd4', 's1'] },
+    usage: { deployments: 203, uniqueConsumers: 34, queriesPerDay: 120000 },
+    rating: 4.8,
+    reviews: 18,
+    tags: ['postgres', 'transactions', 'cdc', 'real-time'],
+    verified: true,
+    lastUpdated: '1 minute ago',
+    version: '3.0.2'
+  },
+  {
+    id: 'f3',
+    name: 'Google Analytics 4 Events',
+    description: 'Web and mobile analytics event stream from GA4 including pageviews, conversions, and user interactions',
+    productType: 'Foundation',
+    technicalType: 'Stream',
+    domain: 'Marketing',
+    owner: { team: 'Marketing Analytics' },
+    sla: { uptime: 99.5, freshness: '5 minutes' },
+    quality: {
+      dataQuality: 94,
+      documentation: 90,
+      testCoverage: 85,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: [], downstream: ['d5', 's3'] },
+    usage: { deployments: 89, uniqueConsumers: 15, queriesPerDay: 230000 },
+    rating: 4.6,
+    reviews: 8,
+    tags: ['google-analytics', 'web-analytics', 'events'],
+    verified: true,
+    lastUpdated: '5 minutes ago',
+    version: '1.8.0'
+  },
+  {
+    id: 'f4',
+    name: 'Zendesk Support Tickets',
+    description: 'Customer support ticket data including ticket details, comments, agent actions, and resolution metrics',
+    productType: 'Foundation',
+    technicalType: 'Dataset',
     domain: 'Customer',
+    owner: { team: 'Customer Success Platform' },
+    sla: { uptime: 99.2, freshness: 'hourly' },
+    quality: {
+      dataQuality: 96,
+      documentation: 93,
+      testCoverage: 88,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: [], downstream: ['d1', 's4'] },
+    usage: { deployments: 67, uniqueConsumers: 12, queriesPerDay: 8500 },
+    rating: 4.7,
+    reviews: 6,
+    tags: ['zendesk', 'support', 'tickets', 'customer-service'],
+    verified: true,
+    lastUpdated: '45 minutes ago',
+    version: '2.3.1'
+  },
+  {
+    id: 'f5',
+    name: 'Stripe Payment Events',
+    description: 'Payment processing events from Stripe including charges, refunds, disputes, and subscription changes',
+    productType: 'Foundation',
+    technicalType: 'Stream',
+    domain: 'Financial',
+    owner: { team: 'Finance Engineering' },
+    sla: { uptime: 99.95, freshness: 'real-time', latency: 'p99 <2s' },
+    quality: {
+      dataQuality: 99,
+      documentation: 97,
+      testCoverage: 94,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: [], downstream: ['d3', 'd4', 's1', 's2'] },
+    usage: { deployments: 178, uniqueConsumers: 28, queriesPerDay: 95000 },
+    rating: 4.9,
+    reviews: 14,
+    tags: ['stripe', 'payments', 'financial', 'real-time'],
+    verified: true,
+    lastUpdated: '30 seconds ago',
+    version: '4.1.0',
+    featured: true
+  },
+
+  // === DOMAIN PRODUCTS (Business-context aggregations) ===
+  {
+    id: 'd1',
+    name: 'Customer 360 Dataset',
+    description: 'Unified customer view combining CRM, transactions, support interactions, and behavioral data',
     productType: 'Domain',
     technicalType: 'Dataset',
-    author: 'Customer Domain Team',
-    rating: 4.9,
-    deployments: 423,
+    domain: 'Customer',
+    useCases: ['Customer analytics', 'Segmentation', 'Personalization', 'Lifetime value analysis'],
+    businessQuestions: [
+      'What is the complete history of this customer?',
+      'Which customers are most valuable?',
+      'How do customers interact across channels?'
+    ],
+    owner: { team: 'Data Platform Team' },
+    sla: { uptime: 99.5, freshness: 'daily' },
+    quality: {
+      dataQuality: 96,
+      documentation: 100,
+      testCoverage: 92,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['f1', 'f2', 'f4'], downstream: ['s1', 's4'] },
+    usage: { deployments: 312, uniqueConsumers: 45, queriesPerDay: 12000 },
+    rating: 4.5,
+    reviews: 28,
+    tags: ['customer', 'unified', 'dataset', '360-view'],
+    verified: true,
     lastUpdated: '1 day ago',
-    verified: true,
-    tags: ['customer', 'master-data', 'entity'],
-    latency: 'Near Real-time',
-    purpose: 'Analytics',
-    composedFrom: ['Order Events Stream', 'Support Tickets', 'Web Analytics'],
-    usedBy: 12,
-    deliveryMethods: ['SQL', 'API', 'Feature Store']
+    version: '3.2.0',
+    featured: true
   },
   {
-    id: '3',
-    title: 'Customer 360 View',
-    description: 'Complete customer intelligence combining profile, orders, support, marketing engagement, and predictive scores',
-    domain: 'Customer',
-    productType: 'Solution',
+    id: 'd2',
+    name: 'Product Performance Metrics',
+    description: 'Aggregated product-level metrics including sales volume, revenue, inventory levels, and customer ratings',
+    productType: 'Domain',
     technicalType: 'Dataset',
-    author: 'Analytics Team',
+    domain: 'Product',
+    useCases: ['Product analytics', 'Inventory planning', 'Pricing optimization'],
+    businessQuestions: [
+      'Which products are top sellers?',
+      'What is the profit margin by product?',
+      'Which products need restocking?'
+    ],
+    owner: { team: 'Product Analytics Team' },
+    sla: { uptime: 99.3, freshness: 'hourly' },
+    quality: {
+      dataQuality: 95,
+      documentation: 94,
+      testCoverage: 88,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['f1', 'f2'], downstream: ['s5'] },
+    usage: { deployments: 189, uniqueConsumers: 32, queriesPerDay: 8900 },
     rating: 4.7,
-    deployments: 156,
-    lastUpdated: '3 days ago',
+    reviews: 15,
+    tags: ['product', 'metrics', 'performance', 'inventory'],
     verified: true,
-    tags: ['customer-360', 'analytics', 'intelligence'],
-    latency: 'Batch',
-    purpose: 'Analytics',
-    composedFrom: ['Customer Entity', 'Order Entity', 'Marketing Events'],
-    deliveryMethods: ['SQL', 'API']
+    lastUpdated: '3 days ago',
+    version: '2.0.1',
+    featured: true
   },
   {
-    id: '4',
-    title: 'Churn Prediction Model',
-    description: 'ML model predicting customer churn with 94% accuracy using behavioral features, engagement patterns, and transaction history',
-    domain: 'Customer',
+    id: 'd3',
+    name: 'Financial Period Aggregations',
+    description: 'Revenue, costs, and profitability metrics rolled up by day, week, month, quarter, and year',
+    productType: 'Domain',
+    technicalType: 'Dataset',
+    domain: 'Financial',
+    useCases: ['Financial reporting', 'Board presentations', 'Budget vs actuals'],
+    owner: { team: 'Finance Analytics' },
+    sla: { uptime: 99.7, freshness: 'daily' },
+    quality: {
+      dataQuality: 99,
+      documentation: 100,
+      testCoverage: 96,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['f2', 'f5'], downstream: ['s2'] },
+    usage: { deployments: 156, uniqueConsumers: 18, queriesPerDay: 3200 },
+    rating: 4.8,
+    reviews: 11,
+    tags: ['financial', 'reporting', 'aggregations', 'revenue'],
+    verified: true,
+    lastUpdated: '1 day ago',
+    version: '4.3.0'
+  },
+  {
+    id: 'd4',
+    name: 'Transaction Summary Dataset',
+    description: 'Cleaned and enriched transaction data with customer linking, categorization, and fraud flags',
+    productType: 'Domain',
+    technicalType: 'Dataset',
+    domain: 'Financial',
+    owner: { team: 'Data Engineering' },
+    sla: { uptime: 99.6, freshness: 'real-time' },
+    quality: {
+      dataQuality: 98,
+      documentation: 96,
+      testCoverage: 93,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['f2', 'f5'], downstream: ['s1', 's6'] },
+    usage: { deployments: 245, uniqueConsumers: 41, queriesPerDay: 18500 },
+    rating: 4.6,
+    reviews: 22,
+    tags: ['transactions', 'financial', 'enriched'],
+    verified: true,
+    lastUpdated: '2 hours ago',
+    version: '3.1.2'
+  },
+  {
+    id: 'd5',
+    name: 'Marketing Campaign Analytics',
+    description: 'Multi-channel campaign performance with attribution, ROI, and conversion metrics',
+    productType: 'Domain',
+    technicalType: 'Dataset',
+    domain: 'Marketing',
+    useCases: ['Campaign optimization', 'Budget allocation', 'Channel performance'],
+    owner: { team: 'Marketing Analytics' },
+    sla: { uptime: 99.1, freshness: 'hourly' },
+    quality: {
+      dataQuality: 93,
+      documentation: 92,
+      testCoverage: 85,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['f3', 'f5'], downstream: ['s3'] },
+    usage: { deployments: 167, uniqueConsumers: 24, queriesPerDay: 7100 },
+    rating: 4.4,
+    reviews: 10,
+    tags: ['marketing', 'campaigns', 'attribution', 'roi'],
+    verified: true,
+    lastUpdated: '4 days ago',
+    version: '2.2.0'
+  },
+
+  // === SOLUTION PRODUCTS (Business use cases - compose Domain products) ===
+  {
+    id: 's1',
+    name: 'Customer Churn Predictor',
+    description: 'ML model predicting customer churn probability in next 30 days with 94% accuracy using behavioral, transactional, and support data',
     productType: 'Solution',
     technicalType: 'ML Model',
-    author: 'Data Science Team',
+    domain: 'Customer',
+    useCases: ['Churn prevention', 'Retention campaigns', 'Customer success prioritization'],
+    businessQuestions: [
+      'Which customers are at risk of churning?',
+      'What factors indicate churn risk?',
+      'How can we prevent customer loss?'
+    ],
+    owner: { team: 'Data Science Team' },
+    sla: { uptime: 99.5, freshness: 'daily', latency: 'p99 <100ms' },
+    quality: {
+      dataQuality: 96,
+      documentation: 98,
+      testCoverage: 91,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['d1', 'd4', 'f2'], downstream: [] },
+    usage: { deployments: 234, uniqueConsumers: 18, queriesPerDay: 5600 },
     rating: 4.8,
-    deployments: 89,
-    lastUpdated: '5 days ago',
+    reviews: 32,
+    tags: ['ml', 'churn', 'customer', 'prediction'],
     verified: true,
-    tags: ['machine-learning', 'churn', 'prediction'],
-    latency: 'Batch',
-    purpose: 'ML/AI',
-    composedFrom: ['Customer Entity', 'Order Entity', 'Support Interactions'],
-    deliveryMethods: ['API', 'Feature Store']
-  },
-  {
-    id: '5',
-    title: 'Product Catalog',
-    description: 'Centralized product information with SKUs, pricing, inventory, and rich metadata for all channels',
-    domain: 'Product',
-    productType: 'Domain',
-    technicalType: 'Dataset',
-    author: 'Product Domain Team',
-    rating: 4.6,
-    deployments: 312,
-    lastUpdated: '1 week ago',
-    verified: true,
-    tags: ['product', 'catalog', 'master-data'],
-    latency: 'Near Real-time',
-    purpose: 'Operational',
-    composedFrom: ['Inventory Events', 'Pricing Updates'],
-    usedBy: 15,
-    deliveryMethods: ['SQL', 'API']
-  },
-  {
-    id: '6',
-    title: 'Clickstream Analytics',
-    description: 'Real-time web and app clickstream events with session tracking, user attribution, and conversion funnels',
-    domain: 'Product',
-    productType: 'Foundation',
-    technicalType: 'Pipeline',
-    author: 'Analytics Engineering',
-    rating: 4.7,
-    deployments: 187,
-    lastUpdated: '4 days ago',
-    verified: true,
-    tags: ['clickstream', 'real-time', 'analytics'],
-    latency: 'Real-time',
-    purpose: 'Analytics',
-    usedBy: 6,
-    deliveryMethods: ['Stream', 'SQL']
-  },
-  {
-    id: '7',
-    title: 'Executive KPI Dashboard',
-    description: 'Pre-aggregated metrics for executive reporting: revenue, growth, retention, and operational efficiency',
-    domain: 'Financial',
-    productType: 'Solution',
-    technicalType: 'Dataset',
-    author: 'BI Team',
-    rating: 4.5,
-    deployments: 45,
     lastUpdated: '2 days ago',
-    verified: false,
-    tags: ['dashboard', 'kpi', 'executive'],
-    latency: 'Batch',
-    purpose: 'Reporting',
-    composedFrom: ['Order Entity', 'Customer Entity', 'Financial Transactions'],
-    deliveryMethods: ['SQL', 'API']
+    version: '3.1.0',
+    featured: true
   },
   {
-    id: '8',
-    title: 'Real-time Inventory API',
-    description: 'Low-latency inventory availability API for e-commerce with sub-second freshness across all warehouses',
-    domain: 'Operations',
+    id: 's2',
+    name: 'Real-time Revenue Dashboard',
+    description: 'Executive dashboard with 5-minute data freshness tracking revenue, bookings, and key financial KPIs',
+    productType: 'Solution',
+    technicalType: 'Dashboard',
+    domain: 'Financial',
+    useCases: ['Executive reporting', 'Board meetings', 'Real-time business monitoring'],
+    businessQuestions: [
+      'What is current revenue vs target?',
+      'Are we on track for quarterly goals?',
+      'Which segments are growing?'
+    ],
+    owner: { team: 'Analytics Team' },
+    sla: { uptime: 99.8, freshness: '5 minutes' },
+    quality: {
+      dataQuality: 98,
+      documentation: 95,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['d3', 'f5'], downstream: [] },
+    usage: { deployments: 156, uniqueConsumers: 45, queriesPerDay: 2100 },
+    rating: 4.6,
+    reviews: 18,
+    tags: ['dashboard', 'real-time', 'revenue', 'executive'],
+    verified: true,
+    lastUpdated: '1 week ago',
+    version: '2.4.1',
+    featured: true
+  },
+  {
+    id: 's3',
+    name: 'Marketing ROI Optimizer',
+    description: 'Automated campaign optimization using ML to maximize ROI across channels with budget recommendations',
+    productType: 'Solution',
+    technicalType: 'ML Model',
+    domain: 'Marketing',
+    useCases: ['Budget allocation', 'Campaign optimization', 'Channel mix modeling'],
+    owner: { team: 'Marketing Science' },
+    sla: { uptime: 99.3, freshness: 'daily' },
+    quality: {
+      dataQuality: 94,
+      documentation: 93,
+      testCoverage: 87,
+      productionReadiness: 'Beta'
+    },
+    dependencies: { upstream: ['d5', 'f3'], downstream: [] },
+    usage: { deployments: 89, uniqueConsumers: 12, queriesPerDay: 1200 },
+    rating: 4.5,
+    reviews: 9,
+    tags: ['marketing', 'ml', 'optimization', 'roi'],
+    verified: true,
+    lastUpdated: '1 week ago',
+    version: '1.2.0'
+  },
+  {
+    id: 's4',
+    name: 'Customer Sentiment Analysis API',
+    description: 'Real-time sentiment analysis on customer interactions from support tickets, reviews, and social media',
     productType: 'Solution',
     technicalType: 'API',
-    author: 'Operations Team',
-    rating: 4.9,
-    deployments: 278,
-    lastUpdated: '1 day ago',
+    domain: 'Customer',
+    useCases: ['Support prioritization', 'Brand monitoring', 'Product feedback'],
+    owner: { team: 'NLP Team' },
+    sla: { uptime: 99.7, freshness: 'real-time', latency: 'p99 <50ms' },
+    quality: {
+      dataQuality: 95,
+      documentation: 97,
+      testCoverage: 92,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['d1', 'f4'], downstream: [] },
+    usage: { deployments: 203, uniqueConsumers: 29, queriesPerDay: 45000 },
+    rating: 4.7,
+    reviews: 16,
+    tags: ['nlp', 'sentiment', 'api', 'real-time'],
     verified: true,
-    tags: ['inventory', 'real-time', 'api'],
-    latency: 'Real-time',
-    purpose: 'Operational',
-    composedFrom: ['Inventory Events', 'Warehouse Data'],
-    deliveryMethods: ['API']
+    lastUpdated: '3 days ago',
+    version: '2.0.3'
+  },
+  {
+    id: 's5',
+    name: 'Inventory Optimization Engine',
+    description: 'ML-powered inventory recommendations balancing stock levels, demand forecasts, and carrying costs',
+    productType: 'Solution',
+    technicalType: 'ML Model',
+    domain: 'Operations',
+    useCases: ['Inventory planning', 'Stock optimization', 'Supply chain efficiency'],
+    owner: { team: 'Supply Chain Analytics' },
+    sla: { uptime: 99.2, freshness: 'hourly' },
+    quality: {
+      dataQuality: 93,
+      documentation: 89,
+      testCoverage: 84,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['d2', 'f2'], downstream: [] },
+    usage: { deployments: 98, uniqueConsumers: 15, queriesPerDay: 3400 },
+    rating: 4.4,
+    reviews: 8,
+    tags: ['inventory', 'ml', 'optimization', 'supply-chain'],
+    verified: false,
+    lastUpdated: '5 days ago',
+    version: '1.5.2'
+  },
+  {
+    id: 's6',
+    name: 'Fraud Detection System',
+    description: 'Real-time fraud detection using ensemble ML models and rule-based checks with automated blocking',
+    productType: 'Solution',
+    technicalType: 'Pipeline',
+    domain: 'Financial',
+    useCases: ['Fraud prevention', 'Risk management', 'Transaction monitoring'],
+    owner: { team: 'Security Team' },
+    sla: { uptime: 99.95, freshness: 'real-time', latency: 'p99 <25ms' },
+    quality: {
+      dataQuality: 99,
+      documentation: 96,
+      testCoverage: 95,
+      productionReadiness: 'Production'
+    },
+    dependencies: { upstream: ['d4', 'f5'], downstream: [] },
+    usage: { deployments: 276, uniqueConsumers: 8, queriesPerDay: 450000 },
+    rating: 4.9,
+    reviews: 24,
+    tags: ['fraud', 'security', 'ml', 'real-time'],
+    verified: true,
+    lastUpdated: '1 week ago',
+    version: '5.2.1',
+    featured: true,
+    trending: true
   }
 ];
 
-// ============================================================================
-// Components
-// ============================================================================
-
-function ProductTypeButton({
-  type,
-  active,
-  onClick
-}: {
-  type: ProductType;
-  active: boolean;
-  onClick: () => void;
-}) {
-  const config = productTypeConfig[type];
-  const Icon = config.icon;
-
-  return (
-    <Button
-      variant={active ? 'default' : 'outline'}
-      size="sm"
-      onClick={onClick}
-      className={cn(
-        'transition-all',
-        active && config.bgClass,
-        active && config.textClass
-      )}
-    >
-      <Icon className="mr-2 h-4 w-4" />
-      {type}
-    </Button>
-  );
-}
-
-function LatencyBadge({ latency }: { latency: Latency }) {
-  const Icon = latency === 'Real-time' ? Zap : latency === 'Near Real-time' ? Activity : Clock;
-  const colorClass =
-    latency === 'Real-time' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800' :
-    latency === 'Near Real-time' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-800' :
-    'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950/20 dark:text-gray-400 dark:border-gray-800';
-
-  return (
-    <Badge variant="outline" className={cn('text-xs', colorClass)}>
-      <Icon className="mr-1 h-3 w-3" />
-      {latency}
-    </Badge>
-  );
-}
-
-function PurposeBadge({ purpose }: { purpose: Purpose }) {
-  const Icon =
-    purpose === 'Analytics' ? BarChart3 :
-    purpose === 'Operational' ? Activity :
-    purpose === 'ML/AI' ? Brain :
-    FileText;
-
-  return (
-    <Badge variant="outline" className="text-xs">
-      <Icon className="mr-1 h-3 w-3" />
-      {purpose}
-    </Badge>
-  );
-}
-
-function ProductCard({ product, onClick }: { product: DataProduct; onClick: () => void }) {
-  const config = productTypeConfig[product.productType];
-  const TypeIcon = config.icon;
-
-  return (
-    <Card
-      className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={onClick}
-    >
-      {/* Header: Badge + Verified */}
-      <div className="flex items-center justify-between p-4 pb-3">
-        <Badge className={cn('font-medium', config.bgClass, config.textClass, config.borderClass)}>
-          <TypeIcon className="mr-1.5 h-3.5 w-3.5" />
-          {product.productType}
-        </Badge>
-        {product.verified && (
-          <CheckCircle className="h-4 w-4 text-green-600" />
-        )}
-      </div>
-
-      {/* Title & Subtitle */}
-      <div className="px-4 pb-3">
-        <h3 className="font-semibold text-lg mb-1">{product.title}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-1">
-          {product.description}
-        </p>
-      </div>
-
-      {/* Key Metrics Bar */}
-      <div className="flex items-center gap-4 px-4 py-2.5 bg-muted/30">
-        <div className="flex items-center gap-1.5">
-          <Activity className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-sm font-medium">{product.deployments}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
-          <span className="text-sm font-medium">{product.rating}</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {product.latency === 'Real-time' ? <Zap className="h-3.5 w-3.5 text-green-600" /> : <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
-          <span className="text-xs text-muted-foreground">{product.latency}</span>
-        </div>
-      </div>
-
-      {/* Last Updated Footer */}
-      <div className="px-4 py-2 text-xs text-muted-foreground bg-muted/20">
-        Updated {product.lastUpdated}
-      </div>
-    </Card>
-  );
-}
-
-// ============================================================================
-// Main Component
-// ============================================================================
+// ProductCard has been replaced with ProductCardFactory which routes to type-specific cards
+// (FoundationProductCard, DomainProductCard, SolutionProductCard)
 
 export default function DiscoverMarketplace() {
+  // Search & Basic Filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDomain, setSelectedDomain] = useState<string>('all');
-  const [selectedTechnicalType, setSelectedTechnicalType] = useState<string>('all');
-  const [selectedProductType, setSelectedProductType] = useState<ProductType | 'all'>('all');
-  const [selectedProduct, setSelectedProduct] = useState<DataProduct | null>(null);
+  const [selectedProductTypes, setSelectedProductTypes] = useState<string[]>([]);
+  const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
+  const [selectedTechnicalTypes, setSelectedTechnicalTypes] = useState<string[]>([]);
 
-  // Filter products based on search and filters
-  const filteredProducts = mockProducts.filter((product) => {
-    const matchesSearch =
-      product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  // Advanced Filters
+  const [selectedMaturity, setSelectedMaturity] = useState<string[]>([]);
+  const [selectedQualityLevel, setSelectedQualityLevel] = useState<string[]>([]);
+  const [showVerifiedOnly, setShowVerifiedOnly] = useState(false);
+
+  // Sorting
+  const [sortBy, setSortBy] = useState<'relevance' | 'rating' | 'popularity' | 'recent'>('relevance');
+
+  // Toggle filter selection
+  const toggleFilter = (value: string, currentValues: string[], setter: (values: string[]) => void) => {
+    if (currentValues.includes(value)) {
+      setter(currentValues.filter(v => v !== value));
+    } else {
+      setter([...currentValues, value]);
+    }
+  };
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedProductTypes([]);
+    setSelectedDomains([]);
+    setSelectedTechnicalTypes([]);
+    setSelectedMaturity([]);
+    setSelectedQualityLevel([]);
+    setShowVerifiedOnly(false);
+    setSearchQuery('');
+  };
+
+  // Count active filters
+  const activeFilterCount =
+    selectedProductTypes.length +
+    selectedDomains.length +
+    selectedTechnicalTypes.length +
+    selectedMaturity.length +
+    selectedQualityLevel.length +
+    (showVerifiedOnly ? 1 : 0);
+
+  // Filter products
+  const filteredProducts = mockProducts.filter(product => {
+    // Search
+    const matchesSearch = searchQuery === '' ||
+      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       product.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+      product.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (product.useCases && product.useCases.some(uc => uc.toLowerCase().includes(searchQuery.toLowerCase())));
 
-    const matchesDomain = selectedDomain === 'all' || product.domain === selectedDomain;
-    const matchesTechnicalType = selectedTechnicalType === 'all' || product.technicalType === selectedTechnicalType;
-    const matchesProductType = selectedProductType === 'all' || product.productType === selectedProductType;
+    // Multi-select filters
+    const matchesProductType = selectedProductTypes.length === 0 || selectedProductTypes.includes(product.productType);
+    const matchesDomain = selectedDomains.length === 0 || selectedDomains.includes(product.domain);
+    const matchesTechnicalType = selectedTechnicalTypes.length === 0 || selectedTechnicalTypes.includes(product.technicalType);
+    const matchesMaturity = selectedMaturity.length === 0 || selectedMaturity.includes(product.quality.productionReadiness);
 
-    return matchesSearch && matchesDomain && matchesTechnicalType && matchesProductType;
+    // Quality level filter
+    const matchesQuality = selectedQualityLevel.length === 0 || selectedQualityLevel.some(level => {
+      if (level === 'high' && product.quality.dataQuality >= 90) return true;
+      if (level === 'medium' && product.quality.dataQuality >= 70 && product.quality.dataQuality < 90) return true;
+      if (level === 'low' && product.quality.dataQuality < 70) return true;
+      return false;
+    });
+
+    // Verified filter
+    const matchesVerified = !showVerifiedOnly || product.verified;
+
+    return matchesSearch && matchesProductType && matchesDomain && matchesTechnicalType &&
+           matchesMaturity && matchesQuality && matchesVerified;
   });
 
+  // Sort products
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    switch (sortBy) {
+      case 'rating':
+        return b.rating - a.rating;
+      case 'popularity':
+        return b.usage.deployments - a.usage.deployments;
+      case 'recent':
+        return 0; // Already sorted by recent in mock data
+      case 'relevance':
+      default:
+        // Simple relevance: featured first, then by rating
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        return b.rating - a.rating;
+    }
+  });
+
+  // Get featured products
+  const featuredProducts = sortedProducts.filter(p => p.featured);
+
+  // Get popular products
+  const popularProducts = [...sortedProducts].sort((a, b) => b.usage.deployments - a.usage.deployments);
+
+  // Get recent products
+  const recentProducts = sortedProducts;
+
+  // Recommendations data
+  const recommendations = {
+    forYou: sortedProducts.filter(p => p.productType === 'Domain').slice(0, 3),
+    trending: sortedProducts.filter(p => p.trending).slice(0, 3),
+    usedTogether: sortedProducts.filter(p => p.productType === 'Solution').slice(0, 3),
+  };
+
   return (
-    <div className="min-h-screen">
-      <div className="max-w-[1584px] mx-auto px-4 md:px-6 lg:px-8 py-6 space-y-6">
+    <div className="flex-1">
+      <div className="flex gap-6 max-w-[1800px] mx-auto">
+        {/* Main Content */}
+        <div className="flex-1 min-w-0">
         {/* Marketplace Header */}
-        <div className="space-y-4">
+        <div className="space-y-6 px-8 pt-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                Data Product Marketplace
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Discover, compose, and deploy production-ready data products
-              </p>
-            </div>
-            <Button size="lg">
-              <Plus className="mr-2 h-4 w-4" />
-              Publish Product
-            </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              Data Product Marketplace
+            </h1>
+            <p className="text-muted-foreground">
+              Discover, share, and deploy production-ready data products
+            </p>
           </div>
-
-          {/* Product Type Quick Filters */}
-          <div className="flex gap-2">
-            <ProductTypeButton
-              type="Foundation"
-              active={selectedProductType === 'Foundation'}
-              onClick={() => setSelectedProductType(selectedProductType === 'Foundation' ? 'all' : 'Foundation')}
-            />
-            <ProductTypeButton
-              type="Domain"
-              active={selectedProductType === 'Domain'}
-              onClick={() => setSelectedProductType(selectedProductType === 'Domain' ? 'all' : 'Domain')}
-            />
-            <ProductTypeButton
-              type="Solution"
-              active={selectedProductType === 'Solution'}
-              onClick={() => setSelectedProductType(selectedProductType === 'Solution' ? 'all' : 'Solution')}
-            />
-          </div>
-
-          {/* Enhanced Search Bar */}
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search products, domains, or use cases..."
-              className="pl-12 h-12 text-base"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <Button size="lg">
+            <Plus className="mr-2 h-4 w-4" />
+            Publish Product
+          </Button>
         </div>
 
-        {/* Main Content Tabs with Filters */}
-        <Tabs defaultValue="featured" className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <TabsList>
-              <TabsTrigger value="featured">Featured</TabsTrigger>
-              <TabsTrigger value="popular">Most Popular</TabsTrigger>
-              <TabsTrigger value="recent">Recently Added</TabsTrigger>
-              <TabsTrigger value="recommended">Recommended</TabsTrigger>
-            </TabsList>
+        {/* Semantic Search Bar */}
+        <SemanticSearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          resultCount={sortedProducts.length}
+        />
 
-            <div className="flex gap-2">
-              <Select value={selectedDomain} onValueChange={setSelectedDomain}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Domain" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Domains</SelectItem>
-                  <SelectItem value="Customer">Customer</SelectItem>
-                  <SelectItem value="Financial">Financial</SelectItem>
-                  <SelectItem value="Product">Product</SelectItem>
-                  <SelectItem value="Sales">Sales</SelectItem>
-                  <SelectItem value="Operations">Operations</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={selectedTechnicalType} onValueChange={setSelectedTechnicalType}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="Pipeline">Pipeline</SelectItem>
-                  <SelectItem value="ML Model">ML Model</SelectItem>
-                  <SelectItem value="Dataset">Dataset</SelectItem>
-                  <SelectItem value="API">API</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Recommended Products Section */}
+        {searchQuery === '' && activeFilterCount === 0 && (
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-medium">Recommended for You</h2>
+            </div>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+              {sortedProducts.filter(p => p.rating >= 4.5).slice(0, 3).map(product => (
+                <ProductCardFactory key={product.id} product={product} />
+              ))}
             </div>
           </div>
+        )}
+        </div>
 
-          <TabsContent value="featured" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="popular" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[...filteredProducts]
-                .sort((a, b) => b.deployments - a.deployments)
-                .map((product) => (
-                  <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
-                ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="recent" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="recommended" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredProducts
-                .filter(p => p.rating >= 4.7)
-                .map((product) => (
-                  <ProductCard key={product.id} product={product} onClick={() => setSelectedProduct(product)} />
-                ))}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Product Detail Sheet */}
-        <Sheet open={selectedProduct !== null} onOpenChange={(open) => !open && setSelectedProduct(null)}>
-          <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-            {selectedProduct && (
-              <>
-                <SheetHeader className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Badge className={cn(
-                      'font-medium',
-                      productTypeConfig[selectedProduct.productType].bgClass,
-                      productTypeConfig[selectedProduct.productType].textClass,
-                      productTypeConfig[selectedProduct.productType].borderClass
-                    )}>
-                      {React.createElement(productTypeConfig[selectedProduct.productType].icon, { className: 'mr-1.5 h-3.5 w-3.5' })}
-                      {selectedProduct.productType}
-                    </Badge>
-                    {selectedProduct.verified && (
-                      <div className="flex items-center gap-1.5 text-sm text-green-600">
-                        <CheckCircle className="h-4 w-4" />
-                        <span>Verified</span>
-                      </div>
+        {/* Filters and Sorting Bar */}
+        <div className="px-8 py-4 border-b space-y-3">
+          <div className="flex items-center justify-between">
+            {/* Filter Controls */}
+            <div className="flex items-center gap-2">
+              {/* Advanced Filters Popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    Filters
+                    {activeFilterCount > 0 && (
+                      <Badge variant="secondary" className="ml-2 h-5 px-1.5">
+                        {activeFilterCount}
+                      </Badge>
                     )}
-                  </div>
-                  <SheetTitle className="text-2xl">{selectedProduct.title}</SheetTitle>
-                  <SheetDescription className="text-base">
-                    {selectedProduct.description}
-                  </SheetDescription>
-                </SheetHeader>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="start">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">Filters</h4>
+                      {activeFilterCount > 0 && (
+                        <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                          Clear all
+                        </Button>
+                      )}
+                    </div>
 
-                <div className="mt-6 space-y-6">
-                  {/* Key Metrics */}
-                  <div>
-                    <h3 className="text-sm font-medium mb-3">Key Metrics</h3>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="flex flex-col">
-                        <span className="text-2xl font-bold">{selectedProduct.deployments}</span>
-                        <span className="text-xs text-muted-foreground">Deployments</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-2xl font-bold">{selectedProduct.rating}</span>
+                    <Separator />
+
+                    {/* Product Type */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Product Type</Label>
+                      {['Foundation', 'Domain', 'Solution'].map(type => (
+                        <div key={type} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`type-${type}`}
+                            checked={selectedProductTypes.includes(type)}
+                            onCheckedChange={() => toggleFilter(type, selectedProductTypes, setSelectedProductTypes)}
+                          />
+                          <label htmlFor={`type-${type}`} className="text-sm cursor-pointer">
+                            {type}
+                          </label>
                         </div>
-                        <span className="text-xs text-muted-foreground">Rating</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-2xl font-bold">{selectedProduct.latency}</span>
-                        <span className="text-xs text-muted-foreground">Latency</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div>
-                    <h3 className="text-sm font-medium mb-3">Details</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Domain</span>
-                        <span className="font-medium">{selectedProduct.domain}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Type</span>
-                        <span className="font-medium">{selectedProduct.technicalType}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Purpose</span>
-                        <span className="font-medium">{selectedProduct.purpose}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Author</span>
-                        <span className="font-medium">{selectedProduct.author}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Last Updated</span>
-                        <span className="font-medium">{selectedProduct.lastUpdated}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Composition */}
-                  {(selectedProduct.composedFrom || selectedProduct.usedBy) && (
-                    <div>
-                      <h3 className="text-sm font-medium mb-3">Composition</h3>
-                      <div className="space-y-2">
-                        {selectedProduct.composedFrom && selectedProduct.composedFrom.length > 0 && (
-                          <div className="flex items-start gap-2">
-                            <GitBranch className="h-4 w-4 text-muted-foreground mt-0.5" />
-                            <div>
-                              <div className="text-sm font-medium">Combines {selectedProduct.composedFrom.length} products</div>
-                              <div className="text-xs text-muted-foreground mt-1">
-                                {selectedProduct.composedFrom.join(', ')}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                        {selectedProduct.usedBy && selectedProduct.usedBy > 0 && (
-                          <div className="flex items-start gap-2">
-                            <GitBranch className="h-4 w-4 text-muted-foreground mt-0.5" />
-                            <div>
-                              <div className="text-sm font-medium">Used by {selectedProduct.usedBy} products</div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Access Methods */}
-                  <div>
-                    <h3 className="text-sm font-medium mb-3">Access Methods</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedProduct.deliveryMethods.map((method) => (
-                        <Badge key={method} variant="secondary" className="text-sm">
-                          {method}
-                        </Badge>
                       ))}
                     </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-3 pt-4">
-                    <Button className="flex-1" size="lg">
-                      Deploy Product
-                    </Button>
-                    <Button variant="outline" size="lg">
-                      View Documentation
-                    </Button>
+                    <Separator />
+
+                    {/* Domain */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Domain</Label>
+                      {['Customer', 'Financial', 'Operations', 'Marketing', 'Product'].map(domain => (
+                        <div key={domain} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`domain-${domain}`}
+                            checked={selectedDomains.includes(domain)}
+                            onCheckedChange={() => toggleFilter(domain, selectedDomains, setSelectedDomains)}
+                          />
+                          <label htmlFor={`domain-${domain}`} className="text-sm cursor-pointer">
+                            {domain}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Separator />
+
+                    {/* Maturity Level */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Maturity</Label>
+                      {['Production', 'Beta', 'Experimental'].map(maturity => (
+                        <div key={maturity} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`maturity-${maturity}`}
+                            checked={selectedMaturity.includes(maturity)}
+                            onCheckedChange={() => toggleFilter(maturity, selectedMaturity, setSelectedMaturity)}
+                          />
+                          <label htmlFor={`maturity-${maturity}`} className="text-sm cursor-pointer">
+                            {maturity}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Separator />
+
+                    {/* Quality Level */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-muted-foreground">Quality</Label>
+                      {[
+                        { value: 'high', label: 'High (90+)' },
+                        { value: 'medium', label: 'Medium (70-89)' },
+                        { value: 'low', label: 'Low (<70)' }
+                      ].map(({ value, label }) => (
+                        <div key={value} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`quality-${value}`}
+                            checked={selectedQualityLevel.includes(value)}
+                            onCheckedChange={() => toggleFilter(value, selectedQualityLevel, setSelectedQualityLevel)}
+                          />
+                          <label htmlFor={`quality-${value}`} className="text-sm cursor-pointer">
+                            {label}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+
+                    <Separator />
+
+                    {/* Verified Only */}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="verified"
+                        checked={showVerifiedOnly}
+                        onCheckedChange={(checked) => setShowVerifiedOnly(checked as boolean)}
+                      />
+                      <label htmlFor="verified" className="text-sm cursor-pointer">
+                        Verified products only
+                      </label>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-          </SheetContent>
-        </Sheet>
+                </PopoverContent>
+              </Popover>
+
+              {/* Clear Filters Button */}
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearAllFilters}>
+                  Clear all filters
+                </Button>
+              )}
+            </div>
+
+            {/* Sort By */}
+            <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+              <SelectTrigger className="w-[160px] h-9">
+                <ArrowUpDown className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="relevance">Relevance</SelectItem>
+                <SelectItem value="rating">Highest Rated</SelectItem>
+                <SelectItem value="popularity">Most Popular</SelectItem>
+                <SelectItem value="recent">Recently Added</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Active Filter Chips */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedProductTypes.map(type => (
+                <Badge key={type} variant="secondary" className="gap-1">
+                  {type}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => toggleFilter(type, selectedProductTypes, setSelectedProductTypes)}
+                  />
+                </Badge>
+              ))}
+              {selectedDomains.map(domain => (
+                <Badge key={domain} variant="secondary" className="gap-1">
+                  {domain}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => toggleFilter(domain, selectedDomains, setSelectedDomains)}
+                  />
+                </Badge>
+              ))}
+              {selectedTechnicalTypes.map(type => (
+                <Badge key={type} variant="secondary" className="gap-1">
+                  {type}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => toggleFilter(type, selectedTechnicalTypes, setSelectedTechnicalTypes)}
+                  />
+                </Badge>
+              ))}
+              {selectedMaturity.map(maturity => (
+                <Badge key={maturity} variant="secondary" className="gap-1">
+                  {maturity}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => toggleFilter(maturity, selectedMaturity, setSelectedMaturity)}
+                  />
+                </Badge>
+              ))}
+              {selectedQualityLevel.map(level => (
+                <Badge key={level} variant="secondary" className="gap-1">
+                  Quality: {level}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => toggleFilter(level, selectedQualityLevel, setSelectedQualityLevel)}
+                  />
+                </Badge>
+              ))}
+              {showVerifiedOnly && (
+                <Badge variant="secondary" className="gap-1">
+                  Verified Only
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setShowVerifiedOnly(false)}
+                  />
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="all" className="space-y-4">
+        <div className="border-b px-8">
+          <TabsList className="h-auto bg-transparent border-0">
+            <TabsTrigger value="all" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+              <Package className="mr-2 h-4 w-4" />
+              All Products ({sortedProducts.length})
+            </TabsTrigger>
+            <TabsTrigger value="featured" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Featured ({featuredProducts.length})
+            </TabsTrigger>
+            <TabsTrigger value="popular" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+              <TrendingUp className="mr-2 h-4 w-4" />
+              Most Popular
+            </TabsTrigger>
+            <TabsTrigger value="recent" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">
+              <Clock className="mr-2 h-4 w-4" />
+              Recently Added
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="all" className="space-y-4 px-8 pb-8">
+          {sortedProducts.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {sortedProducts.map(product => (
+                <ProductCardFactory key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <Card className="p-12">
+              <div className="text-center">
+                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold text-lg">No products found</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Try adjusting your search or filters
+                </p>
+              </div>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="featured" className="space-y-4 px-8 pb-8">
+          {featuredProducts.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {featuredProducts.map(product => (
+                <ProductCardFactory key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <Card className="p-12">
+              <div className="text-center">
+                <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold text-lg">No featured products found</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Try adjusting your search or filters
+                </p>
+              </div>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="popular" className="space-y-4 px-8 pb-8">
+          {popularProducts.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {popularProducts.map(product => (
+                <ProductCardFactory key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <Card className="p-12">
+              <div className="text-center">
+                <TrendingUp className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold text-lg">No products found</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Try adjusting your search or filters
+                </p>
+              </div>
+            </Card>
+          )}
+        </TabsContent>
+
+        <TabsContent value="recent" className="space-y-4 px-8 pb-8">
+          {recentProducts.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {recentProducts.map(product => (
+                <ProductCardFactory key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <Card className="p-12">
+              <div className="text-center">
+                <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold text-lg">No recent products found</h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Try adjusting your search or filters
+                </p>
+              </div>
+            </Card>
+          )}
+        </TabsContent>
+        </Tabs>
+        </div>
+
+        {/* Recommendations Sidebar */}
+        <div className="hidden xl:block w-80 shrink-0 pr-8 pt-6">
+          <div className="sticky top-6">
+            <RecommendationsSection recommendations={recommendations} />
+          </div>
+        </div>
       </div>
     </div>
   );

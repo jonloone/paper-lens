@@ -132,33 +132,30 @@ export function Step1Intent({ initialData, onComplete }: Step1IntentProps) {
   };
 
   return (
-    <div className="flex justify-center min-h-screen p-8">
-      <div className="space-y-6 max-w-7xl w-full">
-        {/* Header */}
-        <div className="space-y-2">
-          <h2 className="text-3xl font-display tracking-tight">What data product do you need?</h2>
-          <p className="text-muted-foreground text-lg">
-            Tell us what you're trying to analyze or report on, and we'll help you build it
-          </p>
-        </div>
+    <div className="max-w-7xl mx-auto p-8 space-y-8">
+      {/* Header - Outside card for clear hierarchy */}
+      <div className="space-y-2">
+        <h2 className="text-3xl font-display tracking-tight">What data product do you need?</h2>
+        <p className="text-muted-foreground text-base">
+          Tell us what you're trying to analyze or report on, and we'll help you build it
+        </p>
+      </div>
 
-      {/* Editorial-Style Intent Section */}
-      <Card className="p-8 space-y-6 bg-gradient-to-br from-background via-muted/20 to-background border-2 border-primary/20">
-        <div className="space-y-4">
-          <Label htmlFor="description" className="text-sm text-muted-foreground uppercase tracking-wide font-medium">
-            What are you trying to analyze or report on? *
+      {/* Primary Intent Card - Clean, focused */}
+      <Card className="border-2 shadow-lg">
+        <div className="p-8 space-y-4">
+          <Label htmlFor="description" className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            Describe your analytical need *
           </Label>
           <Textarea
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="I need a weekly report showing customer purchase behavior - combining orders, website activity, and support interactions to understand retention patterns..."
-            rows={5}
-            style={{ fontFamily: 'var(--font-serif)' }}
-            className="mt-2 text-2xl leading-relaxed bg-muted/30 border-2 border-border rounded-lg px-4 py-4 resize-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary placeholder:italic placeholder:font-light placeholder:text-muted-foreground/60"
+            rows={4}
           />
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Describe your analytical need in plain language. We'll help you find the right data and set everything up.
+          <p className="text-xs text-muted-foreground">
+            We'll help you find the right data and set everything up
           </p>
         </div>
       </Card>
@@ -267,18 +264,18 @@ export function Step1Intent({ initialData, onComplete }: Step1IntentProps) {
         </Card>
       )}
 
-      {/* Domain & Owner Selection */}
-      <Card className="p-6 space-y-6">
-        <div className="flex items-center gap-2 mb-2">
-          <Building2 className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-lg">Context & Ownership</h3>
-        </div>
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-2">
-            <Label htmlFor="domain" className="text-sm font-medium flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-muted-foreground" />
-              Business Domain *
-            </Label>
+      {/* Domain & Owner Selection - Secondary card */}
+      <Card className="border border-border/50 bg-muted/20">
+        <div className="p-6 space-y-6">
+          <div className="flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-primary" />
+            <h3 className="text-sm font-semibold uppercase tracking-wide">Context & Ownership</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="domain" className="text-sm font-medium">
+                Business Domain *
+              </Label>
             <Combobox
               options={domainOptions}
               value={domain}
@@ -293,8 +290,7 @@ export function Step1Intent({ initialData, onComplete }: Step1IntentProps) {
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="owner" className="text-sm font-medium flex items-center gap-2">
-              <Users className="w-4 h-4 text-muted-foreground" />
+            <Label htmlFor="owner" className="text-sm font-medium">
               Product Owner *
             </Label>
             <Combobox
@@ -311,20 +307,20 @@ export function Step1Intent({ initialData, onComplete }: Step1IntentProps) {
             </p>
           </div>
         </div>
+        </div>
       </Card>
 
-        {/* Navigation */}
-        <div className="flex justify-end pt-4">
-          <Button
-            onClick={handleContinue}
-            disabled={!isValid}
-            size="lg"
-            className="min-w-[200px]"
-          >
-            Continue to Data Discovery
-            <ArrowRight className="ml-2 w-4 h-4" />
-          </Button>
-        </div>
+      {/* Navigation */}
+      <div className="flex justify-end">
+        <Button
+          onClick={handleContinue}
+          disabled={!isValid}
+          size="lg"
+          className="min-w-[200px]"
+        >
+          Continue to Data Discovery
+          <ArrowRight className="ml-2 w-4 h-4" />
+        </Button>
       </div>
     </div>
   );

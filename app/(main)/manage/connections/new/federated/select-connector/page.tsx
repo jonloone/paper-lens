@@ -40,7 +40,7 @@ export default function ConnectorSelectionPage() {
     {
       type: 'jdbc',
       title: 'JDBC Database',
-      description: 'PostgreSQL, MySQL, Oracle, SQL Server, MongoDB',
+      description: 'PostgreSQL, MySQL, Oracle, SQL Server, MariaDB',
       icon: Database,
       supported: true,
       complexity: 'simple',
@@ -56,30 +56,11 @@ export default function ConnectorSelectionPage() {
       ],
     },
     {
-      type: 'kafka',
-      title: 'Kafka Topics',
-      description: 'Query Kafka topics as tables with schema registry',
-      icon: Workflow,
-      supported: false,
-      complexity: 'moderate',
-      prerequisites: [
-        'Schema Registry (Confluent or Apicurio)',
-        'Network access to Kafka brokers',
-        'Consumer group permissions',
-      ],
-      useCases: [
-        'Event streams',
-        'Real-time data pipelines',
-        'CDC event topics',
-      ],
-      comingSoon: true,
-    },
-    {
       type: 'snowflake',
       title: 'Snowflake',
       description: 'Cloud data warehouse federation',
       icon: CloudSnow,
-      supported: false,
+      supported: true,
       complexity: 'simple',
       prerequisites: [
         'Snowflake account credentials',
@@ -91,33 +72,13 @@ export default function ConnectorSelectionPage() {
         'Cross-cloud analytics',
         'Data sharing',
       ],
-      comingSoon: true,
-    },
-    {
-      type: 's3_iceberg',
-      title: 'S3 + Iceberg',
-      description: 'Query Iceberg tables stored in S3',
-      icon: Table2,
-      supported: false,
-      complexity: 'complex',
-      prerequisites: [
-        'Hive Metastore URI',
-        'AWS credentials (S3 access)',
-        'Iceberg catalog configuration',
-      ],
-      useCases: [
-        'Data lakehouse',
-        'Iceberg table federation',
-        'S3-based analytics',
-      ],
-      comingSoon: true,
     },
     {
       type: 'bigquery',
       title: 'Google BigQuery',
       description: 'Query BigQuery datasets',
       icon: Cloud,
-      supported: false,
+      supported: true,
       complexity: 'moderate',
       prerequisites: [
         'GCP service account credentials',
@@ -129,14 +90,13 @@ export default function ConnectorSelectionPage() {
         'Cross-cloud federation',
         'BigQuery ML integration',
       ],
-      comingSoon: true,
     },
     {
       type: 'redshift',
       title: 'AWS Redshift',
       description: 'Query Redshift data warehouse',
       icon: Database,
-      supported: false,
+      supported: true,
       complexity: 'simple',
       prerequisites: [
         'Redshift cluster endpoint',
@@ -148,14 +108,49 @@ export default function ConnectorSelectionPage() {
         'Cross-region analytics',
         'Redshift Spectrum tables',
       ],
-      comingSoon: true,
+    },
+    {
+      type: 'synapse',
+      title: 'Azure Synapse',
+      description: 'Microsoft Azure data warehouse',
+      icon: Cloud,
+      supported: true,
+      complexity: 'simple',
+      prerequisites: [
+        'Synapse workspace URL',
+        'SQL pool credentials',
+        'Network access configured',
+      ],
+      useCases: [
+        'Azure data warehouse',
+        'Microsoft analytics stack',
+        'Cross-cloud queries',
+      ],
+    },
+    {
+      type: 's3_iceberg',
+      title: 'S3 + Iceberg',
+      description: 'Query Iceberg tables stored in S3',
+      icon: Table2,
+      supported: true,
+      complexity: 'complex',
+      prerequisites: [
+        'Hive Metastore URI or REST catalog',
+        'AWS credentials (S3 access)',
+        'Iceberg catalog configuration',
+      ],
+      useCases: [
+        'Data lakehouse',
+        'Iceberg table federation',
+        'S3-based analytics',
+      ],
     },
     {
       type: 'delta_lake',
       title: 'Delta Lake',
       description: 'Query Delta Lake tables',
       icon: Table2,
-      supported: false,
+      supported: true,
       complexity: 'complex',
       prerequisites: [
         'Hive Metastore URI',
@@ -167,14 +162,67 @@ export default function ConnectorSelectionPage() {
         'Delta table federation',
         'ACID table queries',
       ],
-      comingSoon: true,
+    },
+    {
+      type: 'hudi',
+      title: 'Apache Hudi',
+      description: 'Query Hudi tables',
+      icon: Table2,
+      supported: true,
+      complexity: 'complex',
+      prerequisites: [
+        'Hive Metastore URI',
+        'Storage credentials (S3/ADLS/GCS)',
+        'Hudi catalog configuration',
+      ],
+      useCases: [
+        'Streaming lakehouse',
+        'Incremental data processing',
+        'Upsert workloads',
+      ],
+    },
+    {
+      type: 'kafka',
+      title: 'Kafka Topics',
+      description: 'Query Kafka topics as tables with schema registry',
+      icon: Workflow,
+      supported: true,
+      complexity: 'moderate',
+      prerequisites: [
+        'Schema Registry (Confluent or Apicurio)',
+        'Network access to Kafka brokers',
+        'Consumer group permissions',
+      ],
+      useCases: [
+        'Event streams',
+        'Real-time data pipelines',
+        'CDC event topics',
+      ],
+    },
+    {
+      type: 'kinesis',
+      title: 'AWS Kinesis',
+      description: 'Query Kinesis streams',
+      icon: Workflow,
+      supported: true,
+      complexity: 'moderate',
+      prerequisites: [
+        'AWS credentials',
+        'Kinesis stream ARN',
+        'Region configuration',
+      ],
+      useCases: [
+        'AWS event streams',
+        'Real-time analytics',
+        'Log aggregation',
+      ],
     },
     {
       type: 'elasticsearch',
       title: 'Elasticsearch',
       description: 'Query Elasticsearch indices as tables',
       icon: Search,
-      supported: false,
+      supported: true,
       complexity: 'moderate',
       prerequisites: [
         'Elasticsearch cluster URL',
@@ -186,19 +234,50 @@ export default function ConnectorSelectionPage() {
         'Search index queries',
         'Time-series data',
       ],
-      comingSoon: true,
+    },
+    {
+      type: 'cassandra',
+      title: 'Apache Cassandra',
+      description: 'Query Cassandra tables',
+      icon: Database,
+      supported: true,
+      complexity: 'moderate',
+      prerequisites: [
+        'Cassandra contact points',
+        'Keyspace permissions',
+        'Network access configured',
+      ],
+      useCases: [
+        'NoSQL database queries',
+        'Time-series data',
+        'Wide-column stores',
+      ],
+    },
+    {
+      type: 'druid',
+      title: 'Apache Druid',
+      description: 'Query Druid datasources',
+      icon: Database,
+      supported: true,
+      complexity: 'moderate',
+      prerequisites: [
+        'Druid broker URL',
+        'Datasource access',
+        'Network connectivity',
+      ],
+      useCases: [
+        'Real-time analytics',
+        'OLAP queries',
+        'Event analytics',
+      ],
     },
   ];
 
   const handleNext = () => {
     if (!selectedConnector) return;
 
-    if (selectedConnector === 'jdbc') {
-      router.push('/manage/sources/new/federated');
-    } else {
-      // For unsupported connectors, show coming soon message
-      alert(`${selectedConnector.toUpperCase()} connector configuration is coming soon!`);
-    }
+    // Pass connector type to the configuration page via query param
+    router.push(`/manage/connections/new/federated?connector=${selectedConnector}`);
   };
 
   const selectedOption = connectorOptions.find(opt => opt.type === selectedConnector);
@@ -319,7 +398,7 @@ export default function ConnectorSelectionPage() {
         <div className="flex items-center justify-between pt-6 border-t">
           <Button
             variant="outline"
-            onClick={() => router.push('/manage/sources/new')}
+            onClick={() => router.push('/manage/connections/new')}
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
