@@ -210,51 +210,9 @@
   - Schema relationship graphs
   - Data flow diagrams
 
-#### **Deck.gl 9.0.12**
-- **Role**: WebGL-powered geospatial visualization framework
-- **Implementation**:
-  - Custom layers for satellite coverage
-  - 3D terrain rendering
-  - Globe projections
-- **Powers**:
-  - Geospatial intelligence visualizations (in demos)
-  - Satellite ground station coverage maps
-  - 3D globe rendering with data overlays
-
-#### **MapLibre GL 4.1.0**
-- **Role**: Open-source vector map rendering
-- **Integration**: Works with Deck.gl for base maps
-- **Powers**:
-  - Base map tiles
-  - Vector map rendering
-  - Custom map styles
-
-#### **ASCII Chart Libraries**
-- **asciichart 1.5.25**: Terminal-style ASCII charts
-- **blessed-contrib 4.11.0**: Terminal UI dashboard components
-- **Implementation**: `components/design-system/`
-  - `ASCIIBarChart.tsx`, `ASCIILineChart.tsx`, `ASCIIMiniChart.tsx`
-  - `HeroTerminalChart.tsx` - Hero section terminal visualization
-- **Powers**:
-  - Retro/terminal aesthetic for command center UI
-  - Real-time metric displays in terminal style
-  - Data engineer-friendly visualizations
-
 ---
 
 ### Code Editors & SQL Tools
-
-#### **Monaco Editor 4.7.0**
-- **Role**: VS Code's editor component (powers TiDB SQL editor)
-- **Implementation**:
-  - SQL syntax highlighting
-  - IntelliSense and autocomplete
-  - Multi-cursor editing
-  - Minimap and breadcrumbs
-- **Powers**:
-  - SQL workstation interface
-  - Code transformation editors
-  - Configuration file editing
 
 #### **CodeMirror 6**
 - **Package**: `@uiw/react-codemirror 4.25.2`
@@ -537,44 +495,6 @@
   - Custom brand icons
   - SVG sprite management
   - Dynamic icon loading
-
----
-
-### Real-Time Communication
-
-#### **Socket.IO 4.8.1**
-- **Packages**:
-  - `socket.io` (server) - WebSocket server
-  - `socket.io-client` (client) - WebSocket client
-- **Implementation**: `server.js`
-  - Real-time chart streaming
-  - Pipeline execution updates
-  - Collaborative editing
-  - Live monitoring dashboards
-- **Powers**:
-  - Real-time pipeline status updates
-  - Live chart data streaming (`lib/services/chart-data-service.js`)
-  - Collaborative SQL editing sessions
-  - Instant notification delivery
-  - Hero terminal chart updates (30s interval)
-
----
-
-### Terminal Emulation
-
-#### **xterm.js 5.3.0**
-- **Addons**:
-  - `xterm-addon-fit 0.8.0` - Automatic terminal sizing
-  - `xterm-addon-web-links 0.9.0` - Clickable URLs
-- **Implementation**:
-  - Terminal emulator in browser
-  - ANSI color support
-  - Scrollback buffer
-- **Powers**:
-  - Command execution interfaces
-  - Log streaming visualization
-  - Interactive CLI tools
-  - Debug output display
 
 ---
 
@@ -890,17 +810,6 @@
   - RAG (Retrieval Augmented Generation) pipelines
   - Agent tool calling
 
-#### **OpenAI >= 1.13.3**
-- **Role**: OpenAI API client
-- **Implementation**:
-  - GPT-4 for complex reasoning
-  - GPT-3.5-turbo for fast responses
-  - Function calling for tool use
-- **Powers**:
-  - Natural language understanding
-  - SQL generation from natural language
-  - Code explanation and documentation
-  - Business context extraction
 
 ---
 
@@ -1511,8 +1420,7 @@ Column Association → Business Glossary
 **Technologies**:
 - **Frontend**: `app/(main)/page.tsx` (Command Center)
 - **Components**:
-  - `HeroTerminalChart.tsx` - Real-time ASCII metrics
-  - `SystemActivity.tsx` - Activity visualization
+    - `SystemActivity.tsx` - Activity visualization
   - `OptimizationOpportunitiesCard.tsx` - AI suggestions
 - **Visualization**: ASCII charts with Socket.IO streaming
 - **Backend**: `backend/api/overview_routes.py`
@@ -1759,12 +1667,7 @@ Real-time capabilities powered by:
 - Rich feature set
 - TypeScript-first
 
-### Why Socket.IO?
-- Reliable WebSocket implementation
-- Automatic reconnection
-- Room-based messaging
-- Fallback to polling
-- Broad browser support
+
 
 ---
 
