@@ -22,6 +22,10 @@ from .api.tisql_routes import router as tisql_router
 from .api.operations_routes import router as operations_router
 from .api.monitor_routes import router as monitor_router
 from .api.glossary_routes import router as glossary_router
+from .api.glossary_analytics_routes import router as glossary_analytics_router
+from .api.quality_gates_routes import router as quality_gates_router
+from .api.business_context_routes import router as business_context_router
+from .api.hybrid_query_routes import router as hybrid_query_router
 from .models import schemas  # Import to register models
 
 # Configure logging
@@ -117,6 +121,10 @@ app.include_router(tisql_router)
 app.include_router(operations_router)
 app.include_router(monitor_router)
 app.include_router(glossary_router)
+app.include_router(glossary_analytics_router)
+app.include_router(quality_gates_router)
+app.include_router(business_context_router)
+app.include_router(hybrid_query_router)
 
 # Global exception handler
 @app.exception_handler(Exception)
