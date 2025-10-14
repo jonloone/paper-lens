@@ -201,9 +201,9 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
         </Breadcrumb>
 
         {/* Product Section - Hero Card with Tabs */}
-        <div className="space-y-0">
+        <div className="space-y-6">
           {/* Hero Card - Large Title + Quality Indicators */}
-          <Card className="border-b-0 rounded-b-none">
+          <Card>
             <CardContent className="pt-8 pb-6">
               {/* Header with title and actions */}
               <div className="flex items-start justify-between gap-4 mb-6">
@@ -288,8 +288,8 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
             </CardContent>
           </Card>
 
-          {/* Tabs Section - Connected to Hero Card */}
-          <Card className="rounded-t-none pt-0">
+          {/* Tabs Section - Separate Container */}
+          <Card>
             <Tabs value={activeTab} onValueChange={handleTabChange}>
               <div className="bg-muted/20">
                 <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-between px-6">
