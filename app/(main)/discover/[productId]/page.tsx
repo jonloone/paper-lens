@@ -1,15 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, Users, Clock, CheckCircle, TrendingUp, Sparkles, Activity, Database, DollarSign, Package, Settings, Target, Heart, Share2, UserCircle2 } from 'lucide-react';
+import { Star, Users, Clock, CheckCircle, TrendingUp, Sparkles, Activity, Database, DollarSign, Package, Settings, Target, Heart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PersonaProvider, usePersona } from '@/contexts/PersonaContext';
-import { getPersonaDisplayName, getPersonaDescription, type ProductDetailPersona } from '@/lib/services/persona-detection';
+import { cn } from '@/lib/utils';
+import { PersonaProvider } from '@/contexts/PersonaContext';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -30,8 +29,9 @@ import { QualityTab } from '@/components/discover/ProductDetail/QualityTab';
 import { UsageTab } from '@/components/discover/ProductDetail/UsageTab';
 import { LineageTab } from '@/components/discover/ProductDetail/LineageTab';
 import { GovernanceTab } from '@/components/discover/ProductDetail/GovernanceTab';
-import { FitnessIndicators } from '@/components/discover/ProductDetail/FitnessIndicators';
-import { BusinessContextSection } from '@/components/discover/ProductDetail/BusinessContextSection';
+import { CompactBusinessContext } from '@/components/discover/ProductDetail/CompactBusinessContext';
+import { ProductDetailSkeleton } from '@/components/discover/ProductDetail/ProductDetailSkeleton';
+import { ProductChatAgent } from '@/components/discover/ProductDetail/ProductChatAgent';
 
 interface ProductDetailPageProps {
   params: {
@@ -39,7 +39,7 @@ interface ProductDetailPageProps {
   };
 }
 
-// Mock product data (will be replaced with API call)
+// Mock product data
 const getProductById = (id: string) => {
   return {
     id,
@@ -81,6 +81,11 @@ const getProductById = (id: string) => {
     verified: true,
     trending: true,
     featured: true,
+    // YData Profiling metrics
+    profiling: {
+      qualityScore: 85,  // 0-100 from YData profiling
+      rowCount: 2341567  // Actual row count from profiling
+    },
     // Business context data from DataHub + ODPS
     businessContext: {
       targetConsumers: [
@@ -156,29 +161,11 @@ const getRelatedProducts = () => {
 
 function ProductDetailContent({ params }: ProductDetailPageProps) {
   const router = useRouter();
-  const { persona, setPersona, getDefaultTab } = usePersona();
-  const [activeTab, setActiveTab] = useState(getDefaultTab());
+  const [activeTab, setActiveTab] = useState('overview');
 
-  // Update active tab when persona changes
-  useEffect(() => {
-    setActiveTab(getDefaultTab());
-  }, [persona, getDefaultTab]);
-
-  // Fetch product data (mock for now)
+  // Fetch product data (synchronous for now)
   const product = getProductById(params.productId);
   const relatedProducts = getRelatedProducts();
-
-  const handlePersonaChange = (newPersona: string) => {
-    setPersona(newPersona as ProductDetailPersona);
-    // Track persona change
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'persona_change', {
-        previous_persona: persona,
-        new_persona: newPersona,
-        product_id: params.productId
-      });
-    }
-  };
 
   // Track tab changes
   const handleTabChange = (newTab: string) => {
@@ -187,32 +174,9 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
     if (typeof window !== 'undefined' && (window as any).gtag) {
       (window as any).gtag('event', 'tab_view', {
         tab_name: newTab,
-        persona: persona,
         product_id: params.productId
       });
     }
-  };
-
-  // Simulate health status
-  const healthStatus = product.sla.uptime >= 99 ? 'Healthy' : product.sla.uptime >= 95 ? 'Degraded' : 'Offline';
-  const healthColor = healthStatus === 'Healthy' ? 'bg-emerald-500' : healthStatus === 'Degraded' ? 'bg-amber-500' : 'bg-red-500';
-
-  // Domain icon mapping
-  const domainIcons: Record<string, any> = {
-    'Customer': Users,
-    'Financial': DollarSign,
-    'Product': Package,
-    'Operations': Settings,
-    'Marketing': Target,
-  };
-
-  const DomainIcon = domainIcons[product.domain] || Database;
-
-  const getQualityColor = (score: number) => {
-    if (score >= 95) return 'text-emerald-600 dark:text-emerald-400';
-    if (score >= 85) return 'text-green-600 dark:text-green-400';
-    if (score >= 70) return 'text-amber-600 dark:text-amber-400';
-    return 'text-red-600 dark:text-red-400';
   };
 
   return (
@@ -239,138 +203,84 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
 
         {/* Product Section - Hero Card with Tabs */}
         <div className="space-y-6">
-          {/* Hero Card - Large Title + Quality Indicators */}
-          <Card>
-            <CardContent className="pt-8 pb-6">
-              {/* Header with title and actions */}
-              <div className="flex items-start justify-between gap-4 mb-6">
-                <div className="flex-1">
-                  <h1 className="text-6xl font-bold tracking-tight mb-3">
-                    {product.displayName}
-                  </h1>
-                  <p className="text-base text-muted-foreground">
-                    {product.domain} Domain • {product.productType} Product • v{product.version}
-                  </p>
+          {/* Hero Card - Clean and Centered */}
+          <Card className="hero-card-gradient">
+            <CardContent className="pt-8 pb-8">
+              {/* Centered Content Container */}
+              <div className="max-w-4xl mx-auto text-center space-y-6">
+                {/* Title */}
+                <h1 className="text-5xl font-bold tracking-tight">
+                  {product.displayName}
+                </h1>
+
+                {/* Subtitle */}
+                <p className="text-lg text-muted-foreground">
+                  {product.domain} Domain • {product.productType} Product • v{product.version}
+                </p>
+
+                {/* Description */}
+                <p className="text-base text-muted-foreground leading-relaxed max-w-3xl mx-auto">
+                  {product.description}
+                </p>
+
+                {/* Compact Business Context */}
+                <div>
+                  <CompactBusinessContext
+                    qualityScore={product.profiling.qualityScore}
+                    rowCount={product.profiling.rowCount}
+                    lastUpdated={product.lastUpdated}
+                    glossaryTerms={product.businessContext.glossaryTerms}
+                    owner={product.owner.team}
+                    ownerContact={product.owner.contact}
+                    upstreamCount={product.dependencies.upstream.length}
+                    downstreamCount={product.dependencies.downstream.length}
+                  />
                 </div>
-                {/* Actions in top right */}
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Heart className="h-4 w-4" />
-                      Save
-                    </Button>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Share2 className="h-4 w-4" />
-                      Share
-                    </Button>
-                    <Button size="sm" className="gap-2">
-                      <Sparkles className="h-4 w-4" />
-                      Request Access
-                    </Button>
-                  </div>
-                  {/* Persona Selector */}
-                  <div className="flex items-center gap-2">
-                    <UserCircle2 className="h-4 w-4 text-muted-foreground" />
-                    <Select value={persona} onValueChange={handlePersonaChange}>
-                      <SelectTrigger className="w-[200px] h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="data_analyst">
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">{getPersonaDisplayName('data_analyst')}</span>
-                            <span className="text-xs text-muted-foreground">{getPersonaDescription('data_analyst')}</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="data_engineer">
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">{getPersonaDisplayName('data_engineer')}</span>
-                            <span className="text-xs text-muted-foreground">{getPersonaDescription('data_engineer')}</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="business_stakeholder">
-                          <div className="flex flex-col items-start">
-                            <span className="font-medium">{getPersonaDisplayName('business_stakeholder')}</span>
-                            <span className="text-xs text-muted-foreground">{getPersonaDescription('business_stakeholder')}</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              <p className="text-base text-muted-foreground leading-relaxed mb-8">
-                {product.description}
-              </p>
-
-              {/* Business Context Section */}
-              <BusinessContextSection
-                description={product.description}
-                targetConsumers={product.businessContext.targetConsumers}
-                glossaryTerms={product.businessContext.glossaryTerms}
-                useCases={product.businessContext.useCases}
-              />
-
-              {/* Fitness Indicators Section */}
-              <div className="border-t pt-6">
-                <FitnessIndicators
-                  quality={{
-                    dataQuality: product.quality.dataQuality
-                  }}
-                  freshness={{
-                    updateFrequency: product.sla.freshness
-                  }}
-                  usage={{
-                    uniqueConsumers: product.usage.uniqueConsumers
-                  }}
-                  sla={{
-                    uptime: product.sla.uptime
-                  }}
-                />
               </div>
             </CardContent>
           </Card>
 
+          {/* Chat Agent - Between Hero and Tabs */}
+          <ProductChatAgent product={product} />
+
           {/* Tabs Section - Separate Container */}
-          <Card>
+          <Card className="elevation-surface-1">
             <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <div className="bg-muted/20">
+              <div className="elevation-surface-1">
                 <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-between px-6">
                   <TabsTrigger
-                    value="quickstart"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
-                  >
-                    Quick Start
-                  </TabsTrigger>
-                  <TabsTrigger
                     value="overview"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     Overview
                   </TabsTrigger>
                   <TabsTrigger
+                    value="quickstart"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    Quick Start
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="schema"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     Schema
                   </TabsTrigger>
                   <TabsTrigger
                     value="quality"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     Quality
                   </TabsTrigger>
                   <TabsTrigger
                     value="lineage"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     Lineage
                   </TabsTrigger>
                   <TabsTrigger
                     value="access"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     Access
                   </TabsTrigger>
@@ -378,12 +288,12 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
               </div>
 
               <div className="px-6 pb-6">
-                <TabsContent value="quickstart" className="mt-6">
-                  <QuickStartTab product={product} />
-                </TabsContent>
-
                 <TabsContent value="overview" className="mt-6">
                   <NewOverviewTab product={product} relatedProducts={relatedProducts} />
+                </TabsContent>
+
+                <TabsContent value="quickstart" className="mt-6">
+                  <QuickStartTab product={product} />
                 </TabsContent>
 
                 <TabsContent value="schema" className="mt-6">
