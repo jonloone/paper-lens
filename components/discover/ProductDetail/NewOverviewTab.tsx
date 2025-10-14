@@ -3,13 +3,30 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Users, TrendingUp, Sparkles, Code2, BarChart3 } from 'lucide-react';
+import { CheckCircle, Users, TrendingUp, Sparkles, Code2, BarChart3, Mail, FileText, Database, DollarSign, Package, Settings, Target } from 'lucide-react';
 
 interface NewOverviewTabProps {
   product: any;
+  relatedProducts?: any[];
 }
 
-export function NewOverviewTab({ product }: NewOverviewTabProps) {
+export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTabProps) {
+  // Domain icon mapping
+  const domainIcons: Record<string, any> = {
+    'Customer': Users,
+    'Financial': DollarSign,
+    'Product': Package,
+    'Operations': Settings,
+    'Marketing': Target,
+  };
+
+  const getQualityColor = (score: number) => {
+    if (score >= 95) return 'text-emerald-600 dark:text-emerald-400';
+    if (score >= 85) return 'text-green-600 dark:text-green-400';
+    if (score >= 70) return 'text-amber-600 dark:text-amber-400';
+    return 'text-red-600 dark:text-red-400';
+  };
+
   return (
     <div className="space-y-6">
       {/* Business Context - Primary Card */}
@@ -44,49 +61,6 @@ export function NewOverviewTab({ product }: NewOverviewTabProps) {
               This dataset serves as the single source of truth for customer intelligence, enabling data-driven decisions
               across acquisition, retention, and growth initiatives. Used in {product.usage.deployments} production workflows.
             </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Questions This Answers - Secondary Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Questions This Data Answers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-              <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="font-medium text-sm mb-1">Which customers are most valuable?</div>
-                <div className="text-sm text-muted-foreground">
-                  Query by <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">lifetime_value</code> and{' '}
-                  <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">segment</code> to identify VIP customers
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-              <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="font-medium text-sm mb-1">Who is at risk of churning?</div>
-                <div className="text-sm text-muted-foreground">
-                  Use <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">churn_risk</code> score
-                  combined with engagement metrics for proactive retention
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30">
-              <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="font-medium text-sm mb-1">How do customers engage across channels?</div>
-                <div className="text-sm text-muted-foreground">
-                  Track interactions via <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">last_interaction_date</code>,{' '}
-                  <code className="font-mono text-xs bg-muted px-1 py-0.5 rounded">total_sessions</code>, and channel data
-                </div>
-              </div>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -140,40 +114,90 @@ export function NewOverviewTab({ product }: NewOverviewTabProps) {
         </CardContent>
       </Card>
 
-      {/* Trust Summary - Highlight Card (Tertiary/Special) */}
-      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
+      {/* Owner & Support - New Card */}
+      <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Trust & Quality Summary</CardTitle>
+          <CardTitle className="text-lg">Owner & Support</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-4 gap-4 text-center">
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mb-1">
-                {product.quality.dataQuality}%
+              <h3 className="font-semibold text-sm mb-2">Product Owner</h3>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">{product.owner.team}</p>
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <a href={`mailto:${product.owner.contact}`} className="text-sm text-primary hover:underline">
+                    {product.owner.contact}
+                  </a>
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground">Quality Score</div>
             </div>
             <div>
-              <div className="text-3xl font-bold mb-1">
-                {product.lastUpdated}
-              </div>
-              <div className="text-sm text-muted-foreground">Last Updated</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold mb-1">
-                {product.usage.uniqueConsumers.toLocaleString()}
-              </div>
-              <div className="text-sm text-muted-foreground">Active Users</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold mb-1">
-                {product.sla.uptime}%
-              </div>
-              <div className="text-sm text-muted-foreground">Uptime SLA</div>
+              <h3 className="font-semibold text-sm mb-2">Documentation</h3>
+              <Button variant="outline" size="sm" className="gap-2">
+                <FileText className="h-4 w-4" />
+                View Full Documentation
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Related Products - Moved from page bottom */}
+      {relatedProducts.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">Related Products</CardTitle>
+              <a href="/discover" className="text-sm font-medium text-primary hover:underline whitespace-nowrap">
+                View all <span aria-hidden="true">&rarr;</span>
+              </a>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {relatedProducts.map((relProduct) => {
+                const RelatedIcon = domainIcons[relProduct.domain] || Database;
+
+                return (
+                  <div key={relProduct.id} className="group relative">
+                    <div className="relative">
+                      <Card className="aspect-4/3 w-full rounded-lg bg-gradient-to-br from-muted/20 to-muted/40 overflow-hidden">
+                        <div className="w-full h-full flex items-center justify-center p-8">
+                          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-background/80 backdrop-blur-sm shadow-lg group-hover:scale-105 transition-transform duration-200">
+                            <RelatedIcon className="h-10 w-10 text-primary" />
+                          </div>
+                        </div>
+                      </Card>
+                      <div
+                        aria-hidden="true"
+                        className="absolute inset-0 flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      >
+                        <div className="w-full rounded-md bg-background/75 backdrop-blur-sm px-4 py-2 text-center text-sm font-medium">
+                          View Product
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between text-base font-medium">
+                      <h3>
+                        <a href={`/discover/${relProduct.id}`}>
+                          <span aria-hidden="true" className="absolute inset-0"></span>
+                          {relProduct.displayName}
+                        </a>
+                      </h3>
+                      <p className={`font-mono ${getQualityColor(relProduct.quality.dataQuality)}`}>
+                        Q{relProduct.quality.dataQuality}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">{relProduct.productType}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

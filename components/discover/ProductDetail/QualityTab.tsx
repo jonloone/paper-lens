@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { CheckCircle, AlertCircle, TrendingUp, TrendingDown, Minus, Activity, ChevronDown } from 'lucide-react';
+import { CheckCircle, AlertCircle, TrendingUp, TrendingDown, Minus, Activity, ChevronDown, Clock, Database, Zap, Globe } from 'lucide-react';
 
 interface QualityTabProps {
   product: any;
@@ -18,6 +18,9 @@ export function QualityTab({ product }: QualityTabProps) {
   const [isDimensionsOpen, setIsDimensionsOpen] = useState(false);
   const [isTestsOpen, setIsTestsOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(true); // Open by default if there are alerts
+  const [isFreshnessOpen, setIsFreshnessOpen] = useState(false);
+  const [isCoverageOpen, setIsCoverageOpen] = useState(false);
+  const [isPerformanceOpen, setIsPerformanceOpen] = useState(false);
 
   const getQualityGrade = (score: number) => {
     if (score >= 90) return { label: 'Certified', color: 'text-green-600' };
@@ -486,6 +489,197 @@ export function QualityTab({ product }: QualityTabProps) {
               </div>
             </div>
           </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Data Freshness - From MetadataPanel */}
+      <Collapsible open={isFreshnessOpen} onOpenChange={setIsFreshnessOpen}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Data Freshness & SLA
+                </div>
+                <ChevronDown className={`h-5 w-5 transition-transform ${isFreshnessOpen ? 'transform rotate-180' : ''}`} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm font-medium mb-2">Update Cadence</div>
+                  <div className="text-2xl font-bold mb-1">{product.sla.freshness}</div>
+                  <div className="text-xs text-muted-foreground">Continuous updates from source systems</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">SLA Commitment</div>
+                  <div className="text-2xl font-bold mb-1">&lt; {product.sla.latency}</div>
+                  <div className="text-xs text-muted-foreground">Maximum acceptable lag from source</div>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                <div>
+                  <div className="text-sm font-medium mb-2">Last Refresh</div>
+                  <div className="text-base font-semibold mb-1">{product.lastUpdated}</div>
+                  <div className="text-xs text-muted-foreground">Successfully completed</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">Next Update</div>
+                  <div className="text-base font-semibold mb-1">In 15 minutes</div>
+                  <div className="text-xs text-muted-foreground">Scheduled pipeline run</div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="text-sm font-medium mb-2">Historical Depth</div>
+                <div className="text-base font-semibold mb-1">5 years</div>
+                <div className="text-xs text-muted-foreground">Full history available since January 2020</div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Uptime SLA</span>
+                  <span className="font-medium">{product.sla.uptime}%</span>
+                </div>
+                <Progress value={product.sla.uptime} className="h-1.5 mt-2" />
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Coverage & Completeness - From MetadataPanel */}
+      <Collapsible open={isCoverageOpen} onOpenChange={setIsCoverageOpen}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Coverage & Completeness
+                </div>
+                <ChevronDown className={`h-5 w-5 transition-transform ${isCoverageOpen ? 'transform rotate-180' : ''}`} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm font-medium mb-2">Total Records</div>
+                  <div className="text-2xl font-bold mb-1">{product.usage.uniqueConsumers.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">Active customer profiles</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">Completeness</div>
+                  <div className="text-2xl font-bold mb-1 text-emerald-600">99.2%</div>
+                  <div className="text-xs text-muted-foreground">Required fields populated</div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="text-sm font-medium mb-3">Geographic Coverage</div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <span>Global (47 countries)</span>
+                    </div>
+                    <Badge variant="secondary">100%</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    North America, Europe, Asia-Pacific, Latin America
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="text-sm font-medium mb-3">Business Units</div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">Enterprise</Badge>
+                  <Badge variant="outline">SMB</Badge>
+                  <Badge variant="outline">Consumer</Badge>
+                  <Badge variant="outline">Partner</Badge>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="text-sm font-medium mb-2">Exclusions</div>
+                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
+                  <li>Test accounts (excluded)</li>
+                  <li>Deleted users older than 7 years (archived separately)</li>
+                  <li>GDPR deletion requests (anonymized)</li>
+                </ul>
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
+      {/* Performance Metrics - From MetadataPanel */}
+      <Collapsible open={isPerformanceOpen} onOpenChange={setIsPerformanceOpen}>
+        <Card>
+          <CollapsibleTrigger className="w-full">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between text-lg">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Performance Metrics
+                </div>
+                <ChevronDown className={`h-5 w-5 transition-transform ${isPerformanceOpen ? 'transform rotate-180' : ''}`} />
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <div className="text-sm font-medium mb-2">Avg Query Time</div>
+                  <div className="text-2xl font-bold mb-1">850ms</div>
+                  <div className="text-xs text-muted-foreground">Typical analytical query</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">P95 Latency</div>
+                  <div className="text-2xl font-bold mb-1">2.1s</div>
+                  <div className="text-xs text-muted-foreground">95th percentile</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium mb-2">P99 Latency</div>
+                  <div className="text-2xl font-bold mb-1">4.8s</div>
+                  <div className="text-xs text-muted-foreground">99th percentile</div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="text-sm font-medium mb-2">Recommended Usage</div>
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Ideal for: Dashboards, analytics, ML training</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Supports: Concurrent queries up to 100 users</span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                    <span>Not recommended for: Real-time transactions (&lt;100ms required)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Query volume (last 24h)</span>
+                  <span className="font-medium text-foreground">{product.usage.queriesPerDay.toLocaleString()} queries</span>
+                </div>
+              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>

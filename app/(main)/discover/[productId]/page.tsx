@@ -275,7 +275,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               </TabsContent>
 
               <TabsContent value="overview" className="mt-8">
-                <NewOverviewTab product={product} />
+                <NewOverviewTab product={product} relatedProducts={relatedProducts} />
               </TabsContent>
 
               <TabsContent value="schema" className="mt-8">

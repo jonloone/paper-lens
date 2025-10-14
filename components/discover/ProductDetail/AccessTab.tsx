@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Database, Code, Copy, ExternalLink, Radio, Download, Key, Check, RefreshCw } from 'lucide-react';
+import { Database, Code, Copy, ExternalLink, Radio, Download, Key, Check, RefreshCw, DollarSign, Users } from 'lucide-react';
 
 interface AccessTabProps {
   product: any;
@@ -426,6 +426,78 @@ group.id=your_consumer_group`;
           <div className="pt-2 border-t">
             <div className="text-xs text-muted-foreground">
               <strong>Note:</strong> Exports are generated asynchronously. You'll receive an email with download link when ready (typically 5-10 minutes).
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cost Information - From MetadataPanel */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5" />
+            Cost Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Transparent pricing and usage metrics to help you optimize costs.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-sm font-medium text-muted-foreground mb-1">Cost per TB</div>
+              <div className="text-2xl font-bold">$12</div>
+              <div className="text-xs text-muted-foreground mt-1">Storage + compute included</div>
+            </div>
+
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-sm font-medium text-muted-foreground mb-1">Avg Query Cost</div>
+              <div className="text-2xl font-bold">$0.003</div>
+              <div className="text-xs text-muted-foreground mt-1">Per query execution</div>
+            </div>
+
+            <div className="p-4 bg-muted/50 rounded-lg">
+              <div className="text-sm font-medium text-muted-foreground mb-1">Monthly Active Users</div>
+              <div className="text-2xl font-bold">{product.usage.uniqueConsumers.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground mt-1">Last 30 days</div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <div className="text-sm font-medium mb-3">Cost Optimization Tips</div>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span className="text-muted-foreground">
+                  Use SQL filters (WHERE clauses) to reduce data scanned
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span className="text-muted-foreground">
+                  Cache frequent queries for better performance and lower costs
+                </span>
+              </div>
+              <div className="flex items-start gap-2">
+                <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                <span className="text-muted-foreground">
+                  Use Parquet format for exports (3-5x smaller than CSV)
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Estimated monthly cost (current usage)</span>
+              <span className="font-semibold text-lg">$142</span>
+            </div>
+            <div className="mt-2">
+              <Button variant="outline" size="sm">
+                <ExternalLink className="mr-2 h-4 w-4" />
+                View Detailed Usage Report
+              </Button>
             </div>
           </div>
         </CardContent>
