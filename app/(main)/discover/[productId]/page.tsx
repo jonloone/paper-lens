@@ -291,48 +291,48 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
           {/* Tabs Section - Connected to Hero Card */}
           <Card className="rounded-t-none pt-0">
             <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <div className="border-b border-border bg-muted/20">
-                <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-start gap-0 px-6">
+              <div className="bg-muted/20">
+                <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-between px-6">
                   <TabsTrigger
                     value="quickstart"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
                   >
                     Quick Start
                   </TabsTrigger>
                   <TabsTrigger
                     value="overview"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
                   >
                     Overview
                   </TabsTrigger>
                   <TabsTrigger
                     value="schema"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
                   >
                     Schema
                   </TabsTrigger>
                   <TabsTrigger
                     value="quality"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
                   >
                     Quality
                   </TabsTrigger>
                   <TabsTrigger
                     value="lineage"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
                   >
                     Lineage
                   </TabsTrigger>
                   <TabsTrigger
                     value="access"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1"
                   >
                     Access
                   </TabsTrigger>
                 </TabsList>
               </div>
 
-              <div className="px-6 pb-6">
+              <div className="bg-background px-6 pb-6">
                 <TabsContent value="quickstart" className="mt-6">
                   <QuickStartTab product={product} />
                 </TabsContent>

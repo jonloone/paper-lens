@@ -295,65 +295,6 @@ export function SchemaTab({ product }: SchemaTabProps) {
           )}
         </CardContent>
       </Card>
-
-      {/* Table Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <BarChart3 className="h-5 w-5" />
-            Table Statistics
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-4 gap-4 text-sm">
-            <div className="p-4 border rounded-lg">
-              <div className="text-muted-foreground mb-1">Total Rows</div>
-              <div className="text-2xl font-bold">2,547,893</div>
-              <div className="text-xs text-emerald-600 mt-1 flex items-center gap-1">
-                <TrendingUp className="h-3 w-3" />
-                +2.3% this month
-              </div>
-            </div>
-            <div className="p-4 border rounded-lg">
-              <div className="text-muted-foreground mb-1">Total Columns</div>
-              <div className="text-2xl font-bold">{fullSchema.length}</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {fullSchema.filter(c => c.isPII).length} PII fields
-              </div>
-            </div>
-            <div className="p-4 border rounded-lg">
-              <div className="text-muted-foreground mb-1">Compressed Size</div>
-              <div className="text-2xl font-bold">847 GB</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Parquet/Snappy
-              </div>
-            </div>
-            <div className="p-4 border rounded-lg">
-              <div className="text-muted-foreground mb-1">Partitions</div>
-              <div className="text-2xl font-bold">2,489</div>
-              <div className="text-xs text-muted-foreground mt-1">
-                By signup_date (daily)
-              </div>
-            </div>
-          </div>
-
-          {/* Partitioning Strategy */}
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="font-medium text-sm mb-1">Query Optimization Tips</div>
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <div>• <strong>Primary key:</strong> Always use <code className="font-mono bg-muted px-1 py-0.5 rounded">customer_id</code> for point lookups</div>
-                  <div>• <strong>Partitioning:</strong> Filter by <code className="font-mono bg-muted px-1 py-0.5 rounded">signup_date</code> to reduce scan size (daily partitions)</div>
-                  <div>• <strong>Indexing:</strong> <code className="font-mono bg-muted px-1 py-0.5 rounded">customer_id</code>, <code className="font-mono bg-muted px-1 py-0.5 rounded">email</code>, <code className="font-mono bg-muted px-1 py-0.5 rounded">segment</code> are indexed</div>
-                  <div>• <strong>Avoid:</strong> Full table scans on <code className="font-mono bg-muted px-1 py-0.5 rounded">lifetime_value</code> or <code className="font-mono bg-muted px-1 py-0.5 rounded">churn_risk_score</code> without date filters</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
