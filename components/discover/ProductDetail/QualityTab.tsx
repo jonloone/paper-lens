@@ -37,7 +37,7 @@ export function QualityTab({ product }: QualityTabProps) {
   return (
     <div className="space-y-6">
       {/* Overall Score */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle className="text-lg">Overall Quality Score</CardTitle>
         </CardHeader>
@@ -66,7 +66,7 @@ export function QualityTab({ product }: QualityTabProps) {
 
       {/* Quality Dimensions */}
       <Collapsible open={isDimensionsOpen} onOpenChange={setIsDimensionsOpen}>
-        <Card>
+        <Card className="bg-muted/50">
           <CollapsibleTrigger className="w-full">
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-lg">
@@ -105,7 +105,7 @@ export function QualityTab({ product }: QualityTabProps) {
 
       {/* Quality Tests - Enhanced */}
       <Collapsible open={isTestsOpen} onOpenChange={setIsTestsOpen}>
-        <Card>
+        <Card className="bg-muted/50">
           <CollapsibleTrigger className="w-full">
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-lg">
@@ -230,7 +230,7 @@ export function QualityTab({ product }: QualityTabProps) {
 
       {/* Quality Alerts - Enhanced */}
       <Collapsible open={isAlertsOpen} onOpenChange={setIsAlertsOpen}>
-        <Card>
+        <Card className="bg-muted/50">
           <CollapsibleTrigger className="w-full">
             <CardHeader>
               <CardTitle className="flex items-center justify-between text-lg">

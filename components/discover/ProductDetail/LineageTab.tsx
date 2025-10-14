@@ -66,7 +66,7 @@ export function LineageTab({ productId, productName }: LineageTabProps) {
     <div className="space-y-4">
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card className="p-4">
+        <Card className="bg-muted/50 p-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-muted-foreground mb-1">Upstream Sources</div>
@@ -76,7 +76,7 @@ export function LineageTab({ productId, productName }: LineageTabProps) {
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="bg-muted/50 p-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-muted-foreground mb-1">Downstream Consumers</div>
@@ -86,7 +86,7 @@ export function LineageTab({ productId, productName }: LineageTabProps) {
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="bg-muted/50 p-4">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-sm text-muted-foreground mb-1">Total Impact Radius</div>
@@ -251,7 +251,7 @@ export function LineageTab({ productId, productName }: LineageTabProps) {
       )}
 
       {/* Impact Analysis */}
-      <Card className="p-6 bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+      <Card className="bg-muted/50 p-6 border-amber-200 dark:border-amber-800">
         <div className="flex items-start gap-3">
           <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
           <div>

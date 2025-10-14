@@ -82,7 +82,7 @@ group.id=your_consumer_group`;
   return (
     <div className="space-y-6">
       {/* SQL Access */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -150,7 +150,7 @@ group.id=your_consumer_group`;
       </Card>
 
       {/* REST API Access */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -290,7 +290,7 @@ group.id=your_consumer_group`;
       </Card>
 
       {/* Kafka Stream */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
@@ -366,7 +366,7 @@ group.id=your_consumer_group`;
       </Card>
 
       {/* File Export */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">

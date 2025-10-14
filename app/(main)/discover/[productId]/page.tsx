@@ -203,7 +203,7 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
         {/* Product Section - Hero Card with Tabs */}
         <div className="space-y-0">
           {/* Hero Card - Large Title + Quality Indicators */}
-          <Card className="bg-muted/30 border-b-0 rounded-b-none">
+          <Card className="border-b-0 rounded-b-none">
             <CardContent className="pt-8 pb-6">
               {/* Header with title and actions */}
               <div className="flex items-start justify-between gap-4 mb-6">

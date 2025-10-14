@@ -24,7 +24,7 @@ export function QuickStartTab({ product }: QuickStartTabProps) {
 
         <div className="space-y-4">
           {/* Step 1: Request Access */}
-          <Card>
+          <Card className="bg-muted/50">
             <CardContent className="pt-6">
               <div className="flex gap-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold text-lg">
@@ -45,7 +45,7 @@ export function QuickStartTab({ product }: QuickStartTabProps) {
           </Card>
 
           {/* Step 2: Connect Your Tool */}
-          <Card>
+          <Card className="bg-muted/50">
             <CardContent className="pt-6">
               <div className="flex gap-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold text-lg">
@@ -230,7 +230,7 @@ df = pd.read_sql(
       </div>
 
       {/* Common Use Cases */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle className="text-lg">Common Use Cases</CardTitle>
         </CardHeader>
@@ -272,7 +272,7 @@ df = pd.read_sql(
       </Card>
 
       {/* Next Steps */}
-      <Card className="border-primary/20 bg-primary/5">
+      <Card className="bg-muted/50 border-primary/20">
         <CardContent className="pt-6">
           <div className="flex items-start gap-4">
             <Sparkles className="h-6 w-6 text-primary mt-1" />

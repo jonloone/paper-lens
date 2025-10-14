@@ -30,7 +30,7 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
   return (
     <div className="space-y-6">
       {/* Business Context - Primary Card */}
-      <Card className="border-l-4 border-l-primary">
+      <Card className="bg-muted/50 border-l-4 border-l-primary">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -66,7 +66,7 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
       </Card>
 
       {/* Common Use Cases - Secondary Card */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle className="text-lg">Common Use Cases</CardTitle>
         </CardHeader>
@@ -115,7 +115,7 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
       </Card>
 
       {/* Owner & Support - New Card */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle className="text-lg">Owner & Support</CardTitle>
         </CardHeader>
@@ -146,7 +146,7 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
 
       {/* Related Products - Moved from page bottom */}
       {relatedProducts.length > 0 && (
-        <Card>
+        <Card className="bg-muted/50">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg">Related Products</CardTitle>

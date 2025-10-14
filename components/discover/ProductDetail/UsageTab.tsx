@@ -44,7 +44,7 @@ export function UsageTab({ product }: UsageTabProps) {
   return (
     <div className="space-y-6">
       {/* Usage Overview - Enhanced with Mini Charts */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle>Usage Overview</CardTitle>
         </CardHeader>
@@ -95,7 +95,7 @@ export function UsageTab({ product }: UsageTabProps) {
       </Card>
 
       {/* Access Method Distribution */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle>Access Method Distribution</CardTitle>
         </CardHeader>
@@ -142,7 +142,7 @@ export function UsageTab({ product }: UsageTabProps) {
       </Card>
 
       {/* Top Users */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle>Top Users (Last 30 Days)</CardTitle>
         </CardHeader>
