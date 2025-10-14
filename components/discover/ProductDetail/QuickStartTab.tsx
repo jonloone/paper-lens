@@ -232,7 +232,7 @@ df = pd.read_sql(
       {/* Common Use Cases */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-xl font-semibold">Common Use Cases</CardTitle>
+          <CardTitle className="text-lg">Common Use Cases</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">

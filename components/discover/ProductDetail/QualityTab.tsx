@@ -88,7 +88,7 @@ export function QualityTab({ product }: QualityTabProps) {
       {/* Overall Score */}
       <Card>
         <CardHeader>
-          <CardTitle>Overall Quality Score</CardTitle>
+          <CardTitle className="text-lg">Overall Quality Score</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
@@ -118,7 +118,7 @@ export function QualityTab({ product }: QualityTabProps) {
         <Card>
           <CollapsibleTrigger className="w-full">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex items-center justify-between text-lg">
                 <div className="flex items-center gap-2">
                   <Activity className="h-5 w-5" />
                   Quality Trends
@@ -197,7 +197,7 @@ export function QualityTab({ product }: QualityTabProps) {
         <Card>
           <CollapsibleTrigger className="w-full">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex items-center justify-between text-lg">
                 <span>Quality Dimensions</span>
                 <ChevronDown className={`h-5 w-5 transition-transform ${isDimensionsOpen ? 'transform rotate-180' : ''}`} />
               </CardTitle>
@@ -244,7 +244,7 @@ export function QualityTab({ product }: QualityTabProps) {
         <Card>
           <CollapsibleTrigger className="w-full">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex items-center justify-between text-lg">
                 <span>Quality Tests</span>
                 <ChevronDown className={`h-5 w-5 transition-transform ${isTestsOpen ? 'transform rotate-180' : ''}`} />
               </CardTitle>
@@ -369,7 +369,7 @@ export function QualityTab({ product }: QualityTabProps) {
         <Card>
           <CollapsibleTrigger className="w-full">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
+              <CardTitle className="flex items-center justify-between text-lg">
                 <div className="flex items-center gap-2">
                   <span>Quality Alerts & Thresholds</span>
                   <Badge variant="secondary" className="text-xs">1 warning</Badge>

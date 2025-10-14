@@ -183,7 +183,7 @@ export function SchemaTab({ product }: SchemaTabProps) {
       {/* Full Schema Table with Distribution Stats */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <Database className="h-5 w-5" />
             {viewMode === 'essential' ? 'Essential Columns' : 'Complete Data Dictionary'} ({filteredColumns.length} of {displaySchema.length} columns{viewMode === 'essential' ? ' shown' : ''})
           </CardTitle>
@@ -299,7 +299,7 @@ export function SchemaTab({ product }: SchemaTabProps) {
       {/* Table Statistics */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
             <BarChart3 className="h-5 w-5" />
             Table Statistics
           </CardTitle>

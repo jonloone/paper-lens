@@ -207,7 +207,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
               {/* Quality Section */}
               <div className="border-t pt-6">
-                <h2 className="text-xs font-bold tracking-widest mb-4" style={{fontFamily: 'Roobert, system-ui, sans-serif'}}>
+                <h2 className="roobert-headline--sm mb-4">
                   QUALITY
                 </h2>
                 <TrustDashboard

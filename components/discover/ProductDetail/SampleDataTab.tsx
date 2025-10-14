@@ -72,25 +72,11 @@ export function SampleDataTab({ product }: SampleDataTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Info Banner */}
-      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
-        <CardContent className="pt-6">
-          <div className="flex items-start gap-3">
-            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-            <div className="text-sm">
-              <p className="font-medium text-blue-900 dark:text-blue-100">
-                Preview Data (No Access Required) • Sanitized sample from last 24 hours
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Sample Table */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Data Preview (5 of 2,341,567 rows)</CardTitle>
+            <CardTitle className="text-lg">Data Preview (5 of 2,341,567 rows)</CardTitle>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="gap-2">
                 <Download className="h-3 w-3" />
@@ -161,7 +147,7 @@ export function SampleDataTab({ product }: SampleDataTabProps) {
       {/* Column Explanation */}
       <Card>
         <CardHeader>
-          <CardTitle>Column Descriptions</CardTitle>
+          <CardTitle className="text-lg">Column Descriptions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -211,7 +197,7 @@ export function SampleDataTab({ product }: SampleDataTabProps) {
       {/* Sample Query Examples */}
       <Card>
         <CardHeader>
-          <CardTitle>Try These Sample Queries</CardTitle>
+          <CardTitle className="text-lg">Try These Sample Queries</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
