@@ -1,9 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Users, TrendingUp, Code, Star, BarChart3, Clock, Zap } from 'lucide-react';
+import { Users, TrendingUp } from 'lucide-react';
 
 interface UsageTabProps {
   product: any;
@@ -14,19 +12,6 @@ export function UsageTab({ product }: UsageTabProps) {
     { name: 'Maria Rodriguez', team: 'Marketing Analytics', queries: 842, usage: 'Daily dashboards' },
     { name: 'James Chen', team: 'Data Science', queries: 634, usage: 'ML model training' },
     { name: 'Sarah Kim', team: 'Product Analytics', queries: 512, usage: 'Product usage reports' },
-  ];
-
-  const commonQueries = [
-    {
-      name: 'Customer Segmentation',
-      uses: 1234,
-      query: 'SELECT segment, COUNT(*), AVG(total_revenue)\nFROM customer_360\nGROUP BY segment'
-    },
-    {
-      name: 'High-Value Customers',
-      uses: 987,
-      query: 'SELECT customer_id, email, total_revenue\nFROM customer_360\nWHERE total_revenue > 10000\nORDER BY total_revenue DESC'
-    },
   ];
 
   // Mock usage data for trends (30 days)
@@ -174,131 +159,6 @@ export function UsageTab({ product }: UsageTabProps) {
               </div>
             </div>
           ))}
-        </CardContent>
-      </Card>
-
-      {/* Query Pattern Analysis */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Query Pattern Analysis
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Performance Metrics */}
-          <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Avg Query Time</div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                <span className="text-lg font-bold">2.3s</span>
-              </div>
-              <div className="text-xs text-green-600 mt-1">↓ 15% vs last week</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Peak Usage</div>
-              <div className="flex items-center gap-2">
-                <Zap className="h-4 w-4 text-muted-foreground" />
-                <span className="text-lg font-bold">9-11 AM</span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">EST</div>
-            </div>
-            <div>
-              <div className="text-xs text-muted-foreground mb-1">Cache Hit Rate</div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                <span className="text-lg font-bold">67%</span>
-              </div>
-              <div className="text-xs text-green-600 mt-1">↑ 8% vs last week</div>
-            </div>
-          </div>
-
-          {/* Top Query Patterns */}
-          <div>
-            <h4 className="text-sm font-medium mb-3">Most Common Query Patterns</h4>
-            {commonQueries.map((pattern, index) => (
-              <div key={index} className="space-y-2 mb-4">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium text-sm">{pattern.name}</div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{pattern.uses.toLocaleString()} uses</Badge>
-                    <Badge variant="outline">Avg 1.8s</Badge>
-                  </div>
-                </div>
-                <pre className="p-3 bg-muted rounded text-xs font-mono overflow-x-auto">
-                  {pattern.query}
-                </pre>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    <Code className="mr-2 h-3 w-3" />
-                    Copy Query
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    View Execution Plan
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Query Complexity Distribution */}
-          <div className="pt-4 border-t">
-            <h4 className="text-sm font-medium mb-3">Query Complexity Distribution</h4>
-            <div className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span>Simple SELECT (1-2 joins)</span>
-                  <span className="font-medium">62%</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500" style={{ width: '62%' }} />
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span>Moderate (3-5 joins, aggregations)</span>
-                  <span className="font-medium">28%</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-500" style={{ width: '28%' }} />
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between text-sm mb-1">
-                  <span>Complex (6+ joins, window functions)</span>
-                  <span className="font-medium">10%</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-500" style={{ width: '10%' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* User Feedback */}
-      <Card>
-        <CardHeader>
-          <CardTitle>User Feedback</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              ))}
-            </div>
-            <span className="font-medium">{product.rating}/5.0</span>
-            <span className="text-sm text-muted-foreground">
-              (based on {product.reviews} reviews)
-            </span>
-          </div>
-
-          <Button variant="outline" size="sm">
-            View All Reviews
-          </Button>
         </CardContent>
       </Card>
     </div>

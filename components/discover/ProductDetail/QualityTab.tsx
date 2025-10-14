@@ -4,9 +4,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { CheckCircle, AlertCircle, TrendingUp, TrendingDown, Minus, Activity, ChevronDown, Clock, Database, Zap, Globe } from 'lucide-react';
+import { CheckCircle, AlertCircle, TrendingUp, ChevronDown } from 'lucide-react';
 
 interface QualityTabProps {
   product: any;
@@ -14,13 +13,9 @@ interface QualityTabProps {
 
 export function QualityTab({ product }: QualityTabProps) {
   const qualityScore = product.quality.dataQuality;
-  const [isTrendsOpen, setIsTrendsOpen] = useState(false);
   const [isDimensionsOpen, setIsDimensionsOpen] = useState(false);
   const [isTestsOpen, setIsTestsOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(true); // Open by default if there are alerts
-  const [isFreshnessOpen, setIsFreshnessOpen] = useState(false);
-  const [isCoverageOpen, setIsCoverageOpen] = useState(false);
-  const [isPerformanceOpen, setIsPerformanceOpen] = useState(false);
 
   const getQualityGrade = (score: number) => {
     if (score >= 90) return { label: 'Certified', color: 'text-green-600' };
@@ -38,53 +33,6 @@ export function QualityTab({ product }: QualityTabProps) {
     { name: 'Consistency', score: 97.2, description: 'Data matches across related products' },
     { name: 'Uniqueness', score: 100, description: 'Primary keys are unique' },
   ];
-
-  // Mock historical data for trends (30/60/90 day)
-  const qualityHistory30 = [95, 94, 96, 97, 95, 96, 98, 97, 98, 97, 98, 99, 98, 99, 98, 99, 97, 98, 99, 98, 99, 98, 97, 98, 99, 98, 97, 98, 99, 98];
-  const qualityHistory60 = [92, 91, 93, 94, 93, 94, 95, 94, 95, 96, 95, 96, 97, 96, 97, 96, 97, 98, ...qualityHistory30];
-  const qualityHistory90 = [88, 89, 90, 91, 90, 91, 92, 91, 92, 93, ...qualityHistory60];
-
-  const dimensionTrends = [
-    { name: 'Completeness', current: 99.2, prev: 99.0, trend: 'up' },
-    { name: 'Accuracy', current: 98.5, prev: 98.7, trend: 'down' },
-    { name: 'Timeliness', current: 99.8, prev: 99.8, trend: 'stable' },
-    { name: 'Consistency', current: 97.2, prev: 96.5, trend: 'up' },
-    { name: 'Uniqueness', current: 100, prev: 100, trend: 'stable' },
-  ];
-
-  const getTrendIcon = (trend: string) => {
-    if (trend === 'up') return <TrendingUp className="h-3 w-3 text-green-600" />;
-    if (trend === 'down') return <TrendingDown className="h-3 w-3 text-red-600" />;
-    return <Minus className="h-3 w-3 text-muted-foreground" />;
-  };
-
-  const getTrendColor = (trend: string) => {
-    if (trend === 'up') return 'text-green-600';
-    if (trend === 'down') return 'text-red-600';
-    return 'text-muted-foreground';
-  };
-
-  const renderSparkline = (data: number[], color: string = 'bg-primary') => {
-    const max = Math.max(...data);
-    const min = Math.min(...data);
-    const range = max - min || 1;
-
-    return (
-      <div className="flex items-end gap-0.5 h-12">
-        {data.slice(-30).map((value, i) => {
-          const height = ((value - min) / range) * 100;
-          return (
-            <div
-              key={i}
-              className={`flex-1 ${color} rounded-t-sm opacity-70 hover:opacity-100 transition-opacity`}
-              style={{ height: `${Math.max(height, 10)}%` }}
-              title={`${value}`}
-            />
-          );
-        })}
-      </div>
-    );
-  };
 
   return (
     <div className="space-y-6">
@@ -116,86 +64,7 @@ export function QualityTab({ product }: QualityTabProps) {
         </CardContent>
       </Card>
 
-      {/* Quality Trends */}
-      <Collapsible open={isTrendsOpen} onOpenChange={setIsTrendsOpen}>
-        <Card>
-          <CollapsibleTrigger className="w-full">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-lg">
-                <div className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Quality Trends
-                </div>
-                <ChevronDown className={`h-5 w-5 transition-transform ${isTrendsOpen ? 'transform rotate-180' : ''}`} />
-              </CardTitle>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent>
-          <Tabs defaultValue="30">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="30">30 Days</TabsTrigger>
-              <TabsTrigger value="60">60 Days</TabsTrigger>
-              <TabsTrigger value="90">90 Days</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="30" className="space-y-4 mt-4">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm text-muted-foreground">Overall Quality Score</div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">+3.2% vs 30 days ago</span>
-                  </div>
-                </div>
-                {renderSparkline(qualityHistory30)}
-                <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                  <span>30 days ago</span>
-                  <span>Today</span>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="60" className="space-y-4 mt-4">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm text-muted-foreground">Overall Quality Score</div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">+6.8% vs 60 days ago</span>
-                  </div>
-                </div>
-                {renderSparkline(qualityHistory60)}
-                <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                  <span>60 days ago</span>
-                  <span>Today</span>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="90" className="space-y-4 mt-4">
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-sm text-muted-foreground">Overall Quality Score</div>
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-medium text-green-600">+10.2% vs 90 days ago</span>
-                  </div>
-                </div>
-                {renderSparkline(qualityHistory90)}
-                <div className="flex justify-between text-xs text-muted-foreground mt-2">
-                  <span>90 days ago</span>
-                  <span>Today</span>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
-
-      {/* Quality Dimensions with Trends */}
+      {/* Quality Dimensions */}
       <Collapsible open={isDimensionsOpen} onOpenChange={setIsDimensionsOpen}>
         <Card>
           <CollapsibleTrigger className="w-full">
@@ -208,33 +77,25 @@ export function QualityTab({ product }: QualityTabProps) {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <CardContent className="space-y-4">
-          {dimensionTrends.map((dimension) => (
+          {dimensions.map((dimension) => (
             <div key={dimension.name} className="space-y-2">
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-medium text-sm">{dimension.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {dimensions.find(d => d.name === dimension.name)?.description}
+                    {dimension.description}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1">
-                    {getTrendIcon(dimension.trend)}
-                    <span className={`text-xs ${getTrendColor(dimension.trend)}`}>
-                      {dimension.trend === 'up' && `+${(dimension.current - dimension.prev).toFixed(1)}%`}
-                      {dimension.trend === 'down' && `${(dimension.current - dimension.prev).toFixed(1)}%`}
-                      {dimension.trend === 'stable' && 'No change'}
-                    </span>
-                  </div>
-                  <span className="text-sm font-medium">{dimension.current}%</span>
-                  {dimension.current >= 95 ? (
+                  <span className="text-sm font-medium">{dimension.score}%</span>
+                  {dimension.score >= 95 ? (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   ) : (
                     <AlertCircle className="h-4 w-4 text-yellow-600" />
                   )}
                 </div>
               </div>
-              <Progress value={dimension.current} className="h-1" />
+              <Progress value={dimension.score} className="h-1" />
             </div>
           ))}
             </CardContent>
@@ -489,197 +350,6 @@ export function QualityTab({ product }: QualityTabProps) {
               </div>
             </div>
           </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
-
-      {/* Data Freshness - From MetadataPanel */}
-      <Collapsible open={isFreshnessOpen} onOpenChange={setIsFreshnessOpen}>
-        <Card>
-          <CollapsibleTrigger className="w-full">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-lg">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Data Freshness & SLA
-                </div>
-                <ChevronDown className={`h-5 w-5 transition-transform ${isFreshnessOpen ? 'transform rotate-180' : ''}`} />
-              </CardTitle>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm font-medium mb-2">Update Cadence</div>
-                  <div className="text-2xl font-bold mb-1">{product.sla.freshness}</div>
-                  <div className="text-xs text-muted-foreground">Continuous updates from source systems</div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium mb-2">SLA Commitment</div>
-                  <div className="text-2xl font-bold mb-1">&lt; {product.sla.latency}</div>
-                  <div className="text-xs text-muted-foreground">Maximum acceptable lag from source</div>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                <div>
-                  <div className="text-sm font-medium mb-2">Last Refresh</div>
-                  <div className="text-base font-semibold mb-1">{product.lastUpdated}</div>
-                  <div className="text-xs text-muted-foreground">Successfully completed</div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium mb-2">Next Update</div>
-                  <div className="text-base font-semibold mb-1">In 15 minutes</div>
-                  <div className="text-xs text-muted-foreground">Scheduled pipeline run</div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t">
-                <div className="text-sm font-medium mb-2">Historical Depth</div>
-                <div className="text-base font-semibold mb-1">5 years</div>
-                <div className="text-xs text-muted-foreground">Full history available since January 2020</div>
-              </div>
-
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Uptime SLA</span>
-                  <span className="font-medium">{product.sla.uptime}%</span>
-                </div>
-                <Progress value={product.sla.uptime} className="h-1.5 mt-2" />
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
-
-      {/* Coverage & Completeness - From MetadataPanel */}
-      <Collapsible open={isCoverageOpen} onOpenChange={setIsCoverageOpen}>
-        <Card>
-          <CollapsibleTrigger className="w-full">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-lg">
-                <div className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Coverage & Completeness
-                </div>
-                <ChevronDown className={`h-5 w-5 transition-transform ${isCoverageOpen ? 'transform rotate-180' : ''}`} />
-              </CardTitle>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm font-medium mb-2">Total Records</div>
-                  <div className="text-2xl font-bold mb-1">{product.usage.uniqueConsumers.toLocaleString()}</div>
-                  <div className="text-xs text-muted-foreground">Active customer profiles</div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium mb-2">Completeness</div>
-                  <div className="text-2xl font-bold mb-1 text-emerald-600">99.2%</div>
-                  <div className="text-xs text-muted-foreground">Required fields populated</div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t">
-                <div className="text-sm font-medium mb-3">Geographic Coverage</div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <span>Global (47 countries)</span>
-                    </div>
-                    <Badge variant="secondary">100%</Badge>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    North America, Europe, Asia-Pacific, Latin America
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t">
-                <div className="text-sm font-medium mb-3">Business Units</div>
-                <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline">Enterprise</Badge>
-                  <Badge variant="outline">SMB</Badge>
-                  <Badge variant="outline">Consumer</Badge>
-                  <Badge variant="outline">Partner</Badge>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t">
-                <div className="text-sm font-medium mb-2">Exclusions</div>
-                <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Test accounts (excluded)</li>
-                  <li>Deleted users older than 7 years (archived separately)</li>
-                  <li>GDPR deletion requests (anonymized)</li>
-                </ul>
-              </div>
-            </CardContent>
-          </CollapsibleContent>
-        </Card>
-      </Collapsible>
-
-      {/* Performance Metrics - From MetadataPanel */}
-      <Collapsible open={isPerformanceOpen} onOpenChange={setIsPerformanceOpen}>
-        <Card>
-          <CollapsibleTrigger className="w-full">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between text-lg">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-5 w-5" />
-                  Performance Metrics
-                </div>
-                <ChevronDown className={`h-5 w-5 transition-transform ${isPerformanceOpen ? 'transform rotate-180' : ''}`} />
-              </CardTitle>
-            </CardHeader>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-3 gap-4">
-                <div>
-                  <div className="text-sm font-medium mb-2">Avg Query Time</div>
-                  <div className="text-2xl font-bold mb-1">850ms</div>
-                  <div className="text-xs text-muted-foreground">Typical analytical query</div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium mb-2">P95 Latency</div>
-                  <div className="text-2xl font-bold mb-1">2.1s</div>
-                  <div className="text-xs text-muted-foreground">95th percentile</div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium mb-2">P99 Latency</div>
-                  <div className="text-2xl font-bold mb-1">4.8s</div>
-                  <div className="text-xs text-muted-foreground">99th percentile</div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t">
-                <div className="text-sm font-medium mb-2">Recommended Usage</div>
-                <div className="space-y-2 text-xs text-muted-foreground">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Ideal for: Dashboards, analytics, ML training</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Supports: Concurrent queries up to 100 users</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
-                    <span>Not recommended for: Real-time transactions (&lt;100ms required)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Query volume (last 24h)</span>
-                  <span className="font-medium text-foreground">{product.usage.queriesPerDay.toLocaleString()} queries</span>
-                </div>
-              </div>
             </CardContent>
           </CollapsibleContent>
         </Card>
