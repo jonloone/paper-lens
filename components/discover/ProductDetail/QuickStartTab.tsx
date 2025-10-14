@@ -18,6 +18,33 @@ export function QuickStartTab({ product }: QuickStartTabProps) {
 
   return (
     <div className="space-y-8">
+      {/* Business Questions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">What questions can this answer?</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <span className="text-sm text-muted-foreground">
+              Which customers are most valuable and what drives their lifetime value?
+            </span>
+          </div>
+          <div className="flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <span className="text-sm text-muted-foreground">
+              Who is at risk of churning and what are the early warning signs?
+            </span>
+          </div>
+          <div className="flex items-start gap-3">
+            <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <span className="text-sm text-muted-foreground">
+              How do customers engage across different channels and touchpoints?
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Get Started Steps */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight mb-6">Get Started in 2 Steps</h2>

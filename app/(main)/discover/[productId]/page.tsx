@@ -27,8 +27,7 @@ import { QualityTab } from '@/components/discover/ProductDetail/QualityTab';
 import { UsageTab } from '@/components/discover/ProductDetail/UsageTab';
 import { LineageTab } from '@/components/discover/ProductDetail/LineageTab';
 import { GovernanceTab } from '@/components/discover/ProductDetail/GovernanceTab';
-import { MetadataPanel } from '@/components/discover/ProductDetail/MetadataPanel';
-import { TrustDashboard } from '@/components/discover/ProductDetail/TrustDashboard';
+import { FitnessIndicators } from '@/components/discover/ProductDetail/FitnessIndicators';
 
 interface ProductDetailPageProps {
   params: {
@@ -117,8 +116,7 @@ const getRelatedProducts = () => {
 
 export default function ProductDetailPage({ params }: ProductDetailPageProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [showSampleData, setShowSampleData] = useState(false);
+  const [activeTab, setActiveTab] = useState('quickstart');
 
   // Fetch product data (mock for now)
   const product = getProductById(params.productId);
@@ -176,7 +174,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               {/* Header with title and actions */}
               <div className="flex items-start justify-between gap-4 mb-6">
                 <div className="flex-1">
-                  <h1 className="text-5xl font-bold tracking-tight mb-3">
+                  <h1 className="text-6xl font-bold tracking-tight mb-3">
                     {product.displayName}
                   </h1>
                   <p className="text-base text-muted-foreground">
@@ -205,83 +203,28 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 {product.description}
               </p>
 
-              {/* Quality Section */}
+              {/* Fitness Indicators Section */}
               <div className="border-t pt-6">
                 <h2 className="roobert-headline--sm mb-4">
                   QUALITY
                 </h2>
-                <TrustDashboard
+                <FitnessIndicators
                   quality={{
-                    dataQuality: product.quality.dataQuality,
-                    completeness: 0.992,
-                    accuracy: 'Validated monthly'
+                    dataQuality: product.quality.dataQuality
                   }}
                   freshness={{
-                    lastUpdated: product.lastUpdated,
                     updateFrequency: product.sla.freshness
                   }}
-                  coverage={{
-                    totalRecords: product.usage.uniqueConsumers.toLocaleString(),
-                    geographic: 'Global (47 countries)',
-                    completeness: 0.992
+                  usage={{
+                    uniqueConsumers: product.usage.uniqueConsumers
                   }}
-                  trend={[
-                    { date: '2025-09-13', score: 96 },
-                    { date: '2025-09-20', score: 97 },
-                    { date: '2025-09-27', score: 96 },
-                    { date: '2025-10-04', score: 98 },
-                    { date: '2025-10-11', score: 98 }
-                  ]}
+                  sla={{
+                    uptime: product.sla.uptime
+                  }}
                 />
               </div>
             </CardContent>
           </Card>
-
-          {/* Business Questions Card */}
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="font-semibold text-lg mb-4">What questions can this answer?</h2>
-              <ul className="space-y-3 text-sm text-muted-foreground mb-6">
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Which customers are most valuable and what drives their lifetime value?</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>Who is at risk of churning and what are the early warning signs?</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                  <span>How do customers engage across different channels and touchpoints?</span>
-                </li>
-              </ul>
-
-              {/* View Sample Data Button */}
-              <Button
-                variant="outline"
-                onClick={() => setShowSampleData(!showSampleData)}
-                className="w-full gap-2"
-              >
-                <Database className="h-4 w-4" />
-                {showSampleData ? 'Hide' : 'View'} Sample Data
-              </Button>
-
-              {/* Sample Data Table (conditionally shown) */}
-              {showSampleData && (
-                <div className="mt-6">
-                  <SampleDataTab product={product} />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Comprehensive Metadata Panel - Prioritize fitness evaluation */}
-          <div className="mx-auto mt-16 w-full max-w-2xl lg:col-span-7 lg:mt-0 lg:max-w-none">
-            <div className="mb-8">
-              <h2 className="text-xl font-bold mb-6">Critical Metadata & Trust Indicators</h2>
-              <MetadataPanel product={product} />
-            </div>
-          </div>
 
           {/* Tabs Section - Full Width Below */}
           <div className="mx-auto w-full max-w-2xl lg:col-span-7 lg:max-w-none">
@@ -289,16 +232,16 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
               <div className="border-b border-border">
                 <TabsList className="h-auto bg-transparent border-0 p-0">
                   <TabsTrigger
+                    value="quickstart"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-1 py-6"
+                  >
+                    Quick Start
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="overview"
                     className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-1 py-6"
                   >
                     Overview
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="sample"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-1 py-6"
-                  >
-                    Sample Data
                   </TabsTrigger>
                   <TabsTrigger
                     value="schema"
@@ -327,12 +270,12 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                 </TabsList>
               </div>
 
-              <TabsContent value="overview" className="mt-8">
-                <NewOverviewTab product={product} />
+              <TabsContent value="quickstart" className="mt-8">
+                <QuickStartTab product={product} />
               </TabsContent>
 
-              <TabsContent value="sample" className="mt-8">
-                <SampleDataTab product={product} />
+              <TabsContent value="overview" className="mt-8">
+                <NewOverviewTab product={product} />
               </TabsContent>
 
               <TabsContent value="schema" className="mt-8">
@@ -352,62 +295,11 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
               <TabsContent value="access" className="mt-8">
                 <div className="space-y-8">
-                  <QuickStartTab product={product} />
                   <UsageTab product={product} />
                   <AccessTab product={product} />
                 </div>
               </TabsContent>
             </Tabs>
-          </div>
-        </div>
-
-        {/* Related Products - "Customers also viewed" */}
-        <div className="mx-auto mt-24 max-w-2xl sm:mt-32 lg:max-w-none">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium">Related Products</h2>
-            <a href="/discover" className="text-sm font-medium text-primary hover:underline whitespace-nowrap">
-              View all <span aria-hidden="true">&rarr;</span>
-            </a>
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2 sm:gap-y-10 lg:grid-cols-4">
-            {relatedProducts.map((relProduct) => {
-              const RelatedIcon = domainIcons[relProduct.domain] || Database;
-
-              return (
-                <div key={relProduct.id} className="group relative">
-                  <div className="relative">
-                    <Card className="aspect-4/3 w-full rounded-lg bg-gradient-to-br from-muted/20 to-muted/40 overflow-hidden">
-                      <div className="w-full h-full flex items-center justify-center p-8">
-                        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-background/80 backdrop-blur-sm shadow-lg group-hover:scale-105 transition-transform duration-200">
-                          <RelatedIcon className="h-10 w-10 text-primary" />
-                        </div>
-                      </div>
-                    </Card>
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 flex items-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                    >
-                      <div className="w-full rounded-md bg-background/75 backdrop-blur-sm px-4 py-2 text-center text-sm font-medium">
-                        View Product
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex items-center justify-between text-base font-medium">
-                    <h3>
-                      <a href={`/discover/${relProduct.id}`}>
-                        <span aria-hidden="true" className="absolute inset-0"></span>
-                        {relProduct.displayName}
-                      </a>
-                    </h3>
-                    <p className={`font-mono ${getQualityColor(relProduct.quality.dataQuality)}`}>
-                      Q{relProduct.quality.dataQuality}
-                    </p>
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{relProduct.productType}</p>
-                </div>
-              );
-            })}
           </div>
         </div>
       </main>
