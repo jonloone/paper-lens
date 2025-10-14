@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Users, TrendingUp, Sparkles, Code2, BarChart3, Mail, FileText, Database, DollarSign, Package, Settings, Target } from 'lucide-react';
+import { CheckCircle, Users, TrendingUp, Clock, Code2, BarChart3, Mail, FileText, Database, DollarSign, Package, Settings, Target, Activity, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface NewOverviewTabProps {
   product: any;
@@ -29,86 +29,113 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
 
   return (
     <div className="space-y-6">
-      {/* Business Context - Primary Card */}
+      {/* Technical Specifications */}
       <Card className="bg-muted/50 border-l-4 border-l-primary">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
-            <Sparkles className="h-5 w-5 text-primary" />
-            Business Context
+            <Code2 className="h-5 w-5 text-primary" />
+            Technical Specifications
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-5">
-          <div>
-            <h3 className="font-semibold text-base mb-2">What is this?</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {product.description}
-            </p>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-base mb-2">Who uses this?</h3>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">Marketing Teams</Badge>
-              <Badge variant="secondary">Sales Operations</Badge>
-              <Badge variant="secondary">Customer Success</Badge>
-              <Badge variant="secondary">Data Analytics</Badge>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div>
+              <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" />
+                SLA & Uptime
+              </h3>
+              <p className="text-2xl font-bold">{product.sla.uptime}%</p>
+              <p className="text-xs text-muted-foreground mt-1">Guaranteed uptime</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                Data Freshness
+              </h3>
+              <p className="text-2xl font-bold capitalize">{product.sla.freshness}</p>
+              <p className="text-xs text-muted-foreground mt-1">Update frequency</p>
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Query Latency
+              </h3>
+              <p className="text-2xl font-bold">{product.sla.latency}</p>
+              <p className="text-xs text-muted-foreground mt-1">Average response time</p>
             </div>
           </div>
 
-          <div>
-            <h3 className="font-semibold text-base mb-2">Why does it matter?</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              This dataset serves as the single source of truth for customer intelligence, enabling data-driven decisions
-              across acquisition, retention, and growth initiatives. Used in {product.usage.deployments} production workflows.
-            </p>
+          <div className="pt-4 border-t">
+            <h3 className="font-semibold text-sm mb-3">Production Readiness</h3>
+            <div className="flex items-center gap-3">
+              <Badge variant="default" className="text-xs">
+                {product.quality.productionReadiness}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                v{product.version} • Last updated {product.lastUpdated}
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Common Use Cases - Secondary Card */}
+      {/* Dependencies */}
       <Card className="bg-muted/50">
         <CardHeader>
-          <CardTitle className="text-lg">Common Use Cases</CardTitle>
+          <CardTitle className="text-lg">Dependencies</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+              <ArrowUp className="h-4 w-4 text-blue-600" />
+              Upstream Sources ({product.dependencies.upstream.length})
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {product.dependencies.upstream.map((source: string, index: number) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {source}
+                </Badge>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
+              <ArrowDown className="h-4 w-4 text-green-600" />
+              Downstream Consumers ({product.dependencies.downstream.length})
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {product.dependencies.downstream.map((consumer: string, index: number) => (
+                <Badge key={index} variant="outline" className="text-xs">
+                  {consumer}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Performance Metrics */}
+      <Card className="bg-muted/50">
+        <CardHeader>
+          <CardTitle className="text-lg">Performance Metrics</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="border rounded-lg p-4 space-y-2 hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <h4 className="font-semibold text-sm">Customer Segmentation</h4>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Group customers by value, behavior, and engagement for targeted campaigns
-              </p>
-              <div className="text-xs text-muted-foreground">
-                Marketing, Sales
-              </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="text-center p-4 border rounded-lg">
+              <BarChart3 className="h-8 w-8 text-primary mx-auto mb-2" />
+              <p className="text-2xl font-bold">{product.usage.deployments}</p>
+              <p className="text-xs text-muted-foreground mt-1">Active Deployments</p>
             </div>
-
-            <div className="border rounded-lg p-4 space-y-2 hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="h-5 w-5 text-primary" />
-                <h4 className="font-semibold text-sm">Churn Prevention</h4>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Identify at-risk customers early and trigger retention workflows
-              </p>
-              <div className="text-xs text-muted-foreground">
-                Customer Success
-              </div>
+            <div className="text-center p-4 border rounded-lg">
+              <Users className="h-8 w-8 text-primary mx-auto mb-2" />
+              <p className="text-2xl font-bold">{product.usage.uniqueConsumers.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground mt-1">Unique Consumers</p>
             </div>
-
-            <div className="border rounded-lg p-4 space-y-2 hover:border-primary/50 transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                <h4 className="font-semibold text-sm">Revenue Forecasting</h4>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Predict future revenue using lifetime value and purchase patterns
-              </p>
-              <div className="text-xs text-muted-foreground">
-                Finance, Strategy
-              </div>
+            <div className="text-center p-4 border rounded-lg">
+              <Activity className="h-8 w-8 text-primary mx-auto mb-2" />
+              <p className="text-2xl font-bold">{product.usage.queriesPerDay.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground mt-1">Queries Per Day</p>
             </div>
           </div>
         </CardContent>

@@ -31,6 +31,7 @@ import { UsageTab } from '@/components/discover/ProductDetail/UsageTab';
 import { LineageTab } from '@/components/discover/ProductDetail/LineageTab';
 import { GovernanceTab } from '@/components/discover/ProductDetail/GovernanceTab';
 import { FitnessIndicators } from '@/components/discover/ProductDetail/FitnessIndicators';
+import { BusinessContextSection } from '@/components/discover/ProductDetail/BusinessContextSection';
 
 interface ProductDetailPageProps {
   params: {
@@ -79,7 +80,43 @@ const getProductById = (id: string) => {
     lastUpdated: '2 hours ago',
     verified: true,
     trending: true,
-    featured: true
+    featured: true,
+    // Business context data from DataHub + ODPS
+    businessContext: {
+      targetConsumers: [
+        'Marketing Analytics',
+        'Data Science',
+        'Customer Success',
+        'Product Analytics',
+        'Sales Operations'
+      ],
+      glossaryTerms: [
+        {
+          urn: 'urn:li:glossaryTerm:customer_lifetime_value',
+          name: 'Customer Lifetime Value',
+          definition: 'Total revenue expected from a customer over their entire relationship with the company',
+          calculation: 'SUM(order_value) OVER (PARTITION BY customer_id ORDER BY order_date)'
+        },
+        {
+          urn: 'urn:li:glossaryTerm:churn_risk_score',
+          name: 'Churn Risk Score',
+          definition: 'Likelihood of customer discontinuing service within next 90 days',
+          calculation: 'CASE WHEN DATEDIFF(day, last_purchase_date, CURRENT_DATE) > 90 THEN 1 ELSE 0 END'
+        },
+        {
+          urn: 'urn:li:glossaryTerm:customer_segment',
+          name: 'Customer Segment',
+          definition: 'RFM-based segmentation (Recency, Frequency, Monetary) for targeted marketing',
+        }
+      ],
+      useCases: [
+        'Customer segmentation for targeted marketing campaigns',
+        'Churn prediction and proactive retention workflows',
+        'Revenue forecasting and lifetime value analysis',
+        'Product recommendation engine training data',
+        'Customer health scoring for account management'
+      ]
+    }
   };
 };
 
@@ -267,6 +304,14 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
               <p className="text-base text-muted-foreground leading-relaxed mb-8">
                 {product.description}
               </p>
+
+              {/* Business Context Section */}
+              <BusinessContextSection
+                description={product.description}
+                targetConsumers={product.businessContext.targetConsumers}
+                glossaryTerms={product.businessContext.glossaryTerms}
+                useCases={product.businessContext.useCases}
+              />
 
               {/* Fitness Indicators Section */}
               <div className="border-t pt-6">
