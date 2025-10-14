@@ -200,10 +200,10 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
           </BreadcrumbList>
         </Breadcrumb>
 
-        {/* Product Section - Hero Card */}
-        <div className="space-y-6">
+        {/* Product Section - Hero Card with Tabs */}
+        <div className="space-y-0">
           {/* Hero Card - Large Title + Quality Indicators */}
-          <Card className="bg-card/50 backdrop-blur">
+          <Card className="bg-muted/30 border-b-0 rounded-b-none">
             <CardContent className="pt-8 pb-6">
               {/* Header with title and actions */}
               <div className="flex items-start justify-between gap-4 mb-6">
@@ -288,81 +288,83 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
             </CardContent>
           </Card>
 
-          {/* Tabs Section - Full Width Below */}
-          <div className="mx-auto w-full max-w-2xl lg:col-span-7 lg:max-w-none">
+          {/* Tabs Section - Connected to Hero Card */}
+          <Card className="rounded-t-none pt-0">
             <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <div className="border-b border-border">
-                <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-between">
+              <div className="border-b border-border bg-muted/20">
+                <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-start gap-0 px-6">
                   <TabsTrigger
                     value="quickstart"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
                   >
                     Quick Start
                   </TabsTrigger>
                   <TabsTrigger
                     value="overview"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
                   >
                     Overview
                   </TabsTrigger>
                   <TabsTrigger
                     value="schema"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
                   >
                     Schema
                   </TabsTrigger>
                   <TabsTrigger
                     value="quality"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
                   >
                     Quality
                   </TabsTrigger>
                   <TabsTrigger
                     value="lineage"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
                   >
                     Lineage
                   </TabsTrigger>
                   <TabsTrigger
                     value="access"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-card/50 rounded-t-lg rounded-b-none bg-transparent px-6 py-4"
                   >
                     Access
                   </TabsTrigger>
                 </TabsList>
               </div>
 
-              <TabsContent value="quickstart" className="mt-8">
-                <QuickStartTab product={product} />
-              </TabsContent>
+              <div className="px-6 pb-6">
+                <TabsContent value="quickstart" className="mt-6">
+                  <QuickStartTab product={product} />
+                </TabsContent>
 
-              <TabsContent value="overview" className="mt-8">
-                <NewOverviewTab product={product} relatedProducts={relatedProducts} />
-              </TabsContent>
+                <TabsContent value="overview" className="mt-6">
+                  <NewOverviewTab product={product} relatedProducts={relatedProducts} />
+                </TabsContent>
 
-              <TabsContent value="schema" className="mt-8">
-                <SchemaTab product={product} />
-                <div className="mt-8">
-                  <OverviewTab product={product} />
-                </div>
-              </TabsContent>
+                <TabsContent value="schema" className="mt-6">
+                  <SchemaTab product={product} />
+                  <div className="mt-8">
+                    <OverviewTab product={product} />
+                  </div>
+                </TabsContent>
 
-              <TabsContent value="quality" className="mt-8">
-                <QualityTab product={product} />
-              </TabsContent>
+                <TabsContent value="quality" className="mt-6">
+                  <QualityTab product={product} />
+                </TabsContent>
 
-              <TabsContent value="lineage" className="mt-8">
-                <LineageTab productId={params.productId} productName={product.displayName} />
-              </TabsContent>
+                <TabsContent value="lineage" className="mt-6">
+                  <LineageTab productId={params.productId} productName={product.displayName} />
+                </TabsContent>
 
-              <TabsContent value="access" className="mt-8">
-                <div className="space-y-8">
-                  <UsageTab product={product} />
-                  <AccessTab product={product} />
-                </div>
-              </TabsContent>
+                <TabsContent value="access" className="mt-6">
+                  <div className="space-y-8">
+                    <UsageTab product={product} />
+                    <AccessTab product={product} />
+                  </div>
+                </TabsContent>
+              </div>
             </Tabs>
-          </div>
+          </Card>
         </div>
       </main>
     </div>
