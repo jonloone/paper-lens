@@ -332,7 +332,7 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
                 </TabsList>
               </div>
 
-              <div className="bg-background px-6 pb-6">
+              <div className="px-6 pb-6">
                 <TabsContent value="quickstart" className="mt-6">
                   <QuickStartTab product={product} />
                 </TabsContent>
