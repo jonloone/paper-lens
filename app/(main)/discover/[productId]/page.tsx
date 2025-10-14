@@ -203,7 +203,7 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
         {/* Product Section - Hero Card */}
         <div className="space-y-6">
           {/* Hero Card - Large Title + Quality Indicators */}
-          <Card>
+          <Card className="bg-card/50 backdrop-blur">
             <CardContent className="pt-8 pb-6">
               {/* Header with title and actions */}
               <div className="flex items-start justify-between gap-4 mb-6">
@@ -270,9 +270,6 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
 
               {/* Fitness Indicators Section */}
               <div className="border-t pt-6">
-                <h2 className="roobert-headline--sm mb-4">
-                  QUALITY
-                </h2>
                 <FitnessIndicators
                   quality={{
                     dataQuality: product.quality.dataQuality
@@ -295,42 +292,42 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
           <div className="mx-auto w-full max-w-2xl lg:col-span-7 lg:max-w-none">
             <Tabs value={activeTab} onValueChange={handleTabChange}>
               <div className="border-b border-border">
-                <TabsList className="h-auto bg-transparent border-0 p-0">
+                <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-between">
                   <TabsTrigger
                     value="quickstart"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-1 py-6"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
                   >
                     Quick Start
                   </TabsTrigger>
                   <TabsTrigger
                     value="overview"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-1 py-6"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
                   >
                     Overview
                   </TabsTrigger>
                   <TabsTrigger
                     value="schema"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-1 py-6"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
                   >
-                    Schema & Data Dictionary
+                    Schema
                   </TabsTrigger>
                   <TabsTrigger
                     value="quality"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-1 py-6"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
                   >
-                    Quality & SLA
+                    Quality
                   </TabsTrigger>
                   <TabsTrigger
                     value="lineage"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-1 py-6"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
                   >
-                    Lineage & Dependencies
+                    Lineage
                   </TabsTrigger>
                   <TabsTrigger
                     value="access"
-                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-1 py-6"
+                    className="border-b-2 border-transparent data-[state=active]:border-primary rounded-none bg-transparent px-4 py-6 flex-1"
                   >
-                    Access & Usage
+                    Access
                   </TabsTrigger>
                 </TabsList>
               </div>
