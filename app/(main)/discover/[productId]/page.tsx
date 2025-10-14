@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, Users, Clock, CheckCircle, TrendingUp, Sparkles, Activity, Database, DollarSign, Package, Settings, Target, Heart, Share2 } from 'lucide-react';
+import { Star, Users, Clock, CheckCircle, TrendingUp, Sparkles, Activity, Database, DollarSign, Package, Settings, Target, Heart, Share2, UserCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PersonaProvider, usePersona } from '@/contexts/PersonaContext';
+import { getPersonaDisplayName, getPersonaDescription, type ProductDetailPersona } from '@/lib/services/persona-detection';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -114,13 +117,44 @@ const getRelatedProducts = () => {
   ];
 };
 
-export default function ProductDetailPage({ params }: ProductDetailPageProps) {
+function ProductDetailContent({ params }: ProductDetailPageProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('quickstart');
+  const { persona, setPersona, getDefaultTab } = usePersona();
+  const [activeTab, setActiveTab] = useState(getDefaultTab());
+
+  // Update active tab when persona changes
+  useEffect(() => {
+    setActiveTab(getDefaultTab());
+  }, [persona, getDefaultTab]);
 
   // Fetch product data (mock for now)
   const product = getProductById(params.productId);
   const relatedProducts = getRelatedProducts();
+
+  const handlePersonaChange = (newPersona: string) => {
+    setPersona(newPersona as ProductDetailPersona);
+    // Track persona change
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'persona_change', {
+        previous_persona: persona,
+        new_persona: newPersona,
+        product_id: params.productId
+      });
+    }
+  };
+
+  // Track tab changes
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    // Track tab view
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'tab_view', {
+        tab_name: newTab,
+        persona: persona,
+        product_id: params.productId
+      });
+    }
+  };
 
   // Simulate health status
   const healthStatus = product.sla.uptime >= 99 ? 'Healthy' : product.sla.uptime >= 95 ? 'Degraded' : 'Offline';
@@ -182,19 +216,50 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
                   </p>
                 </div>
                 {/* Actions in top right */}
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Heart className="h-4 w-4" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Share2 className="h-4 w-4" />
-                    Share
-                  </Button>
-                  <Button size="sm" className="gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    Request Access
-                  </Button>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Heart className="h-4 w-4" />
+                      Save
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      <Share2 className="h-4 w-4" />
+                      Share
+                    </Button>
+                    <Button size="sm" className="gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Request Access
+                    </Button>
+                  </div>
+                  {/* Persona Selector */}
+                  <div className="flex items-center gap-2">
+                    <UserCircle2 className="h-4 w-4 text-muted-foreground" />
+                    <Select value={persona} onValueChange={handlePersonaChange}>
+                      <SelectTrigger className="w-[200px] h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="data_analyst">
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">{getPersonaDisplayName('data_analyst')}</span>
+                            <span className="text-xs text-muted-foreground">{getPersonaDescription('data_analyst')}</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="data_engineer">
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">{getPersonaDisplayName('data_engineer')}</span>
+                            <span className="text-xs text-muted-foreground">{getPersonaDescription('data_engineer')}</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="business_stakeholder">
+                          <div className="flex flex-col items-start">
+                            <span className="font-medium">{getPersonaDisplayName('business_stakeholder')}</span>
+                            <span className="text-xs text-muted-foreground">{getPersonaDescription('business_stakeholder')}</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -228,7 +293,7 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
 
           {/* Tabs Section - Full Width Below */}
           <div className="mx-auto w-full max-w-2xl lg:col-span-7 lg:max-w-none">
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
               <div className="border-b border-border">
                 <TabsList className="h-auto bg-transparent border-0 p-0">
                   <TabsTrigger
@@ -304,5 +369,13 @@ export default function ProductDetailPage({ params }: ProductDetailPageProps) {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function ProductDetailPage({ params }: ProductDetailPageProps) {
+  return (
+    <PersonaProvider>
+      <ProductDetailContent params={params} />
+    </PersonaProvider>
   );
 }
