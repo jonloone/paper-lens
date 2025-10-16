@@ -18,6 +18,11 @@ interface ExecutionResponse {
   logs: ExecutionLog[];
   metrics?: ExecutionMetrics;
   qualityResults?: QualityCheckResult[];
+  pipelineType?: 'ingestion' | 'product';
+  ingestionMethod?: 'cdc' | 'batch' | 'stream';
+  source?: string;
+  destination?: string;
+  contract?: string;
 }
 
 interface ExecutionLog {
@@ -58,6 +63,130 @@ interface QualityCheckResult {
 
 // In-memory storage for executions (replace with database in production)
 const executions = new Map<string, ExecutionResponse>();
+
+// Initialize with sample executions for demo
+const initializeSampleExecutions = () => {
+  const now = Date.now();
+
+  const sampleExecutions: ExecutionResponse[] = [
+    // INGESTION PIPELINES
+    {
+      executionId: 'exec-ing-1',
+      pipelineId: 'salesforce_cdc_sync',
+      status: 'completed',
+      startTime: new Date(now - 7200000), // 2 hours ago
+      endTime: new Date(now - 7140000),
+      logs: [],
+      metrics: {
+        recordsRead: 15420,
+        recordsProcessed: 15420,
+        recordsFailed: 0,
+        duration: 60000, // 1 minute
+        stages: []
+      },
+      pipelineType: 'ingestion',
+      ingestionMethod: 'cdc',
+      source: 'Salesforce CRM',
+      destination: 'iceberg.foundation.salesforce_raw'
+    },
+    {
+      executionId: 'exec-ing-2',
+      pipelineId: 'mysql_batch_orders',
+      status: 'completed',
+      startTime: new Date(now - 14400000), // 4 hours ago
+      endTime: new Date(now - 14220000),
+      logs: [],
+      metrics: {
+        recordsRead: 124850,
+        recordsProcessed: 124850,
+        recordsFailed: 0,
+        duration: 180000, // 3 minutes
+        stages: []
+      },
+      pipelineType: 'ingestion',
+      ingestionMethod: 'batch',
+      source: 'MySQL Production',
+      destination: 'iceberg.foundation.orders_raw'
+    },
+    {
+      executionId: 'exec-ing-3',
+      pipelineId: 'kafka_events_stream',
+      status: 'running',
+      startTime: new Date(now - 300000), // 5 minutes ago
+      logs: [],
+      metrics: {
+        recordsRead: 48750,
+        recordsProcessed: 48750,
+        recordsFailed: 0,
+        duration: 0,
+        stages: []
+      },
+      pipelineType: 'ingestion',
+      ingestionMethod: 'stream',
+      source: 'Kafka Events Topic',
+      destination: 'iceberg.foundation.events_raw'
+    },
+    // DATA PRODUCT PIPELINES
+    {
+      executionId: 'exec-prod-1',
+      pipelineId: 'customer_360_refresh',
+      status: 'completed',
+      startTime: new Date(now - 3600000), // 1 hour ago
+      endTime: new Date(now - 3540000), // 59 minutes ago
+      logs: [],
+      metrics: {
+        recordsRead: 125000,
+        recordsProcessed: 124850,
+        recordsFailed: 150,
+        duration: 60000, // 1 minute
+        stages: []
+      },
+      pipelineType: 'product',
+      contract: 'customer_360 v3.0'
+    },
+    {
+      executionId: 'exec-prod-2',
+      pipelineId: 'sales_aggregation_daily',
+      status: 'completed',
+      startTime: new Date(now - 7200000), // 2 hours ago
+      endTime: new Date(now - 7020000),
+      logs: [],
+      metrics: {
+        recordsRead: 50000,
+        recordsProcessed: 50000,
+        recordsFailed: 0,
+        duration: 180000, // 3 minutes
+        stages: []
+      },
+      pipelineType: 'product',
+      contract: 'sales_metrics_daily v2.1'
+    },
+    {
+      executionId: 'exec-prod-3',
+      pipelineId: 'churn_model_training',
+      status: 'failed',
+      startTime: new Date(now - 10800000), // 3 hours ago
+      endTime: new Date(now - 10740000),
+      logs: [],
+      metrics: {
+        recordsRead: 75000,
+        recordsProcessed: 12500,
+        recordsFailed: 62500,
+        duration: 60000,
+        stages: []
+      },
+      pipelineType: 'product',
+      contract: 'customer_churn_score v2.0'
+    }
+  ];
+
+  sampleExecutions.forEach(exec => {
+    executions.set(exec.executionId, exec);
+  });
+};
+
+// Initialize sample data on module load
+initializeSampleExecutions();
 
 // Simulate pipeline execution stages
 async function simulatePipelineExecution(
