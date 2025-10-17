@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { TrendingUp, Package, Code, XCircle } from 'lucide-react';
 import { TiSQLEditor } from './TiSQLEditor';
 import { DBTModelViewer, DbtConfig } from './dbt/DBTModelViewerSimple';
+import { TemplateGallery } from '@/components/sql/TemplateGallery';
 
 interface ValidationResult {
   isValid: boolean;
@@ -62,6 +63,17 @@ export interface TiSQLRightPanelProps {
   dbtModel?: DbtModelData | null;
   onCopyDbt?: (content: string, type: string) => void;
   onDownloadDbt?: () => void;
+
+  // Template Gallery props
+  productDefinition?: {
+    name?: string;
+    description?: string;
+    domain?: string;
+  };
+  selectedTables?: Array<{
+    name: string;
+    columns: Array<{ name: string; type: string }>;
+  }>;
 }
 
 export function TiSQLRightPanel({
@@ -84,7 +96,11 @@ export function TiSQLRightPanel({
   // dbt Model props
   dbtModel,
   onCopyDbt,
-  onDownloadDbt
+  onDownloadDbt,
+
+  // Template Gallery props
+  productDefinition,
+  selectedTables = []
 }: TiSQLRightPanelProps) {
   const hasDbtModel = !!dbtModel;
 
@@ -135,15 +151,18 @@ export function TiSQLRightPanel({
         </TabsList>
 
         {/* Templates Tab */}
-        <TabsContent value="templates" className="flex-1 m-0 p-6">
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center space-y-3 max-w-md">
-              <h3 className="text-sm font-semibold">Query Templates</h3>
-              <p className="text-xs text-muted-foreground">
-                Saved query templates will appear here. Coming soon.
-              </p>
-            </div>
-          </div>
+        <TabsContent value="templates" className="flex-1 m-0">
+          <TemplateGallery
+            context={{
+              productDefinition,
+              selectedTables,
+            }}
+            onSelectTemplate={(sql) => {
+              if (onSQLChange) {
+                onSQLChange(sql);
+              }
+            }}
+          />
         </TabsContent>
 
         {/* SQL Editor Tab */}

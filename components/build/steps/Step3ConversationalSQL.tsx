@@ -311,6 +311,8 @@ export function Step3ConversationalSQL({
                 // TODO: Implement download as ZIP
                 console.log('Downloading dbt model...');
               }}
+              productDefinition={productDefinition}
+              selectedTables={selectedSources}
             />
           </div>
         </div>
