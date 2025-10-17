@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, Play, Sparkles, Package, Loader2 } from 'lucide-
 import { SQLChat } from '@/components/sql/SQLChat';
 import { TiSQLRightPanel } from '@/components/tisql/TiSQLRightPanel';
 import { Source } from './Step2SelectSources';
+import type { DbtTemplate } from '@/lib/services/dbt-template-service';
 
 export interface Step3Data {
   sql: string;
@@ -178,6 +179,20 @@ export function Step3ConversationalSQL({
     }
   };
 
+  // Handle dbt template selection
+  const handleDbtTemplateSelected = (template: DbtTemplate) => {
+    // Set the dbt model from template
+    setDbtModel({
+      modelSql: template.modelSql,
+      schemaYml: template.schemaYml,
+      sourcesYml: template.sourcesYml,
+      config: template.config,
+    });
+
+    // Also update SQL editor with the model SQL
+    setSQL(template.modelSql);
+  };
+
   // Calculate confidence score
   const confidenceScore = validationResult?.isValid && testResult?.success ? 95 :
                          validationResult?.isValid ? 75 : 30;
@@ -307,6 +322,7 @@ export function Step3ConversationalSQL({
               onSQLChange={setSQL}
               onExecuteSQL={() => handleRunQuery()}
               dbtModel={dbtModel}
+              onDbtTemplateSelected={handleDbtTemplateSelected}
               onDownloadDbt={() => {
                 // TODO: Implement download as ZIP
                 console.log('Downloading dbt model...');

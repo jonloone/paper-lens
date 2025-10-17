@@ -1,12 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { TrendingUp, Package, Code, XCircle } from 'lucide-react';
 import { TiSQLEditor } from './TiSQLEditor';
 import { DBTModelViewer, DbtConfig } from './dbt/DBTModelViewerSimple';
-import { TemplateGallery } from '@/components/sql/TemplateGallery';
+import { DbtTemplateGallery } from '@/components/sql/DbtTemplateGallery';
+import type { DbtTemplate } from '@/lib/services/dbt-template-service';
 
 interface ValidationResult {
   isValid: boolean;
@@ -63,6 +65,7 @@ export interface TiSQLRightPanelProps {
   dbtModel?: DbtModelData | null;
   onCopyDbt?: (content: string, type: string) => void;
   onDownloadDbt?: () => void;
+  onDbtTemplateSelected?: (template: DbtTemplate) => void;
 
   // Template Gallery props
   productDefinition?: {
@@ -97,21 +100,31 @@ export function TiSQLRightPanel({
   dbtModel,
   onCopyDbt,
   onDownloadDbt,
+  onDbtTemplateSelected,
 
   // Template Gallery props
   productDefinition,
   selectedTables = []
 }: TiSQLRightPanelProps) {
   const hasDbtModel = !!dbtModel;
+  const [activeTab, setActiveTab] = useState('results');
+
+  const handleTemplateSelect = (template: DbtTemplate) => {
+    if (onDbtTemplateSelected) {
+      onDbtTemplateSelected(template);
+      // Switch to dbt tab after template is selected
+      setActiveTab('dbt');
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-background">
-      <Tabs defaultValue="results" className="h-full flex flex-col">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
         <TabsList className="w-full justify-start rounded-none border-b border-border bg-muted">
-          {/* Templates Tab */}
+          {/* dbt Templates Tab */}
           <TabsTrigger value="templates" className="gap-2">
-            <TrendingUp className="w-4 h-4" />
-            Templates
+            <Package className="w-4 h-4" />
+            dbt Templates
           </TabsTrigger>
 
           {/* SQL Editor Tab */}
@@ -150,18 +163,14 @@ export function TiSQLRightPanel({
           </TabsTrigger>
         </TabsList>
 
-        {/* Templates Tab */}
+        {/* dbt Templates Tab */}
         <TabsContent value="templates" className="flex-1 m-0">
-          <TemplateGallery
+          <DbtTemplateGallery
             context={{
               productDefinition,
               selectedTables,
             }}
-            onSelectTemplate={(sql) => {
-              if (onSQLChange) {
-                onSQLChange(sql);
-              }
-            }}
+            onSelectTemplate={handleTemplateSelect}
           />
         </TabsContent>
 
