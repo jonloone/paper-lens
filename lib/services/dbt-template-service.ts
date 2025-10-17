@@ -73,19 +73,18 @@ export async function recommendDbtTemplates(context: {
   for (const template of templates) {
     const relevance = calculateDbtRelevance(template, context);
 
-    if (relevance.score > 0.3) {
-      recommendations.push({
-        template,
-        relevanceScore: relevance.score,
-        reasoning: relevance.reasoning,
-      });
-    }
+    // Always include all templates, but sort by relevance
+    recommendations.push({
+      template,
+      relevanceScore: relevance.score,
+      reasoning: relevance.reasoning || 'General dbt template',
+    });
   }
 
   // Sort by relevance score
   recommendations.sort((a, b) => b.relevanceScore - a.relevanceScore);
 
-  return recommendations.slice(0, 10); // Top 10
+  return recommendations; // Return all templates sorted by relevance
 }
 
 /**
