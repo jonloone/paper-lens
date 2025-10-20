@@ -18,7 +18,9 @@ from .api.kag_routes import router as kag_router
 from .api.sources_routes import router as sources_router
 from .api.build_routes import router as build_router
 from .api.governance_routes import router as governance_router
+from .api.policy_routes import router as policy_router
 from .api.tisql_routes import router as tisql_router
+from .api.trino_query_routes import router as trino_query_router
 from .api.operations_routes import router as operations_router
 from .api.monitor_routes import router as monitor_router
 from .api.glossary_routes import router as glossary_router
@@ -26,7 +28,14 @@ from .api.glossary_analytics_routes import router as glossary_analytics_router
 from .api.quality_gates_routes import router as quality_gates_router
 from .api.business_context_routes import router as business_context_router
 from .api.hybrid_query_routes import router as hybrid_query_router
+from .api.context_routes import router as context_router
+from .api.recommendations_routes import router as recommendations_router
+from .api.datahub_sync_routes import router as datahub_sync_router
+from .api.profile_routes import router as profile_router
+from .api.feedback_routes import router as feedback_router
+from .api.table_analysis_routes import router as table_analysis_router
 from .models import schemas  # Import to register models
+from .services.pattern_aggregation_scheduler import start_scheduler, stop_scheduler
 
 # Configure logging
 logging.basicConfig(
@@ -58,10 +67,16 @@ async def lifespan(app: FastAPI):
     logger.info("  ✓ Trino API schemas")
     logger.info("  ✓ Iceberg table simulation")
 
+    # Start pattern aggregation scheduler
+    logger.info("Starting usage pattern aggregation scheduler...")
+    start_scheduler()
+
     yield
 
     # Shutdown
     logger.info("🛑 NexusOne Backend shutting down...")
+    logger.info("Stopping pattern aggregation scheduler...")
+    stop_scheduler()
 
 # Create FastAPI application
 app = FastAPI(
@@ -117,7 +132,9 @@ app.include_router(kag_router)
 app.include_router(sources_router)
 app.include_router(build_router)
 app.include_router(governance_router)
+app.include_router(policy_router)
 app.include_router(tisql_router)
+app.include_router(trino_query_router)
 app.include_router(operations_router)
 app.include_router(monitor_router)
 app.include_router(glossary_router)
@@ -125,6 +142,12 @@ app.include_router(glossary_analytics_router)
 app.include_router(quality_gates_router)
 app.include_router(business_context_router)
 app.include_router(hybrid_query_router)
+app.include_router(context_router)
+app.include_router(recommendations_router)
+app.include_router(datahub_sync_router)
+app.include_router(profile_router)
+app.include_router(feedback_router)
+app.include_router(table_analysis_router)
 
 # Global exception handler
 @app.exception_handler(Exception)

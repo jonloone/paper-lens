@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { TrendingUp, Package, Code, XCircle } from 'lucide-react';
+import { TrendingUp, Package, Code, XCircle, Sparkles } from 'lucide-react';
 import { TiSQLEditor } from './TiSQLEditor';
 import { DBTModelViewer, DbtConfig } from './dbt/DBTModelViewerSimple';
 import { DbtTemplateGallery } from '@/components/sql/DbtTemplateGallery';
+import { TableAnalysisAgent } from '@/components/build/TableAnalysisAgent';
 import type { DbtTemplate } from '@/lib/services/dbt-template-service';
 
 interface ValidationResult {
@@ -121,6 +122,12 @@ export function TiSQLRightPanel({
     <div className="h-full flex flex-col bg-background">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
         <TabsList className="w-full justify-start rounded-none border-b border-border bg-muted">
+          {/* AI Analysis Tab */}
+          <TabsTrigger value="analysis" className="gap-2">
+            <Sparkles className="w-4 h-4" />
+            AI Analysis
+          </TabsTrigger>
+
           {/* dbt Templates Tab */}
           <TabsTrigger value="templates" className="gap-2">
             <Package className="w-4 h-4" />
@@ -162,6 +169,15 @@ export function TiSQLRightPanel({
             )}
           </TabsTrigger>
         </TabsList>
+
+        {/* AI Analysis Tab */}
+        <TabsContent value="analysis" className="flex-1 m-0">
+          <TableAnalysisAgent
+            selectedTables={selectedTables}
+            productDefinition={productDefinition}
+            userDepartment="engineering"
+          />
+        </TabsContent>
 
         {/* dbt Templates Tab */}
         <TabsContent value="templates" className="flex-1 m-0">
