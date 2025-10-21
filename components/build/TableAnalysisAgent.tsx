@@ -22,6 +22,7 @@ import {
   Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SuggestionChips } from '@/components/ui/suggestion-chips';
 
 // Types matching backend models
 interface UsageInsight {
@@ -64,6 +65,8 @@ interface TableAnalysisData {
   summary: string;
   key_findings: string[];
   overall_recommendation: string;
+  conversational_message: string;
+  follow_up_suggestions: string[];
   usage_insights: UsageInsight[];
   quality_insights: QualityInsight[];
   semantic_relationships: SemanticRelationship[];
@@ -105,6 +108,7 @@ export function TableAnalysisAgent({
   const [chatInput, setChatInput] = useState('');
   const [isSendingChat, setIsSendingChat] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
 
   // Auto-trigger analysis when tables change
   useEffect(() => {
@@ -146,10 +150,10 @@ export function TableAnalysisAgent({
         onAnalysisComplete(data);
       }
 
-      // Add initial AI message
+      // Auto-send the conversational AI message
       setChatMessages([{
         role: 'assistant',
-        content: `I've analyzed your ${selectedTables.length} selected table(s). ${data.summary} Feel free to ask me any questions about the analysis!`,
+        content: data.conversational_message || `I've analyzed your ${selectedTables.length} selected table(s). ${data.summary} Feel free to ask me any questions about the analysis!`,
       }]);
     } catch (err) {
       console.error('Error analyzing tables:', err);
@@ -187,6 +191,12 @@ export function TableAnalysisAgent({
     } finally {
       setIsSendingChat(false);
     }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setChatInput(suggestion);
+    // Optionally auto-send
+    // handleSendChat();
   };
 
   if (selectedTables.length === 0) {
@@ -245,272 +255,222 @@ export function TableAnalysisAgent({
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Scrollable Analysis Content */}
-      <ScrollArea className="flex-1">
-        <div className="p-6 space-y-6">
-          {/* AI Summary Card */}
-          <Card className="border-primary/50 bg-primary/5">
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <CardTitle className="text-base">AI Analysis Summary</CardTitle>
-                <Badge variant="secondary" className="ml-auto text-xs">
+    <div className="h-full flex gap-4">
+      {/* Left Column: Chat Interface (60%) */}
+      <div className={cn(
+        "flex flex-col transition-all",
+        isRightPanelCollapsed ? "flex-1" : "w-[60%]"
+      )}>
+        {/* Chat Messages */}
+        <ScrollArea className="flex-1 p-6">
+          <div className="space-y-4">
+            {chatMessages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={cn(
+                  'flex gap-3',
+                  msg.role === 'user' ? 'justify-end' : 'justify-start'
+                )}
+              >
+                {msg.role === 'assistant' && (
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-1">
+                    <Sparkles className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    'max-w-[85%] rounded-lg px-4 py-3 text-sm',
+                    msg.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted prose prose-sm dark:prose-invert max-w-none'
+                  )}
+                >
+                  {msg.content}
+                </div>
+              </div>
+            ))}
+
+            {/* Suggestion Chips after first AI message */}
+            {chatMessages.length === 1 && analysis?.follow_up_suggestions && (
+              <div className="flex justify-start pl-11">
+                <div className="max-w-[85%]">
+                  <SuggestionChips
+                    suggestions={analysis.follow_up_suggestions}
+                    onSuggestionClick={handleSuggestionClick}
+                    disabled={isSendingChat}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        {/* Chat Input */}
+        <div className="border-t border-border bg-muted/30 p-4">
+          <div className="flex items-center gap-2">
+            <Input
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendChat();
+                }
+              }}
+              placeholder="Ask questions about the analysis..."
+              className="flex-1 text-sm"
+              disabled={isSendingChat}
+            />
+            <Button
+              size="sm"
+              onClick={handleSendChat}
+              disabled={!chatInput.trim() || isSendingChat}
+              className="gap-2"
+            >
+              {isSendingChat ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Ask
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column: Structured Analysis Cards (40%) */}
+      {!isRightPanelCollapsed && (
+        <div className="w-[40%] border-l border-border">
+          <ScrollArea className="h-full">
+            <div className="p-4 space-y-4">
+              {/* Analysis Confidence Badge */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold text-muted-foreground">ANALYSIS DETAILS</h3>
+                <Badge variant="secondary" className="text-xs">
                   {Math.round(analysis.analysis_confidence * 100)}% confidence
                 </Badge>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">{analysis.summary}</p>
 
-              {analysis.key_findings.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold">Key Findings:</p>
-                  <ul className="space-y-1">
-                    {analysis.key_findings.map((finding, idx) => (
-                      <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
-                        <CheckCircle2 className="w-3 h-3 mt-0.5 text-primary flex-shrink-0" />
-                        <span>{finding}</span>
-                      </li>
+              {/* Usage Insights */}
+              {analysis.usage_insights.length > 0 && (
+                <Card className="border-blue-500/20">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-blue-500" />
+                      <CardTitle className="text-xs">Usage Patterns</CardTitle>
+                      <Badge variant="outline" className="ml-auto text-[10px]">
+                        {analysis.usage_insights.length}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {analysis.usage_insights.slice(0, 3).map((insight, idx) => (
+                      <div key={idx} className="space-y-1 pb-2 border-b border-border last:border-0 last:pb-0">
+                        <p className="text-xs font-medium">{insight.summary}</p>
+                        <p className="text-[10px] text-muted-foreground line-clamp-2">{insight.details}</p>
+                      </div>
                     ))}
-                  </ul>
-                </div>
+                  </CardContent>
+                </Card>
               )}
 
-              <div className="pt-2 border-t border-border">
-                <p className="text-xs font-semibold mb-1">Recommendation:</p>
-                <p className="text-xs text-muted-foreground">{analysis.overall_recommendation}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Usage Insights */}
-          {analysis.usage_insights.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-blue-500" />
-                  <CardTitle className="text-sm">Usage Patterns</CardTitle>
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {analysis.usage_insights.length} insight{analysis.usage_insights.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {analysis.usage_insights.map((insight, idx) => (
-                  <div key={idx} className="space-y-1 pb-3 border-b border-border last:border-0 last:pb-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-semibold">{insight.summary}</p>
-                      <Badge variant="secondary" className="text-[10px]">
-                        {Math.round(insight.confidence * 100)}%
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{insight.details}</p>
-                    <p className="text-[10px] text-muted-foreground italic">Source: {insight.source}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Quality Insights */}
-          {analysis.quality_insights.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-green-500" />
-                  <CardTitle className="text-sm">Data Quality</CardTitle>
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {analysis.quality_insights.length} finding{analysis.quality_insights.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {analysis.quality_insights.map((insight, idx) => {
-                  const Icon = insight.severity === 'error' ? AlertTriangle :
-                               insight.severity === 'warning' ? AlertCircle : Info;
-                  const colorClass = insight.severity === 'error' ? 'text-red-500' :
-                                   insight.severity === 'warning' ? 'text-yellow-500' : 'text-blue-500';
-
-                  return (
-                    <div key={idx} className="space-y-1 pb-3 border-b border-border last:border-0 last:pb-0">
-                      <div className="flex items-start gap-2">
-                        <Icon className={cn('w-4 h-4 mt-0.5 flex-shrink-0', colorClass)} />
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-xs font-semibold">{insight.issue}</p>
-                            {insight.column && (
-                              <Badge variant="outline" className="text-[10px]">
-                                {insight.column}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground">{insight.recommendation}</p>
-                          {insight.affected_rows && (
-                            <p className="text-[10px] text-muted-foreground">
-                              Affects {insight.affected_rows.toLocaleString()} row(s)
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Semantic Relationships */}
-          {analysis.semantic_relationships.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Link2 className="w-4 h-4 text-purple-500" />
-                  <CardTitle className="text-sm">Table Relationships</CardTitle>
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {analysis.semantic_relationships.length} relationship{analysis.semantic_relationships.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {analysis.semantic_relationships.map((rel, idx) => (
-                  <div key={idx} className="space-y-1 pb-3 border-b border-border last:border-0 last:pb-0">
+              {/* Quality Insights */}
+              {analysis.quality_insights.length > 0 && (
+                <Card className="border-green-500/20">
+                  <CardHeader className="pb-3">
                     <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-[10px]">
-                        {rel.table1}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">↔</span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {rel.table2}
-                      </Badge>
-                      <Badge variant="secondary" className="ml-auto text-[10px]">
-                        {Math.round(rel.confidence * 100)}%
+                      <BarChart3 className="w-4 h-4 text-green-500" />
+                      <CardTitle className="text-xs">Data Quality</CardTitle>
+                      <Badge variant="outline" className="ml-auto text-[10px]">
+                        {analysis.quality_insights.length}
                       </Badge>
                     </div>
-                    <p className="text-xs font-semibold">{rel.relationship_type.replace('_', ' ')}</p>
-                    <p className="text-xs text-muted-foreground">{rel.explanation}</p>
-                    {rel.join_keys.length > 0 && (
-                      <div className="flex items-center gap-1 flex-wrap">
-                        <span className="text-[10px] text-muted-foreground">Join keys:</span>
-                        {rel.join_keys.map((key, kidx) => (
-                          <Badge key={kidx} variant="outline" className="text-[10px]">
-                            {key}
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {analysis.quality_insights.slice(0, 3).map((insight, idx) => {
+                      const Icon = insight.severity === 'error' ? AlertTriangle :
+                                   insight.severity === 'warning' ? AlertCircle : Info;
+                      const colorClass = insight.severity === 'error' ? 'text-red-500' :
+                                       insight.severity === 'warning' ? 'text-yellow-500' : 'text-blue-500';
+
+                      return (
+                        <div key={idx} className="flex items-start gap-2 pb-2 border-b border-border last:border-0 last:pb-0">
+                          <Icon className={cn('w-3 h-3 mt-0.5 flex-shrink-0', colorClass)} />
+                          <div className="flex-1 space-y-0.5">
+                            <p className="text-xs font-medium">{insight.issue}</p>
+                            <p className="text-[10px] text-muted-foreground line-clamp-1">{insight.recommendation}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Semantic Relationships */}
+              {analysis.semantic_relationships.length > 0 && (
+                <Card className="border-purple-500/20">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <Link2 className="w-4 h-4 text-purple-500" />
+                      <CardTitle className="text-xs">Relationships</CardTitle>
+                      <Badge variant="outline" className="ml-auto text-[10px]">
+                        {analysis.semantic_relationships.length}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {analysis.semantic_relationships.slice(0, 3).map((rel, idx) => (
+                      <div key={idx} className="space-y-1 pb-2 border-b border-border last:border-0 last:pb-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-mono">{rel.table1}</span>
+                          <span className="text-[10px] text-muted-foreground">↔</span>
+                          <span className="text-[10px] font-mono">{rel.table2}</span>
+                        </div>
+                        <p className="text-xs font-medium">{rel.relationship_type.replace('_', ' ')}</p>
+                        <p className="text-[10px] text-muted-foreground line-clamp-1">{rel.explanation}</p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Transformation Suggestions */}
+              {analysis.transformation_suggestions.length > 0 && (
+                <Card className="border-orange-500/20">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-orange-500" />
+                      <CardTitle className="text-xs">dbt Patterns</CardTitle>
+                      <Badge variant="outline" className="ml-auto text-[10px]">
+                        {analysis.transformation_suggestions.length}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {analysis.transformation_suggestions.slice(0, 3).map((suggestion, idx) => (
+                      <div key={idx} className="space-y-1 pb-2 border-b border-border last:border-0 last:pb-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-xs font-medium">{suggestion.pattern_name}</p>
+                          <Badge
+                            variant={suggestion.priority === 'high' ? 'default' : 'secondary'}
+                            className="text-[10px]"
+                          >
+                            {suggestion.priority}
                           </Badge>
-                        ))}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground line-clamp-2">{suggestion.description}</p>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Transformation Suggestions */}
-          {analysis.transformation_suggestions.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-orange-500" />
-                  <CardTitle className="text-sm">Suggested dbt Transformations</CardTitle>
-                  <Badge variant="outline" className="ml-auto text-xs">
-                    {analysis.transformation_suggestions.length} suggestion{analysis.transformation_suggestions.length !== 1 ? 's' : ''}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {analysis.transformation_suggestions.map((suggestion, idx) => (
-                  <div key={idx} className="space-y-1 pb-3 border-b border-border last:border-0 last:pb-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-semibold">{suggestion.pattern_name}</p>
-                      <div className="flex items-center gap-1">
-                        <Badge
-                          variant={suggestion.priority === 'high' ? 'default' : 'secondary'}
-                          className="text-[10px]"
-                        >
-                          {suggestion.priority}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]">
-                          {suggestion.complexity}
-                        </Badge>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{suggestion.description}</p>
-                    <p className="text-[10px] text-muted-foreground italic">{suggestion.reasoning}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </ScrollArea>
-
-      {/* Chat Interface */}
-      <div className="border-t border-border bg-muted/30">
-        {/* Chat Messages */}
-        {chatMessages.length > 1 && (
-          <ScrollArea className="h-48 p-4">
-            <div className="space-y-3">
-              {chatMessages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={cn(
-                    'flex gap-2',
-                    msg.role === 'user' ? 'justify-end' : 'justify-start'
-                  )}
-                >
-                  {msg.role === 'assistant' && (
-                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                      <Sparkles className="w-3 h-3 text-primary-foreground" />
-                    </div>
-                  )}
-                  <div
-                    className={cn(
-                      'max-w-[80%] rounded-lg px-3 py-2 text-xs',
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    )}
-                  >
-                    {msg.content}
-                  </div>
-                </div>
-              ))}
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </ScrollArea>
-        )}
-
-        {/* Chat Input */}
-        <div className="p-4 flex items-center gap-2">
-          <Input
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendChat();
-              }
-            }}
-            placeholder="Ask questions about the analysis..."
-            className="flex-1 text-xs"
-            disabled={isSendingChat}
-          />
-          <Button
-            size="sm"
-            onClick={handleSendChat}
-            disabled={!chatInput.trim() || isSendingChat}
-            className="gap-2"
-          >
-            {isSendingChat ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <>
-                <Send className="w-4 h-4" />
-                Ask
-              </>
-            )}
-          </Button>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -91,6 +91,10 @@ class TableAnalysisResponse(BaseModel):
     key_findings: List[str]
     overall_recommendation: str
 
+    # Conversational analysis (for chat interface)
+    conversational_message: str
+    follow_up_suggestions: List[str]
+
     # Detailed analysis
     usage_insights: List[UsageInsight]
     quality_insights: List[QualityInsight]
@@ -160,6 +164,16 @@ async def analyze_tables(request: AnalysisRequest):
             transformation_suggestions
         )
 
+        # Generate conversational analysis for chat interface
+        logger.info("Generating conversational analysis...")
+        conversational_data = await generate_conversational_analysis(
+            request.tables,
+            usage_insights,
+            quality_insights,
+            semantic_relationships,
+            transformation_suggestions
+        )
+
         # Calculate overall confidence
         avg_confidence = calculate_average_confidence(
             usage_insights,
@@ -174,6 +188,8 @@ async def analyze_tables(request: AnalysisRequest):
             summary=summary_data["summary"],
             key_findings=summary_data["key_findings"],
             overall_recommendation=summary_data["recommendation"],
+            conversational_message=conversational_data["conversational_message"],
+            follow_up_suggestions=conversational_data["follow_up_suggestions"],
             usage_insights=usage_insights,
             quality_insights=quality_insights,
             semantic_relationships=semantic_relationships,
@@ -553,6 +569,141 @@ def generate_rule_based_suggestions(
     ))
 
     return suggestions
+
+
+async def generate_conversational_analysis(
+    tables: List[TableSelection],
+    usage_insights: List[UsageInsight],
+    quality_insights: List[QualityInsight],
+    relationships: List[SemanticRelationship],
+    transformations: List[TransformationSuggestion]
+) -> Dict[str, Any]:
+    """
+    Generate rich conversational analysis using LLM for chat interface.
+    Creates an executive summary with progressive disclosure suggestions.
+    """
+
+    # Build context for LLM
+    table_names = [f"{t.schema}.{t.name}" for t in tables]
+
+    usage_summary = "\n".join([
+        f"- {insight.summary}: {insight.details} (Confidence: {int(insight.confidence * 100)}%)"
+        for insight in usage_insights[:3]
+    ]) if usage_insights else "No historical usage data available"
+
+    quality_summary = "\n".join([
+        f"- [{insight.severity.upper()}] {insight.issue}" +
+        (f" ({insight.affected_rows} rows affected)" if insight.affected_rows else "")
+        for insight in quality_insights[:5]
+    ]) if quality_insights else "No quality issues detected"
+
+    relationship_summary = "\n".join([
+        f"- {rel.table1} ↔ {rel.table2} via {', '.join(rel.join_keys)} ({rel.relationship_type})"
+        for rel in relationships
+    ]) if relationships else "No relationships detected"
+
+    transformation_summary = "\n".join([
+        f"- [{trans.priority.upper()}] {trans.pattern_name}: {trans.description}"
+        for trans in transformations[:4]
+    ]) if transformations else "No transformation suggestions"
+
+    # Quality metrics
+    error_count = len([q for q in quality_insights if q.severity == "error"])
+    warning_count = len([q for q in quality_insights if q.severity == "warning"])
+
+    # Create detailed prompt for LLM
+    system_prompt = """You are an expert data engineer AI assistant helping users analyze their database tables.
+You provide conversational, friendly analysis with technical depth. Use markdown formatting for structure.
+Focus on executive summary, key findings, and actionable recommendations with progressive disclosure."""
+
+    user_prompt = f"""I've analyzed {len(tables)} table(s): {', '.join(table_names)}
+
+Here's what I found:
+
+**Usage Patterns:**
+{usage_summary}
+
+**Data Quality Issues:**
+{quality_summary}
+- {error_count} errors, {warning_count} warnings detected
+
+**Table Relationships:**
+{relationship_summary}
+
+**Suggested Transformations:**
+{transformation_summary}
+
+Please create a conversational analysis message that includes:
+1. Executive Summary (2-3 sentences about overall table health and potential)
+2. Key Findings (3-4 bullet points with most important insights)
+3. Recommendations (specific next steps prioritized by importance)
+4. End with a question asking which area the user would like to explore in detail
+
+Keep it friendly, conversational, and use markdown formatting. Aim for 200-300 words total."""
+
+    try:
+        # Generate conversational message using LLM
+        conversational_message = await llm_service.generate_completion(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=0.7,
+            max_tokens=600
+        )
+
+        # Generate follow-up suggestions based on what we found
+        suggestions = []
+
+        if quality_insights:
+            suggestions.append("Explain data quality issues in detail")
+        if usage_insights:
+            suggestions.append("Show me how these tables have been used before")
+        if relationships:
+            suggestions.append("Tell me more about table relationships and joins")
+        if transformations:
+            suggestions.append("Walk me through the dbt transformation approach")
+
+        # Always offer general help
+        if not suggestions:
+            suggestions = [
+                "What should I focus on first?",
+                "How can I improve data quality?",
+                "Suggest a starting point for transformations"
+            ]
+
+        return {
+            "conversational_message": conversational_message,
+            "follow_up_suggestions": suggestions[:4]  # Limit to 4 suggestions
+        }
+
+    except Exception as e:
+        logger.error(f"Error generating conversational analysis: {e}")
+        # Fallback to simple summary
+        fallback_message = f"""I've analyzed your {len(tables)} selected table(s). Here's what I found:
+
+**Executive Summary**
+{"Overall data quality looks good with minor issues to address." if error_count == 0 else f"Found {error_count} critical quality issues that need attention."} {f"Detected {len(relationships)} potential relationships for joins." if relationships else "Tables appear independent."}
+
+**Key Findings**
+{chr(10).join(['✓ ' + finding for finding in [
+    usage_insights[0].summary if usage_insights else "Limited usage history available",
+    quality_insights[0].issue if quality_insights else "Data quality meets standards",
+    f"Join opportunity: {relationships[0].table1} ↔ {relationships[0].table2}" if relationships else "No obvious join patterns"
+][:3]])}
+
+**Recommendations**
+{transformations[0].description if transformations else "Start with staging models to establish clean foundation"}
+
+Which area would you like me to explain in more detail?"""
+
+        return {
+            "conversational_message": fallback_message,
+            "follow_up_suggestions": [
+                "Explain data quality issues",
+                "Show usage patterns",
+                "Describe dbt approach",
+                "What should I do first?"
+            ]
+        }
 
 
 async def generate_ai_summary(
