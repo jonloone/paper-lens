@@ -16,7 +16,7 @@ from datetime import datetime
 from backend.services.kuzu_knowledge_graph import get_knowledge_graph
 from backend.services.data_profiling import DataProfilingService
 from backend.services.recommendation_engine import RecommendationEngine
-from backend.services.vultr_llm_service import VultrLLMService
+from backend.services.vultr_llm_adapter import VultrLLMAdapter
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -25,7 +25,7 @@ router = APIRouter()
 kg = get_knowledge_graph()
 profiling_service = DataProfilingService()
 recommendation_engine = RecommendationEngine()
-llm_service = VultrLLMService()
+llm_service = VultrLLMAdapter()
 
 
 class TableSelection(BaseModel):
