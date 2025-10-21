@@ -124,9 +124,9 @@ export function TableAnalysisAgent({
     setError(null);
 
     try {
-      // Use window.location.hostname to support both localhost and public IP
+      // Use relative URL to go through nginx proxy (no port needed)
       const backendUrl = typeof window !== 'undefined'
-        ? `http://${window.location.hostname}:8000/api/table-analysis/analyze`
+        ? `/api/table-analysis/analyze`
         : 'http://localhost:8000/api/table-analysis/analyze';
 
       const response = await fetch(backendUrl, {
