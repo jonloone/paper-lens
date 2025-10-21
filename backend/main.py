@@ -117,6 +117,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://0.0.0.0:3000",
+        "http://137.220.61.218:3000",
         "https://*.vercel.app",
         "https://*.netlify.app"
     ],

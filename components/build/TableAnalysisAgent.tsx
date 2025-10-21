@@ -124,7 +124,12 @@ export function TableAnalysisAgent({
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/table-analysis/analyze', {
+      // Use window.location.hostname to support both localhost and public IP
+      const backendUrl = typeof window !== 'undefined'
+        ? `http://${window.location.hostname}:8000/api/table-analysis/analyze`
+        : 'http://localhost:8000/api/table-analysis/analyze';
+
+      const response = await fetch(backendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
