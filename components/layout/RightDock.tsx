@@ -316,11 +316,6 @@ export function RightDock(props?: RightDockProps) {
   ]);
   const [chatInput, setChatInput] = useState('');
 
-  // Debug: Log mode changes
-  useEffect(() => {
-    console.log('RightDock mode changed to:', mode, 'isExpanded:', mode !== 'collapsed');
-  }, [mode]);
-
   // Get context-aware tools based on current page
   const getContextualTools = useCallback(() => {
     const tools = DATA_ASSETS.filter(asset => asset.type === 'tool');
@@ -365,7 +360,6 @@ export function RightDock(props?: RightDockProps) {
   }, [mode]);
 
   const handleModeClick = (newMode: DockMode) => {
-    console.log('handleModeClick called:', { currentMode: mode, newMode, willCollapse: mode === newMode });
     if (mode === newMode) {
       setMode('collapsed');
     } else {
@@ -557,7 +551,6 @@ export function RightDock(props?: RightDockProps) {
           transition: 'height 500ms cubic-bezier(0.23, 1, 0.32, 1) 0ms, width 500ms cubic-bezier(0.23, 1, 0.32, 1) 200ms',
           willChange: 'width, height'
         }}
-        onClick={() => console.log('RightDock clicked, mode:', mode, 'isExpanded:', isExpanded)}
       >
         <div className="flex h-full">
           {/* Launcher Buttons - Always visible on right */}
