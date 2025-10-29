@@ -1,364 +1,812 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useStepper, Step } from '@/lib/build/use-stepper';
-import { HorizontalStepper } from '@/components/build/HorizontalStepper';
-import { Step1DefineProduct, type Step1Data } from '@/components/build/steps/Step1DefineProduct';
-import { Step2SelectSources, type Step2Data } from '@/components/build/steps/Step2SelectSources';
-import { Step3SQLWorkstation } from '@/components/build/steps/Step3SQLWorkstation';
-import { Step4QualityRules, type Step4Data } from '@/components/build/steps/Step4QualityRules';
-import { Step5DeliveryConfig, type Step5Data } from '@/components/build/steps/Step5DeliveryConfig';
-import { Step6ReviewDeploy, type Step6Data } from '@/components/build/steps/Step6ReviewDeploy';
-
-// SQL step data type
-interface Step3Data {
-  sql: string;
-  validationResult?: any;
-  testResult?: any;
-}
-import { DraftRecoveryModal } from '@/components/build/DraftRecoveryModal';
-import { DraftsPanel } from '@/components/build/DraftsPanel';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { FileText, Database, Code, Shield, Truck, Rocket, BookMarked } from 'lucide-react';
-import { autoSave, clearAutoSave, Draft, saveAutoSaveAs, loadDraft } from '@/lib/utils/draft-storage';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Sparkles,
+  Layers,
+  Copy,
+  ArrowRight,
+  Rocket,
+  Clock,
+  TrendingUp,
+  Database,
+  Code,
+  Shield,
+  Loader2,
+  ChevronRight,
+  Zap,
+  BookMarked
+} from 'lucide-react';
+import { UnifiedProductWorkspace, ProductData } from '@/components/build/workspace/UnifiedProductWorkspace';
+import { DeploymentSuccess } from '@/components/build/deploy/DeploymentSuccess';
+import { ALL_TEMPLATES, ProductTemplate } from '@/lib/data/product-templates';
+import { IntentAnalysisPreview } from '@/components/build/IntentAnalysisPreview';
+import { getIntentAnalysisService, type IntentAnalysisResponse } from '@/lib/services/intent-analysis';
+import { TemplatePreviewModal } from '@/components/build/TemplatePreviewModal';
+import { TemplateGalleryHeader } from '@/components/build/TemplateGalleryHeader';
+import { TemplateListItem } from '@/components/build/TemplateListItem';
+import {
+  searchAndSortTemplates,
+  getTemplateCountByDomain,
+  type DomainFilter,
+  type SortOption,
+  type TemplateWithMetrics
+} from '@/lib/services/template-search';
+import { ClonePreviewModal } from '@/components/build/ClonePreviewModal';
+import { CloneAnalysisService, type CloneAnalysisResponse } from '@/lib/services/clone-analysis';
+import { DraftCard } from '@/components/build/DraftCard';
+import { DraftPreviewModal } from '@/components/build/DraftPreviewModal';
+import { draftConflictService } from '@/lib/services/draft-conflict';
+import type { Draft } from '@/lib/services/draft-autosave';
+import type { ConflictCheck } from '@/lib/services/draft-conflict';
 
-// PRD v2: 6-step pragmatic workflow
-const workflowSteps: Step[] = [
-  {
-    id: 'define',
-    label: 'Define Product',
-    description: 'Name, description, schedule',
-    icon: FileText
-  },
-  {
-    id: 'sources',
-    label: 'Select Sources',
-    description: 'Choose data tables',
-    icon: Database
-  },
-  {
-    id: 'transform',
-    label: 'Write SQL',
-    description: 'Transformation logic',
-    icon: Code
-  },
-  {
-    id: 'quality',
-    label: 'Quality Rules',
-    description: 'Data validation',
-    icon: Shield
-  },
-  {
-    id: 'delivery',
-    label: 'Configure Delivery',
-    description: 'SQL table, API, etc',
-    icon: Truck
-  },
-  {
-    id: 'deploy',
-    label: 'Review & Deploy',
-    description: 'Create pull request',
-    icon: Rocket
-  }
+// State machine
+type BuildPhase = 'builder' | 'analysis' | 'workspace' | 'success';
+
+// Mock deployed products for cloning
+const RECENT_PRODUCTS = [
+  { id: 'prod-1', name: 'Customer 360 View', domain: 'Marketing', lastModified: '2 days ago', usageCount: 247 },
+  { id: 'prod-2', name: 'Sales Performance Dashboard', domain: 'Sales', lastModified: '1 week ago', usageCount: 189 },
+  { id: 'prod-3', name: 'Product Usage Analytics', domain: 'Product', lastModified: '3 days ago', usageCount: 156 }
 ];
 
-// 6-step form data
-interface BuildFormData {
-  step1?: Step1Data; // Define product (name, owner, schedule, SLA)
-  step2?: Step2Data; // Select sources (tables from DataHub)
-  step3?: Step3Data; // Write SQL (transformation logic)
-  step4?: Step4Data; // Quality rules (Great Expectations)
-  step5?: Step5Data; // Delivery config (SQL table, API endpoint)
-  step6?: Step6Data; // Deploy (PR creation)
-}
+const DOMAIN_ICONS: Record<string, any> = {
+  'Marketing': TrendingUp,
+  'Sales': TrendingUp,
+  'Product': Code,
+  'Finance': Database,
+  'Operations': Zap
+};
 
 export default function BuildPage() {
-  const stepper = useStepper(workflowSteps);
-  const [formData, setFormData] = useState<BuildFormData>({});
-  const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [showRecovery, setShowRecovery] = useState(true);
-  const [showSaveDraftDialog, setShowSaveDraftDialog] = useState(false);
-  const [draftName, setDraftName] = useState('');
-  const [draftDescription, setDraftDescription] = useState('');
-  const [showDraftsPanel, setShowDraftsPanel] = useState(false);
+  const [phase, setPhase] = useState<BuildPhase>('builder');
+  const [intent, setIntent] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<ProductTemplate | null>(null);
+  const [productData, setProductData] = useState<Partial<ProductData> | null>(null);
+  const [deployedProductId, setDeployedProductId] = useState<string>('');
+  const [analysisResult, setAnalysisResult] = useState<IntentAnalysisResponse | null>(null);
 
-  // Auto-save effect (runs every 30 seconds)
+  // Template gallery state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDomain, setSelectedDomain] = useState<DomainFilter>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('popularity');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateWithMetrics | null>(null);
+
+  // Clone state
+  const [cloneSourceProduct, setCloneSourceProduct] = useState<ProductData | null>(null);
+  const [cloneAnalysis, setCloneAnalysis] = useState<CloneAnalysisResponse | null>(null);
+  const [isAnalyzingClone, setIsAnalyzingClone] = useState(false);
+
+  // Draft state
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [previewDraft, setPreviewDraft] = useState<Draft | null>(null);
+  const [previewConflicts, setPreviewConflicts] = useState<ConflictCheck | null>(null);
+
+  // Load drafts from localStorage on mount
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (Object.keys(formData).length > 0) {
-        autoSave(formData, stepper.currentStep, Array.from(stepper.completedSteps));
-        setLastSaved(new Date().toISOString());
+    try {
+      const savedDrafts = localStorage.getItem('product-drafts');
+      if (savedDrafts) {
+        const parsedDrafts: Draft[] = JSON.parse(savedDrafts);
+        // Sort by lastSaved (most recent first)
+        parsedDrafts.sort((a, b) =>
+          new Date(b.lastSaved).getTime() - new Date(a.lastSaved).getTime()
+        );
+        setDrafts(parsedDrafts);
       }
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [formData, stepper.currentStep, stepper.completedSteps]);
-
-  // Handle draft recovery
-  const handleRecoverDraft = useCallback((draft: Draft<BuildFormData>) => {
-    setFormData(draft.formData);
-    stepper.goTo(draft.currentStep);
-    draft.completedSteps.forEach(step => stepper.complete(step));
-    setLastSaved(draft.updatedAt);
-    setShowRecovery(false);
-  }, [stepper]);
-
-  const handleStartFresh = useCallback(() => {
-    clearAutoSave();
-    setShowRecovery(false);
+    } catch (error) {
+      console.error('Failed to load drafts:', error);
+    }
   }, []);
 
-  const handleSaveDraft = useCallback(() => {
-    setShowSaveDraftDialog(true);
-    // Auto-populate draft name from Step 1 if available
-    if (formData.step1?.name) {
-      setDraftName(formData.step1.name);
-    }
-  }, [formData]);
+  // Filter and sort templates
+  const filteredTemplates = searchAndSortTemplates(ALL_TEMPLATES, {
+    query: searchQuery,
+    domain: selectedDomain,
+    sortBy: sortBy
+  });
 
-  const handleSaveDraftConfirm = useCallback(() => {
-    if (!draftName.trim()) {
-      alert('Please enter a draft name');
-      return;
-    }
+  const domainCounts = getTemplateCountByDomain(ALL_TEMPLATES);
 
+  // Intent analysis with AI
+  const handleGenerateFromIntent = useCallback(async () => {
+    if (!intent.trim()) return;
+
+    setIsGenerating(true);
     try {
-      const draftId = saveAutoSaveAs(draftName, draftDescription);
-      console.log('Saved draft:', draftId);
-      setShowSaveDraftDialog(false);
-      setDraftName('');
-      setDraftDescription('');
-      alert(`Draft "${draftName}" saved successfully!`);
+      const service = getIntentAnalysisService();
+      const analysis = await service.analyzeIntent({
+        intent: intent.trim()
+      });
+
+      setAnalysisResult(analysis);
+      setIsGenerating(false);
+      setPhase('analysis');
     } catch (error) {
-      console.error('Failed to save draft:', error);
-      alert('Failed to save draft. Please try again.');
+      console.error('Intent analysis failed:', error);
+      setIsGenerating(false);
+      alert('Failed to analyze intent. Please try again.');
     }
-  }, [draftName, draftDescription]);
+  }, [intent]);
 
-  const handleLoadDraft = useCallback((draftId: string) => {
-    const draft = loadDraft<BuildFormData>(draftId);
-    if (draft) {
-      setFormData(draft.formData);
-      stepper.goTo(draft.currentStep);
-      draft.completedSteps.forEach(step => stepper.complete(step));
-      setLastSaved(draft.updatedAt);
-      console.log('Loaded draft:', draft.name);
-    }
-  }, [stepper]);
+  // Accept AI analysis and proceed to workspace
+  const handleAcceptAnalysis = useCallback(() => {
+    if (!analysisResult) return;
 
-  // Step completion handlers
-  const handleStep1Complete = (data: Step1Data) => {
-    setFormData(prev => ({ ...prev, step1: data }));
-    stepper.complete(0);
-    stepper.next();
-  };
-
-  const handleStep2Complete = (data: Step2Data) => {
-    setFormData(prev => ({ ...prev, step2: data }));
-    stepper.complete(1);
-    stepper.next();
-  };
-
-  const handleStep3Complete = (data: Step3Data) => {
-    setFormData(prev => ({ ...prev, step3: data }));
-    stepper.complete(2);
-    stepper.next();
-  };
-
-  const handleStep4Complete = (data: Step4Data) => {
-    setFormData(prev => ({ ...prev, step4: data }));
-    stepper.complete(3);
-    stepper.next();
-  };
-
-  const handleStep5Complete = (data: Step5Data) => {
-    setFormData(prev => ({ ...prev, step5: data }));
-    stepper.complete(4);
-    stepper.next();
-  };
-
-  const handleStep6Complete = async (data: Step6Data) => {
-    setFormData(prev => ({ ...prev, step6: data }));
-    stepper.complete(5);
-
-    // Submit complete data product for deployment
-    const completeData = {
-      ...formData,
-      step6: data
+    const generatedData: Partial<ProductData> = {
+      name: analysisResult.suggestedName,
+      description: analysisResult.description,
+      domain: analysisResult.domain,
+      owner: '',
+      createdFrom: 'intent',
+      intent,
+      productType: analysisResult.productType,
+      selectedSources: analysisResult.suggestedSources.map(source => ({
+        id: source.tableName,
+        name: source.tableName,
+        schema: source.schema || 'public',
+        columns: [],
+        required: source.required
+      })),
+      sql: '-- AI-suggested transformation will be developed in workspace',
+      inheritedQualityRules: [],
+      customQualityRules: analysisResult.suggestedQualityRules.map(rule => ({
+        id: `rule-${Date.now()}-${Math.random()}`,
+        type: rule.type,
+        field: rule.field,
+        threshold: rule.threshold,
+        description: rule.description,
+        isInherited: false
+      })),
+      schedule: analysisResult.suggestedSchedule || '0 2 * * *',
+      outputFormat: analysisResult.suggestedOutputFormat || 'table'
     };
 
-    console.log('Creating pull request for data product:', completeData);
+    setProductData(generatedData);
+    setPhase('workspace');
+  }, [analysisResult, intent]);
 
-    // Clear auto-save on successful completion
-    clearAutoSave();
+  // Customize analysis (proceed to workspace but allow manual adjustment)
+  const handleCustomizeAnalysis = useCallback(() => {
+    if (!analysisResult) return;
 
-    // TODO: Submit to backend /api/v1/build/deploy
-    // This will: Generate artifacts → Commit to Git → Create PR
-    // await deployDataProduct(completeData);
+    // Similar to accept, but user will manually customize in workspace
+    const generatedData: Partial<ProductData> = {
+      name: analysisResult.suggestedName,
+      description: analysisResult.description,
+      domain: analysisResult.domain,
+      owner: '',
+      createdFrom: 'intent',
+      intent,
+      productType: analysisResult.productType,
+      selectedSources: [], // Empty - user will select manually
+      sql: '',
+      inheritedQualityRules: [],
+      customQualityRules: [],
+      schedule: analysisResult.suggestedSchedule || '0 2 * * *',
+      outputFormat: analysisResult.suggestedOutputFormat || 'table'
+    };
 
-    // Show success message
-    alert('Data product created successfully!');
-  };
+    setProductData(generatedData);
+    setPhase('workspace');
+  }, [analysisResult, intent]);
 
-  return (
-    <div className="min-h-screen">
-      {/* Draft Recovery Modal */}
-      {showRecovery && (
-        <DraftRecoveryModal
-          onRecover={handleRecoverDraft}
-          onStartFresh={handleStartFresh}
-        />
-      )}
+  // Reanalyze intent
+  const handleReanalyze = useCallback(() => {
+    setAnalysisResult(null);
+    setPhase('builder');
+  }, []);
 
-      {/* Horizontal Stepper */}
-      <HorizontalStepper
-        steps={stepper.steps}
-        currentStep={stepper.currentStep}
-        completedSteps={stepper.completedSteps}
-        onStepClick={stepper.goTo}
-        lastSaved={lastSaved}
-        onSaveDraft={handleSaveDraft}
-      />
+  // Template preview
+  const handlePreviewTemplate = useCallback((template: TemplateWithMetrics) => {
+    setPreviewTemplate(template);
+  }, []);
 
-      {/* Save Draft Dialog */}
-      <Dialog open={showSaveDraftDialog} onOpenChange={setShowSaveDraftDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Save Draft</DialogTitle>
-            <DialogDescription>
-              Save your current progress as a named draft that you can resume later.
-            </DialogDescription>
-          </DialogHeader>
+  const handleClosePreview = useCallback(() => {
+    setPreviewTemplate(null);
+  }, []);
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="draft-name">Draft Name *</Label>
-              <Input
-                id="draft-name"
-                placeholder="e.g., Customer 360 Pipeline"
-                value={draftName}
-                onChange={(e) => setDraftName(e.target.value)}
-                autoFocus
-              />
-            </div>
+  // Template selection
+  const handleSelectTemplate = useCallback((template: ProductTemplate) => {
+    setSelectedTemplate(template);
+    setPreviewTemplate(null); // Close preview if open
+    setPhase('workspace');
+  }, []);
 
-            <div className="space-y-2">
-              <Label htmlFor="draft-description">Description (optional)</Label>
-              <Textarea
-                id="draft-description"
-                placeholder="Add notes about this draft..."
-                value={draftDescription}
-                onChange={(e) => setDraftDescription(e.target.value)}
-                rows={3}
-              />
-            </div>
+  // Clone product with AI analysis
+  const handleCloneProduct = useCallback(async (productId: string) => {
+    const product = RECENT_PRODUCTS.find(p => p.id === productId);
+    if (!product) return;
+
+    // Create a mock ProductData from RECENT_PRODUCTS
+    const sourceProduct: ProductData = {
+      name: product.name,
+      description: `${product.domain} data product`,
+      domain: product.domain,
+      owner: '',
+      createdFrom: 'manual',
+      productType: 'aggregate',
+      selectedSources: [],
+      sql: `-- SQL for ${product.name}\nSELECT * FROM ${product.domain.toLowerCase()}_data`,
+      schema: {
+        columns: [
+          { name: 'id', type: 'string', description: 'Primary key', nullable: false },
+          { name: 'created_at', type: 'timestamp', description: 'Creation time', nullable: false }
+        ]
+      },
+      qualityRules: [
+        { field: 'id', rule: 'unique', severity: 'critical' }
+      ],
+      schedule: '0 2 * * *',
+      outputFormat: 'table',
+      inheritedQualityRules: [],
+      customQualityRules: []
+    };
+
+    // Analyze clone with AI
+    setIsAnalyzingClone(true);
+    setCloneSourceProduct(sourceProduct);
+
+    try {
+      const service = new CloneAnalysisService();
+      const analysis = await service.analyzeClone({
+        sourceProduct,
+        userIntent: undefined // No initial intent
+      });
+
+      setCloneAnalysis(analysis);
+    } catch (error) {
+      console.error('Clone analysis failed:', error);
+      // Fallback: proceed without analysis
+      setCloneAnalysis(null);
+    } finally {
+      setIsAnalyzingClone(false);
+    }
+  }, []);
+
+  // Close clone preview modal
+  const handleCloseClonePreview = useCallback(() => {
+    setCloneSourceProduct(null);
+    setCloneAnalysis(null);
+  }, []);
+
+  // Confirm clone with modifications
+  const handleConfirmClone = useCallback((modifications: {
+    name: string;
+    description: string;
+    applyModifications: string[];
+    customIntent?: string;
+  }) => {
+    if (!cloneSourceProduct) return;
+
+    const clonedData: Partial<ProductData> = {
+      name: modifications.name,
+      description: modifications.description,
+      domain: cloneSourceProduct.domain,
+      owner: '',
+      createdFrom: 'clone',
+      clonedFromId: cloneSourceProduct.name,
+      productType: cloneSourceProduct.productType,
+      selectedSources: cloneSourceProduct.selectedSources || [],
+      sql: cloneSourceProduct.sql || '',
+      schema: cloneSourceProduct.schema,
+      qualityRules: cloneSourceProduct.qualityRules || [],
+      schedule: cloneSourceProduct.schedule || '0 2 * * *',
+      outputFormat: cloneSourceProduct.outputFormat || 'table',
+      inheritedQualityRules: [],
+      customQualityRules: []
+    };
+
+    setProductData(clonedData);
+    setCloneSourceProduct(null);
+    setCloneAnalysis(null);
+    setPhase('workspace');
+  }, [cloneSourceProduct]);
+
+  // Preview draft with conflict detection
+  const handlePreviewDraft = useCallback(async (draft: Draft) => {
+    try {
+      // Check for conflicts
+      const conflicts = await draftConflictService.checkConflicts(draft);
+
+      setPreviewDraft(draft);
+      setPreviewConflicts(conflicts);
+    } catch (error) {
+      console.error('Failed to check draft conflicts:', error);
+      alert('Failed to load draft preview');
+    }
+  }, []);
+
+  // Load draft from preview modal
+  const handleLoadDraft = useCallback((draft: Draft) => {
+    setProductData(draft.productData);
+    setPreviewDraft(null);
+    setPreviewConflicts(null);
+    setPhase('workspace');
+  }, []);
+
+  // Delete draft
+  const handleDeleteDraft = useCallback((draftId: string) => {
+    try {
+      const updatedDrafts = drafts.filter(d => d.id !== draftId);
+      setDrafts(updatedDrafts);
+      localStorage.setItem('product-drafts', JSON.stringify(updatedDrafts));
+    } catch (error) {
+      console.error('Failed to delete draft:', error);
+      alert('Failed to delete draft');
+    }
+  }, [drafts]);
+
+  // Export draft to JSON file
+  const handleExportDraft = useCallback((draft: Draft) => {
+    try {
+      const dataStr = JSON.stringify(draft, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+      const exportFileDefaultName = `draft-${draft.productData.name || 'untitled'}-${Date.now()}.json`;
+
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+    } catch (error) {
+      console.error('Failed to export draft:', error);
+      alert('Failed to export draft');
+    }
+  }, []);
+
+  // Deploy
+  const handleDeploy = useCallback(async (data: ProductData) => {
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const productId = `prod-${Date.now()}`;
+    setDeployedProductId(productId);
+    setProductData(data);
+    setPhase('success');
+  }, []);
+
+  // Save draft
+  const handleSaveDraft = useCallback((data: ProductData) => {
+    console.log('Saving draft:', data);
+    // Draft is auto-saved - no alert needed
+  }, []);
+
+  // Back to builder
+  const handleBackToBuilder = useCallback(() => {
+    setPhase('builder');
+    setSelectedTemplate(null);
+    setProductData(null);
+    setIntent('');
+    setAnalysisResult(null);
+  }, []);
+
+  // Create another
+  const handleCreateAnother = useCallback(() => {
+    setPhase('builder');
+    setSelectedTemplate(null);
+    setProductData(null);
+    setIntent('');
+    setDeployedProductId('');
+    setAnalysisResult(null);
+  }, []);
+
+  // Render analysis phase
+  if (phase === 'analysis' && analysisResult) {
+    return (
+      <div className="min-h-screen bg-dot-grid">
+        <div className="max-w-[1200px] mx-auto px-6 py-12">
+          <div className="mb-8">
+            <Button
+              variant="ghost"
+              onClick={handleBackToBuilder}
+              className="mb-4"
+            >
+              ← Back to Builder
+            </Button>
+            <h1 className="text-3xl font-bold mb-2">Review AI Analysis</h1>
+            <p className="text-muted-foreground">
+              Review the suggestions below and accept them or customize to your needs
+            </p>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSaveDraftDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveDraftConfirm}>
-              Save Draft
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <IntentAnalysisPreview
+            analysis={analysisResult}
+            originalIntent={intent}
+            onAccept={handleAcceptAnalysis}
+            onCustomize={handleCustomizeAnalysis}
+            onReanalyze={handleReanalyze}
+            loading={false}
+          />
+        </div>
+      </div>
+    );
+  }
 
-      {/* Drafts Panel */}
-      <DraftsPanel
-        open={showDraftsPanel}
-        onOpenChange={setShowDraftsPanel}
-        onLoadDraft={handleLoadDraft}
+  // Render workspace phase
+  if (phase === 'workspace') {
+    return (
+      <UnifiedProductWorkspace
+        initialData={productData || undefined}
+        template={selectedTemplate || undefined}
+        onDeploy={handleDeploy}
+        onSaveDraft={handleSaveDraft}
+        onBack={handleBackToBuilder}
       />
+    );
+  }
 
-      {/* Floating Drafts Button */}
-      <Button
-        onClick={() => setShowDraftsPanel(true)}
-        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
-        size="icon"
-        title="View Saved Drafts"
-      >
-        <BookMarked className="w-5 h-5" />
-      </Button>
+  // Render success phase
+  if (phase === 'success') {
+    return (
+      <DeploymentSuccess
+        productData={productData as ProductData}
+        productId={deployedProductId}
+        onCreateAnother={handleCreateAnother}
+        onViewProduct={() => {
+          window.location.href = `/discover/${deployedProductId}`;
+        }}
+      />
+    );
+  }
 
-      {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Step 1: Define Product */}
-        {stepper.when('define', () => (
-          <Step1DefineProduct
-            initialData={formData.step1}
-            onComplete={handleStep1Complete}
-          />
-        ))}
+  // Main builder page with workspace feel
+  return (
+    <div className="min-h-screen bg-dot-grid">
+      <div className="max-w-[1400px] mx-auto px-6 py-12">
+        {/* Hero Intent Capture */}
+        <div className="mb-12">
+          <div className="max-w-3xl mx-auto text-center mb-8">
+            <h1 className="text-4xl font-bold text-foreground mb-3">
+              Build a Data Product
+            </h1>
+            <p className="text-base text-muted-foreground">
+              Start from a template, describe what you need, or clone an existing product
+            </p>
+          </div>
 
-        {/* Step 2: Select Sources */}
-        {stepper.when('sources', () => (
-          <Step2SelectSources
-            initialData={formData.step2}
-            onComplete={handleStep2Complete}
-            onBack={() => stepper.prev()}
-          />
-        ))}
+          {/* Quick Intent Input */}
+          <Card className="max-w-3xl mx-auto p-6 border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Describe what you need</h2>
+            </div>
+            <div className="flex gap-3">
+              <Input
+                placeholder="e.g., Create a customer 360 view combining CRM data, purchase history, and website activity..."
+                value={intent}
+                onChange={(e) => setIntent(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleGenerateFromIntent()}
+                className="flex-1 text-base h-12"
+                disabled={isGenerating}
+              />
+              <Button
+                onClick={handleGenerateFromIntent}
+                disabled={!intent.trim() || isGenerating}
+                className="gap-2 h-12 px-6 bg-primary hover:bg-primary/90"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    Generate
+                  </>
+                )}
+              </Button>
+            </div>
+          </Card>
+        </div>
 
-        {/* Step 3: Write SQL */}
-        {stepper.when('transform', () => {
-          // Infer schema from selected sources
-          const schema = (formData.step2?.selectedSources || [])
-            .flatMap(source => source.columns || [])
-            .map(col => ({ name: col.name, type: col.type }));
+        {/* Tabbed Content: Templates, Clone, Drafts */}
+        <Tabs defaultValue="templates" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-8">
+            <TabsTrigger value="templates" className="gap-2">
+              <Layers className="w-4 h-4" />
+              Templates
+            </TabsTrigger>
+            <TabsTrigger value="clone" className="gap-2">
+              <Copy className="w-4 h-4" />
+              Clone
+            </TabsTrigger>
+            <TabsTrigger value="drafts" className="gap-2">
+              <BookMarked className="w-4 h-4" />
+              Drafts
+            </TabsTrigger>
+          </TabsList>
 
-          return (
-            <Step3SQLWorkstation
-              productDefinition={formData.step1?.productDefinition}
-              selectedSources={formData.step2?.selectedSources || []}
-              schema={schema}
-              initialData={formData.step3}
-              onComplete={handleStep3Complete}
-              onBack={() => stepper.prev()}
+          {/* Templates Tab */}
+          <TabsContent value="templates" className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Start from a proven template
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Production-ready SQL, sources, and quality rules included
+              </p>
+            </div>
+
+            {/* Template Gallery Header */}
+            <TemplateGalleryHeader
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedDomain={selectedDomain}
+              onDomainChange={setSelectedDomain}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              resultCount={filteredTemplates.length}
+              totalCount={ALL_TEMPLATES.length}
+              domainCounts={domainCounts}
             />
-          );
-        })}
 
-        {/* Step 4: Quality Rules */}
-        {stepper.when('quality', () => (
-          <Step4QualityRules
-            initialData={formData.step4}
-            sql={formData.step3?.sql || ''}
-            onComplete={handleStep4Complete}
-            onBack={() => stepper.prev()}
-          />
-        ))}
+            {/* Grid View */}
+            {viewMode === 'grid' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredTemplates.map((template) => {
+                  const DomainIcon = DOMAIN_ICONS[template.domain] || Layers;
 
-        {/* Step 5: Configure Delivery */}
-        {stepper.when('delivery', () => (
-          <Step5DeliveryConfig
-            initialData={formData.step5}
-            productName={formData.step1?.name || ''}
-            onComplete={handleStep5Complete}
-            onBack={() => stepper.prev()}
-          />
-        ))}
+                  return (
+                    <Card
+                      key={template.id}
+                      className="p-5 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/50 group bg-elevation-1"
+                      onClick={() => handleSelectTemplate(template)}
+                    >
+                      {/* Template Header */}
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                          <DomainIcon className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-base font-semibold text-foreground line-clamp-1 mb-1">
+                            {template.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {template.domain} • {template.useCase}
+                          </p>
+                        </div>
+                      </div>
 
-        {/* Step 6: Review & Deploy */}
-        {stepper.when('deploy', () => (
-          <Step6ReviewDeploy
-            formData={formData}
-            onComplete={handleStep6Complete}
-            onBack={() => stepper.prev()}
-          />
-        ))}
+                      {/* Description */}
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                        {template.description}
+                      </p>
+
+                      {/* Quick Stats */}
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
+                        <div className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          <span>{template.estimatedTimeToValue}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Database className="w-3 h-3" />
+                          <span>{template.requiredSources.length} sources</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Shield className="w-3 h-3" />
+                          <span>{template.qualityRules.length} rules</span>
+                        </div>
+                      </div>
+
+                      {/* Action */}
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2 group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTemplate(template);
+                        }}
+                      >
+                        Start Building
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* List View */}
+            {viewMode === 'list' && (
+              <div className="space-y-3">
+                {filteredTemplates.map((template) => (
+                  <TemplateListItem
+                    key={template.id}
+                    template={template}
+                    onPreview={handlePreviewTemplate}
+                    onUse={handleSelectTemplate}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {filteredTemplates.length === 0 && (
+              <Card className="p-12 text-center">
+                <p className="text-muted-foreground mb-4">
+                  No templates match your filters
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedDomain('all');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </Card>
+            )}
+
+            {/* Template Preview Modal */}
+            <TemplatePreviewModal
+              template={previewTemplate}
+              open={!!previewTemplate}
+              onClose={handleClosePreview}
+              onUse={handleSelectTemplate}
+            />
+          </TabsContent>
+
+          {/* Clone Tab */}
+          <TabsContent value="clone" className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Clone an existing product
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Start from a deployed product and adapt it to your needs
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {RECENT_PRODUCTS.map((product) => {
+                const DomainIcon = DOMAIN_ICONS[product.domain] || Database;
+
+                return (
+                  <Card
+                    key={product.id}
+                    className="p-5 hover:shadow-lg transition-all cursor-pointer border-2 hover:border-primary/50 bg-elevation-1"
+                    onClick={() => handleCloneProduct(product.id)}
+                  >
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+                        <DomainIcon className="w-5 h-5 text-green-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-base font-semibold text-foreground line-clamp-1 mb-1">
+                          {product.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {product.domain}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Usage:</span>
+                        <span className="font-medium text-foreground">{product.usageCount} queries/mo</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Modified:</span>
+                        <span className="font-medium text-foreground">{product.lastModified}</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCloneProduct(product.id);
+                      }}
+                    >
+                      <Copy className="w-4 h-4" />
+                      Clone Product
+                    </Button>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Clone Preview Modal */}
+            <ClonePreviewModal
+              sourceProduct={cloneSourceProduct}
+              analysis={cloneAnalysis}
+              open={!!(cloneSourceProduct && cloneAnalysis)}
+              onClose={handleCloseClonePreview}
+              onClone={handleConfirmClone}
+            />
+
+            {/* Loading State for Clone Analysis */}
+            {isAnalyzingClone && cloneSourceProduct && !cloneAnalysis && (
+              <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+                <Card className="p-8">
+                  <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                    <div className="text-center">
+                      <h3 className="font-semibold text-foreground mb-1">
+                        Analyzing Clone
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Identifying modifications and dependencies...
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Drafts Tab */}
+          <TabsContent value="drafts" className="space-y-6">
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                Resume a saved draft
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Pick up where you left off • Drafts are auto-saved every 30 seconds
+              </p>
+            </div>
+
+            {drafts.length === 0 ? (
+              <Card className="p-12 text-center bg-elevation-1">
+                <BookMarked className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-50" />
+                <p className="text-muted-foreground mb-4">No saved drafts yet</p>
+                <p className="text-sm text-muted-foreground">
+                  Start building a data product and your progress will be automatically saved
+                </p>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {drafts.map((draft) => (
+                  <DraftCard
+                    key={draft.id}
+                    draft={draft}
+                    onClick={() => handleLoadDraft(draft)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Draft Preview Modal */}
+            <DraftPreviewModal
+              draft={previewDraft}
+              conflicts={previewConflicts}
+              open={!!previewDraft}
+              onClose={() => {
+                setPreviewDraft(null);
+                setPreviewConflicts(null);
+              }}
+              onLoad={handleLoadDraft}
+              onDelete={handleDeleteDraft}
+              onExport={handleExportDraft}
+            />
+          </TabsContent>
+        </Tabs>
+
+        {/* Helper Text */}
+        <div className="mt-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            Need help? Check out our{' '}
+            <a href="/docs" className="text-primary hover:underline">
+              documentation
+            </a>{' '}
+            or{' '}
+            <a href="/examples" className="text-primary hover:underline">
+              example products
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
