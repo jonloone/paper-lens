@@ -34,6 +34,8 @@ from .api.datahub_sync_routes import router as datahub_sync_router
 from .api.profile_routes import router as profile_router
 from .api.feedback_routes import router as feedback_router
 from .api.table_analysis_routes import router as table_analysis_router
+# TODO: Fix data_profiling_routes import - missing dependency
+# from .api.data_profiling_routes import router as data_profiling_router
 from .models import schemas  # Import to register models
 from .services.pattern_aggregation_scheduler import start_scheduler, stop_scheduler
 
@@ -152,7 +154,9 @@ app.include_router(recommendations_router)
 app.include_router(datahub_sync_router)
 app.include_router(profile_router)
 app.include_router(feedback_router)
-app.include_router(table_analysis_router)
+app.include_router(table_analysis_router, prefix="/api/table-analysis")
+# TODO: Fix data_profiling_router - missing dependency
+# app.include_router(data_profiling_router, prefix="/api")
 
 # Global exception handler
 @app.exception_handler(Exception)

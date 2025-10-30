@@ -376,7 +376,7 @@ export default function OperationsCenterV2() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* System Status Header */}
       <div className={cn(
         "border-b px-6 py-4",

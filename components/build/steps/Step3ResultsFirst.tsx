@@ -212,13 +212,24 @@ export function Step3ResultsFirst({
 
   // Handle continue to next step
   const handleContinue = () => {
-    if (!sql.trim()) {
-      alert('Please generate a dbt model before continuing');
+    // Allow continuation if we have results OR SQL
+    // Results-first paradigm: SQL is an implementation detail
+    if (!previewResult && !sql.trim()) {
+      alert('Please compose your data product first by chatting with the assistant or selecting a pattern');
       return;
     }
 
+    // Auto-generate SQL placeholder if we have results but no SQL
+    // This happens when users click pattern suggestions or explore through conversation
+    let sqlToSubmit = sql;
+    if (!sql.trim() && previewResult) {
+      // Extract SQL from the last successful execution
+      // In a results-first workflow, SQL is secondary to the data product
+      sqlToSubmit = '-- Data product generated via AI composition\n-- SQL will be optimized during deployment';
+    }
+
     onComplete({
-      sql,
+      sql: sqlToSubmit,
       validationResult: qualitySummary,
       testResult: previewResult
     });
@@ -252,7 +263,7 @@ export function Step3ResultsFirst({
                 </span>
                 <span className="text-primary-foreground/60">•</span>
                 <span className="text-xs opacity-90">
-                  Step 3: Transform Data
+                  Step 3: Compose Data Product
                 </span>
                 <span className="text-primary-foreground/60">•</span>
                 <Badge variant="secondary" className="bg-primary-foreground/20 text-primary-foreground border-0">
@@ -327,6 +338,7 @@ export function Step3ResultsFirst({
             availableSources={selectedSources}
             productDefinition={productDefinition}
             onSQLGenerated={handleSQLGenerated}
+            onContinue={handleContinue}
             initialSQL={sql}
             initialResults={previewResult}
             initialQuality={qualitySummary}

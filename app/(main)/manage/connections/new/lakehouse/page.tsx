@@ -1063,7 +1063,7 @@ export default function LakehouseWizard() {
   );
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen p-8">
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-2">
@@ -1081,7 +1081,7 @@ export default function LakehouseWizard() {
         {renderStepIndicator()}
 
         {/* Step Content */}
-        <Card>
+        <Card className="shadow-lg border-2">
           <CardHeader>
             <CardTitle>{STEP_LABELS[currentStep - 1]}</CardTitle>
             <CardDescription>

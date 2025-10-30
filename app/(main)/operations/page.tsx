@@ -981,9 +981,9 @@ export default function PipelineHealthMonitor() {
   };
 
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen">
       {/* Header */}
-      <div className="border-b bg-background">
+      <div className="border-b">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>

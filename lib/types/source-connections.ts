@@ -46,7 +46,23 @@ export type DatabaseType =
   // Analytics/Search
   | 'elasticsearch'
   | 'cassandra'
-  | 'druid';
+  | 'druid'
+
+  // File Sources (NEW)
+  | 'file_csv'
+  | 'file_json'
+  | 'file_parquet'
+  | 'file_avro'
+  | 'file_orc'
+
+  // Cloud Storage (NEW)
+  | 's3'
+  | 'gcs'
+  | 'azure_blob'
+
+  // API Sources (NEW)
+  | 'api_rest'
+  | 'api_graphql';
 
 export type ConnectorType =
   | 'jdbc'         // Traditional JDBC databases (Postgres, MySQL, Oracle, SQL Server)
@@ -97,6 +113,48 @@ export interface ConnectionDetails {
   password_secret?: SecretReference;
   ssl: boolean;
   additional_params?: Record<string, string>;
+}
+
+// ============================================================================
+// File Source Configuration (NEW)
+// ============================================================================
+
+export type FileFormat = 'csv' | 'json' | 'parquet' | 'avro' | 'orc';
+
+export interface FileSchemaField {
+  name: string;
+  type: string; // SQL type: VARCHAR, INTEGER, DOUBLE, TIMESTAMP, etc.
+  nullable: boolean;
+}
+
+export interface FileConfig {
+  // Storage
+  s3_url: string;
+  file_format: FileFormat;
+  file_size_bytes: number;
+  file_size_mb: number;
+
+  // Schema
+  row_count: number;
+  column_count: number;
+  schema_fields: FileSchemaField[];
+
+  // CSV-specific options
+  delimiter?: string;
+  quote_character?: string;
+  has_headers?: boolean;
+
+  // Refresh configuration
+  refresh_schedule?: string; // Cron expression
+  last_refreshed_at?: Date;
+
+  // Trino catalog registration
+  trino_catalog: string;
+  trino_schema: string;
+  trino_table: string;
+
+  // Partitioning (optional)
+  partition_columns?: string[];
 }
 
 export interface SourceConnection {
@@ -673,6 +731,9 @@ export interface UnifiedSourceConnection {
 
   // Federated query config (Trino catalog)
   trino?: TrinoConfig;
+
+  // File source config (for file uploads)
+  fileConfig?: FileConfig;
 
   // Tables and their ingestion methods
   tables: TableIngestionConfig[];

@@ -23,17 +23,19 @@
   --weight-body-semibold: 600;
   --weight-body-bold: 700;
 
-  /* Type Scale - Perfect Fourth (1.333) ratio */
-  --text-xs: 0.75rem;       /* 12px */
-  --text-sm: 0.875rem;      /* 14px */
-  --text-base: 1rem;        /* 16px (base) */
-  --text-lg: 1.313rem;      /* 21px (16 × 1.333) */
-  --text-xl: 1.75rem;       /* 28px (21 × 1.333) */
-  --text-2xl: 2.333rem;     /* 37px (28 × 1.333) */
-  --text-3xl: 3.111rem;     /* 50px (37 × 1.333) */
-  --text-4xl: 4.147rem;     /* 66px (50 × 1.333) */
-  --text-5xl: 5.526rem;     /* 88px (66 × 1.333) */
-  --text-6xl: 7.369rem;     /* 118px (88 × 1.333) */
+  /* Type Scale - Refined hierarchy for enterprise UX
+   * Based on Minor Third (1.2) ratio for tighter, more professional scale
+   */
+  --text-xs: 0.75rem;       /* 12px - Labels, captions */
+  --text-sm: 0.875rem;      /* 14px - Secondary text, table data */
+  --text-base: 1rem;        /* 16px - Body text (standard) */
+  --text-lg: 1.125rem;      /* 18px - Emphasized body text */
+  --text-xl: 1.25rem;       /* 20px - h6, small headings */
+  --text-2xl: 1.5rem;       /* 24px - h5 */
+  --text-3xl: 1.875rem;     /* 30px - h4 */
+  --text-4xl: 2.25rem;      /* 36px - h3 */
+  --text-5xl: 3rem;         /* 48px - h2 */
+  --text-6xl: 3.75rem;      /* 60px - h1 page titles (Reckless only) */
 
   /* Line Heights */
   --leading-none: 1;
@@ -123,37 +125,58 @@
 }
 
 /* ================================================
-   Component Classes
+   Component Classes - Typography Hierarchy
    ================================================ */
 
-/* H1 and H2 use Reckless display font */
-.nexus-enhanced h1,
-.nexus-enhanced h2,
-.nexus-enhanced .headline {
+/* CRITICAL RULE: Only H1 uses Reckless (page titles only) */
+.nexus-enhanced h1 {
   font-family: var(--font-display);
+  font-size: var(--text-6xl);        /* 60px */
   font-weight: var(--weight-display-regular);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
 }
 
-/* H3-H6 use Roobert sans font */
-.nexus-enhanced h3,
-.nexus-enhanced h4,
-.nexus-enhanced h5,
-.nexus-enhanced h6 {
+/* H2-H6 use Roobert (all section/subsection headings) */
+.nexus-enhanced h2 {
   font-family: var(--font-body);
+  font-size: var(--text-5xl);        /* 48px */
+  font-weight: var(--weight-body-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-tight);
+}
+
+.nexus-enhanced h3 {
+  font-family: var(--font-body);
+  font-size: var(--text-4xl);        /* 36px */
   font-weight: var(--weight-body-semibold);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-normal);
 }
 
-/* Heading sizes follow Perfect Fourth scale */
-.nexus-enhanced h1 { font-size: var(--text-6xl); }
-.nexus-enhanced h2 { font-size: var(--text-5xl); }
-.nexus-enhanced h3 { font-size: var(--text-4xl); }
-.nexus-enhanced h4 { font-size: var(--text-3xl); }
-.nexus-enhanced h5 { font-size: var(--text-2xl); }
-.nexus-enhanced h6 { font-size: var(--text-xl); }
+.nexus-enhanced h4 {
+  font-family: var(--font-body);
+  font-size: var(--text-3xl);        /* 30px */
+  font-weight: var(--weight-body-semibold);
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-normal);
+}
+
+.nexus-enhanced h5 {
+  font-family: var(--font-body);
+  font-size: var(--text-2xl);        /* 24px */
+  font-weight: var(--weight-body-medium);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-normal);
+}
+
+.nexus-enhanced h6 {
+  font-family: var(--font-body);
+  font-size: var(--text-xl);         /* 20px */
+  font-weight: var(--weight-body-medium);
+  line-height: var(--leading-snug);
+  letter-spacing: var(--tracking-normal);
+}
 
 /* Body text with Roobert */
 .nexus-enhanced body,
@@ -165,34 +188,60 @@
   line-height: var(--leading-relaxed);
 }
 
-/* Roobert Accent Headlines - For smaller, impactful text */
+/* ================================================
+   Roobert Utility Classes (For UI Components)
+   ================================================ */
+
+/* Roobert Headline Variants - Use these instead of arbitrary sizes */
 .roobert-headline {
   font-family: var(--font-body);
-  font-weight: var(--weight-body-bold);
+  font-weight: var(--weight-body-semibold);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tight);
 }
 
 .roobert-headline--xl {
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-body-bold);
+  font-size: var(--text-3xl);      /* 30px - Card/panel titles */
+  font-weight: var(--weight-body-semibold);
 }
 
 .roobert-headline--lg {
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);      /* 24px - Section headers */
   font-weight: var(--weight-body-semibold);
 }
 
 .roobert-headline--md {
-  font-size: var(--text-lg);
-  font-weight: var(--weight-body-semibold);
+  font-size: var(--text-xl);       /* 20px - Subsection headers */
+  font-weight: var(--weight-body-medium);
 }
 
 .roobert-headline--sm {
-  font-size: var(--text-base);
-  font-weight: var(--weight-body-bold);
+  font-size: var(--text-base);     /* 16px - Label emphasis */
+  font-weight: var(--weight-body-semibold);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wider);
+}
+
+/* Roobert Body Text Variants */
+.roobert-body-lg {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);       /* 18px - Lead text */
+  font-weight: var(--weight-body-regular);
+  line-height: var(--leading-relaxed);
+}
+
+.roobert-body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);     /* 16px - Standard body */
+  font-weight: var(--weight-body-regular);
+  line-height: var(--leading-normal);
+}
+
+.roobert-body-sm {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);       /* 14px - Secondary text */
+  font-weight: var(--weight-body-regular);
+  line-height: var(--leading-normal);
 }
 
 /* Roobert Accent Text - For callouts and emphasis */
@@ -380,9 +429,9 @@
 }
 
 .card-nexus__title {
-  font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-weight: var(--weight-display-medium);
+  font-family: var(--font-body);      /* Roobert, not Reckless */
+  font-size: var(--text-2xl);         /* 24px */
+  font-weight: var(--weight-body-semibold);
   margin-bottom: var(--space-2);
   color: hsl(var(--foreground));
 }
@@ -467,9 +516,9 @@
 }
 
 .nav-nexus__brand {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: var(--weight-display-semibold);
+  font-family: var(--font-body);          /* Roobert for navigation */
+  font-size: var(--text-xl);              /* 20px */
+  font-weight: var(--weight-body-semibold);
   color: hsl(var(--foreground));
 }
 
@@ -549,7 +598,8 @@
 }
 
 .hero-nexus__title {
-  font-size: var(--text-6xl);
+  font-family: var(--font-display);       /* Reckless for hero h1 */
+  font-size: var(--text-6xl);             /* 60px */
   font-weight: var(--weight-display-regular);
   line-height: var(--leading-tight);
   letter-spacing: var(--tracking-tighter);
@@ -560,7 +610,9 @@
 }
 
 .hero-nexus__subtitle {
-  font-size: var(--text-xl);
+  font-family: var(--font-body);          /* Roobert for subtitle */
+  font-size: var(--text-lg);              /* 18px (not xl) */
+  font-weight: var(--weight-body-regular);
   color: hsl(var(--muted-foreground));
   max-width: 60ch;
   margin-left: auto;
@@ -1043,16 +1095,17 @@
 }
 
 .header-title h1 {
-  font-family: var(--font-display);
-  font-size: 48px;
-  font-weight: 400;
-  letter-spacing: -0.025em;
+  font-family: var(--font-display);       /* Reckless for page title */
+  font-size: var(--text-5xl);             /* 48px */
+  font-weight: var(--weight-display-regular);
+  letter-spacing: var(--tracking-tight);
   color: #FFFFFF;
 }
 
 .header-title p {
-  font-family: var(--font-body);
-  font-size: 14px;
+  font-family: var(--font-body);          /* Roobert for description */
+  font-size: var(--text-sm);              /* 14px */
+  font-weight: var(--weight-body-regular);
   color: #ADB5BD;
 }
 

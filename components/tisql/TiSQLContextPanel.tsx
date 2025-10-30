@@ -2,7 +2,9 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   FileText,
   Database,
@@ -13,7 +15,8 @@ import {
   ChevronDown,
   ChevronRight,
   Key,
-  Columns
+  Columns,
+  PanelLeftClose
 } from 'lucide-react';
 import { useState } from 'react';
 import type { ProductDefinition } from '../build/steps/Step1DefineProduct';
@@ -32,7 +35,7 @@ interface TiSQLContextPanelProps {
   outputSchema?: Array<{ name: string; type: string }>;
   catalog?: string;
   environment?: string;
-  theme?: 'dark' | 'light';
+  onCollapse?: () => void;
 }
 
 export function TiSQLContextPanel({
@@ -41,10 +44,9 @@ export function TiSQLContextPanel({
   outputSchema = [],
   catalog = 'iceberg',
   environment = 'development',
-  theme = 'dark'
+  onCollapse
 }: TiSQLContextPanelProps) {
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'context' | 'schema'>('context');
 
   const toggleTable = (tableId: string) => {
     const newExpanded = new Set(expandedTables);
@@ -68,41 +70,36 @@ export function TiSQLContextPanel({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Tabs */}
-      <div className={`flex border-b ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-        <button
-          onClick={() => setActiveTab('context')}
-          className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'context'
-              ? theme === 'dark'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-blue-600 border-b-2 border-blue-600'
-              : theme === 'dark'
-                ? 'text-gray-400 hover:text-gray-300'
-                : 'text-gray-600 hover:text-gray-700'
-          }`}
-        >
-          Context
-        </button>
-        <button
-          onClick={() => setActiveTab('schema')}
-          className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-            activeTab === 'schema'
-              ? theme === 'dark'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-blue-600 border-b-2 border-blue-600'
-              : theme === 'dark'
-                ? 'text-gray-400 hover:text-gray-300'
-                : 'text-gray-600 hover:text-gray-700'
-          }`}
-        >
-          Schema
-        </button>
+      {/* Panel Header with Minimize Button */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card">
+        <div className="flex-1" />
+        {onCollapse && (
+          <Button
+            onClick={onCollapse}
+            variant="ghost"
+            size="sm"
+            className="h-6 w-6 p-0"
+            title="Minimize context panel (⌘B)"
+          >
+            <PanelLeftClose className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
-      {/* Tab Content */}
-      <ScrollArea className="flex-1">
-        {activeTab === 'context' ? (
+      <Tabs defaultValue="context" className="flex-1 flex flex-col">
+        <TabsList className="w-full justify-start rounded-none border-b border-border bg-muted">
+          <TabsTrigger value="context" className="gap-2">
+            <FileText className="w-4 h-4" />
+            Context
+          </TabsTrigger>
+          <TabsTrigger value="schema" className="gap-2">
+            <Database className="w-4 h-4" />
+            Schema
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="context" className="flex-1 m-0">
+          <ScrollArea className="h-full">
           <div className="space-y-4 p-4">
             {/* Environment Badge */}
             <Card className="border-2">
@@ -275,7 +272,11 @@ export function TiSQLContextPanel({
               </Card>
             )}
           </div>
-        ) : (
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="schema" className="flex-1 m-0">
+          <ScrollArea className="h-full">
           <div className="p-4">
             {/* Schema Browser - using selected sources as schema */}
             <div className="space-y-2">
@@ -309,8 +310,9 @@ export function TiSQLContextPanel({
               ))}
             </div>
           </div>
-        )}
-      </ScrollArea>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

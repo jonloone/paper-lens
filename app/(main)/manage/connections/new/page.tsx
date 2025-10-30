@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -208,9 +208,18 @@ const connectorsByCategory: Record<SourceCategory, Array<{id: string; name: stri
 
 export default function NewSourcePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<SourceCategory | null>(null);
   const [selectedConnector, setSelectedConnector] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pre-select category from URL parameter
+  useEffect(() => {
+    const categoryParam = searchParams?.get('category') as SourceCategory | null;
+    if (categoryParam && sourceCategories.some(cat => cat.id === categoryParam)) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [searchParams]);
 
   const handleCategorySelect = (category: SourceCategory) => {
     setSelectedCategory(category);
@@ -223,6 +232,13 @@ export default function NewSourcePage() {
 
   const handleContinue = () => {
     if (!selectedCategory || !selectedConnector) return;
+
+    // Special handling for file uploads - route to quick upload wizard by default
+    if (selectedCategory === 'files') {
+      router.push('/manage/connections/new/files/quick');
+      return;
+    }
+
     router.push(`/manage/connections/new/connect?category=${selectedCategory}&connector=${selectedConnector}`);
   };
 
@@ -244,11 +260,11 @@ export default function NewSourcePage() {
     : sourceCategories;
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">
+        <div className="space-y-3">
+          <h1 className="text-6xl font-display font-normal tracking-tight">
             {!selectedCategory ? 'What are you connecting to?' : 'Select your connector'}
           </h1>
           <p className="text-muted-foreground text-lg">
@@ -269,7 +285,7 @@ export default function NewSourcePage() {
                 placeholder="Search by source type (e.g., Postgres, S3, Kafka)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
               />
             </div>
 
@@ -281,7 +297,7 @@ export default function NewSourcePage() {
                 return (
                   <Card
                     key={category.id}
-                    className="cursor-pointer transition-all hover:border-primary hover:shadow-md group"
+                    className="shadow-lg border-2 cursor-pointer transition-all hover:shadow-xl hover:border-primary group"
                     onClick={() => handleCategorySelect(category.id)}
                   >
                     <CardContent className="p-6">
@@ -301,19 +317,19 @@ export default function NewSourcePage() {
                           {category.examples.map((logoTech, idx) => (
                             <div
                               key={idx}
-                              className="flex items-center justify-center w-10 h-10 rounded bg-muted/50 hover:bg-muted transition-colors"
+                              className="flex items-center justify-center w-14 h-14 rounded bg-muted/50 hover:bg-muted transition-colors"
                               title={logoTech}
                             >
                               <TechIcon
                                 technology={logoTech}
-                                size="md"
+                                size="lg"
                                 variant="branded"
-                                className="h-6 w-6"
+                                className="h-10 w-10"
                               />
                             </div>
                           ))}
                           {category.connectorCount > category.examples.length && (
-                            <div className="flex items-center justify-center w-10 h-10 rounded bg-muted/50 text-xs text-muted-foreground font-medium">
+                            <div className="flex items-center justify-center w-14 h-14 rounded bg-muted/50 text-xs text-muted-foreground font-medium">
                               +{category.connectorCount - category.examples.length}
                             </div>
                           )}
@@ -341,7 +357,7 @@ export default function NewSourcePage() {
                       setSelectedConnector(null);
                     }}
                   >
-                    <SelectTrigger className="w-[280px]">
+                    <SelectTrigger className="w-[280px] bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus:bg-card focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors duration-200">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -370,20 +386,21 @@ export default function NewSourcePage() {
                 return (
                   <Card
                     key={connector.id}
-                    className={`cursor-pointer transition-all ${
+                    className={`shadow-lg border-2 cursor-pointer transition-all ${
                       isSelected
-                        ? 'border-primary bg-primary/5'
-                        : 'hover:border-primary/50 hover:shadow-sm'
+                        ? 'border-primary bg-primary/5 shadow-xl'
+                        : 'hover:border-primary hover:shadow-xl'
                     }`}
                     onClick={() => handleConnectorSelect(connector.id)}
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-6">
                       <div className="flex flex-col items-center gap-3">
-                        <div className="p-3 rounded-lg bg-muted">
+                        <div className="p-4 rounded-lg bg-muted">
                           <TechIcon
                             technology={connector.tech}
-                            size="lg"
+                            size="xl"
                             variant="branded"
+                            className="h-12 w-12"
                           />
                         </div>
                         <div className="text-center">

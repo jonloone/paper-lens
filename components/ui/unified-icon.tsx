@@ -42,6 +42,7 @@ const phosphorIconMapping: Record<string, any> = {
   // File & Folder icons
   'File': PhosphorIcons.File,
   'FileText': PhosphorIcons.FileText,
+  'FileUp': PhosphorIcons.FileArrowUp,
   'Folder': PhosphorIcons.Folder,
   'FolderOpen': PhosphorIcons.FolderOpen,
   'FileCode': PhosphorIcons.FileCode,
@@ -103,6 +104,7 @@ const phosphorIconMapping: Record<string, any> = {
   'TrendingDown': PhosphorIcons.TrendDown,
   'Zap': PhosphorIcons.Lightning,
   'Server': PhosphorIcons.Database, // Server doesn't exist, use Database
+  'Cloud': PhosphorIcons.Cloud,
   'Globe': PhosphorIcons.Globe,
   'ShoppingCart': PhosphorIcons.ShoppingCart,
 

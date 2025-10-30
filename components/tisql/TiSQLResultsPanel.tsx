@@ -19,9 +19,11 @@ import {
   Database,
   GitBranch,
   TrendingDown,
-  Info
+  Info,
+  Network
 } from 'lucide-react';
 import type { QueryAnalysisResult, Finding } from '@/lib/types/query-optimization';
+import { QueryLineagePanel } from './QueryLineagePanel';
 
 interface ValidationResult {
   isValid: boolean;
@@ -46,6 +48,10 @@ interface TiSQLResultsPanelProps {
   isAnalyzing?: boolean;
   onCollapse?: () => void;
   theme?: 'dark' | 'light';
+  currentSQL?: string;
+  catalog?: string;
+  schema?: string;
+  onTableClick?: (tableName: string) => void;
 }
 
 export function TiSQLResultsPanel({
@@ -56,13 +62,17 @@ export function TiSQLResultsPanel({
   analysisResult,
   isAnalyzing = false,
   onCollapse,
-  theme = 'dark'
+  theme = 'dark',
+  currentSQL = '',
+  catalog = 'iceberg',
+  schema = 'default',
+  onTableClick,
 }: TiSQLResultsPanelProps) {
   return (
     <div className="h-full flex flex-col">
       {/* Panel Header with Minimize Button */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card">
-        <h3 className="text-sm font-medium text-muted-foreground">RESULTS</h3>
+        <h3 className="text-sm font-medium text-muted-foreground font-body">RESULTS</h3>
         {onCollapse && (
           <Button
             onClick={onCollapse}
@@ -81,6 +91,10 @@ export function TiSQLResultsPanel({
           <TabsTrigger value="results" className="gap-2">
             <TrendingUp className="w-4 h-4" />
             Results
+          </TabsTrigger>
+          <TabsTrigger value="lineage" className="gap-2">
+            <Network className="w-4 h-4" />
+            Lineage
           </TabsTrigger>
           <TabsTrigger value="optimization" className="gap-2">
             <Sparkles className="w-4 h-4" />
@@ -108,6 +122,7 @@ export function TiSQLResultsPanel({
 
         {/* Results Tab */}
         <TabsContent value="results" className="flex-1 m-0 p-4">
+
           <ScrollArea className="h-full">
             {isTesting ? (
               <div className="flex items-center gap-2 text-blue-500">
@@ -253,6 +268,16 @@ export function TiSQLResultsPanel({
               </div>
             )}
           </ScrollArea>
+        </TabsContent>
+
+        {/* Lineage Tab */}
+        <TabsContent value="lineage" className="flex-1 m-0 p-0">
+          <QueryLineagePanel
+            query={currentSQL}
+            catalog={catalog}
+            schema={schema}
+            onTableClick={onTableClick}
+          />
         </TabsContent>
 
         {/* Optimization Tab */}

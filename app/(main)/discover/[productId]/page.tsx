@@ -161,7 +161,7 @@ const getRelatedProducts = () => {
 
 function ProductDetailContent({ params }: ProductDetailPageProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('access');
 
   // Fetch product data (synchronous for now)
   const product = getProductById(params.productId);
@@ -201,121 +201,102 @@ function ProductDetailContent({ params }: ProductDetailPageProps) {
           </BreadcrumbList>
         </Breadcrumb>
 
-        {/* Product Section - Hero Card with Tabs */}
+        {/* Product Section - Hero + Chat + Tabs Layout */}
         <div className="space-y-6">
-          {/* Hero Card - Clean and Centered */}
+          {/* Hero Card with Integrated Chat */}
           <Card className="hero-card-gradient">
             <CardContent className="pt-8 pb-8">
-              {/* Centered Content Container */}
-              <div className="max-w-4xl mx-auto text-center space-y-6">
-                {/* Title */}
-                <h1 className="text-5xl font-bold tracking-tight">
-                  {product.displayName}
-                </h1>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left: Product Info */}
+                <div className="space-y-6">
+                  {/* Title */}
+                  <h1 className="text-4xl font-bold tracking-tight">
+                    {product.displayName}
+                  </h1>
 
-                {/* Subtitle */}
-                <p className="text-lg text-muted-foreground">
-                  {product.domain} Domain • {product.productType} Product • v{product.version}
-                </p>
+                  {/* Subtitle */}
+                  <p className="text-base text-muted-foreground">
+                    {product.domain} Domain • {product.productType} Product • v{product.version}
+                  </p>
 
-                {/* Description */}
-                <p className="text-base text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-                  {product.description}
-                </p>
+                  {/* Description */}
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {product.description}
+                  </p>
 
-                {/* Compact Business Context */}
-                <div>
-                  <CompactBusinessContext
-                    qualityScore={product.profiling.qualityScore}
-                    rowCount={product.profiling.rowCount}
-                    lastUpdated={product.lastUpdated}
-                    glossaryTerms={product.businessContext.glossaryTerms}
-                    owner={product.owner.team}
-                    ownerContact={product.owner.contact}
-                    upstreamCount={product.dependencies.upstream.length}
-                    downstreamCount={product.dependencies.downstream.length}
-                  />
+                  {/* Compact Business Context */}
+                  <div>
+                    <CompactBusinessContext
+                      qualityScore={product.profiling.qualityScore}
+                      rowCount={product.profiling.rowCount}
+                      lastUpdated={product.lastUpdated}
+                      glossaryTerms={product.businessContext.glossaryTerms}
+                      owner={product.owner.team}
+                      ownerContact={product.owner.contact}
+                      upstreamCount={product.dependencies.upstream.length}
+                      downstreamCount={product.dependencies.downstream.length}
+                    />
+                  </div>
+                </div>
+
+                {/* Right: Chat Agent */}
+                <div className="h-[600px]">
+                  <ProductChatAgent product={product} />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Chat Agent - Between Hero and Tabs */}
-          <ProductChatAgent product={product} />
-
-          {/* Tabs Section - Separate Container */}
+          {/* Bottom Row: Full-width Consolidated Tabs */}
           <Card className="elevation-surface-1">
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <div className="elevation-surface-1">
-                <TabsList className="h-auto bg-transparent border-0 p-0 w-full justify-between px-6">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
+              <div className="elevation-surface-1 border-b">
+                <TabsList className="h-auto bg-transparent border-0 p-0 w-full grid grid-cols-4 px-6">
                   <TabsTrigger
-                    value="overview"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value="access"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-6 py-4 data-[state=active]:font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="quickstart"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    Quick Start
+                    Access
                   </TabsTrigger>
                   <TabsTrigger
                     value="schema"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-6 py-4 data-[state=active]:font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     Schema
                   </TabsTrigger>
                   <TabsTrigger
                     value="quality"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-6 py-4 data-[state=active]:font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     Quality
                   </TabsTrigger>
                   <TabsTrigger
                     value="lineage"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-6 py-4 data-[state=active]:font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     Lineage
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="access"
-                    className="relative border-b-2 border-transparent data-[state=active]:border-b-0 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-t-lg rounded-b-none bg-transparent px-8 py-4 data-[state=active]:font-semibold flex-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  >
-                    Access
                   </TabsTrigger>
                 </TabsList>
               </div>
 
-              <div className="px-6 pb-6">
-                <TabsContent value="overview" className="mt-6">
-                  <NewOverviewTab product={product} relatedProducts={relatedProducts} />
-                </TabsContent>
-
-                <TabsContent value="quickstart" className="mt-6">
-                  <QuickStartTab product={product} />
-                </TabsContent>
-
-                <TabsContent value="schema" className="mt-6">
-                  <SchemaTab product={product} />
-                  <div className="mt-8">
-                    <OverviewTab product={product} />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="quality" className="mt-6">
-                  <QualityTab product={product} />
-                </TabsContent>
-
-                <TabsContent value="lineage" className="mt-6">
-                  <LineageTab productId={params.productId} productName={product.displayName} />
-                </TabsContent>
-
-                <TabsContent value="access" className="mt-6">
+              <div className="flex-1 overflow-y-auto px-6 py-6">
+                <TabsContent value="access" className="mt-0 h-full">
                   <div className="space-y-8">
                     <UsageTab product={product} />
                     <AccessTab product={product} />
                   </div>
+                </TabsContent>
+
+                <TabsContent value="schema" className="mt-0 h-full">
+                  <SchemaTab product={product} />
+                </TabsContent>
+
+                <TabsContent value="quality" className="mt-0 h-full">
+                  <QualityTab product={product} />
+                </TabsContent>
+
+                <TabsContent value="lineage" className="mt-0 h-full">
+                  <LineageTab productId={params.productId} productName={product.displayName} />
                 </TabsContent>
               </div>
             </Tabs>

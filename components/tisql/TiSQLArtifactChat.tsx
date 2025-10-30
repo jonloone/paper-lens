@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { Sparkles, Send, Copy, RotateCcw, Check, Code2, Loader2 } from 'lucide-react';
+import { Sparkles, Send, Copy, RotateCcw, Check, Code2, Loader2, X } from 'lucide-react';
 import * as Icons from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ResultsArtifactCard } from '@/components/build/ResultsArtifactCard';
@@ -18,6 +18,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  type?: 'sql-generation' | 'conversation'; // NEW: Message classification
   artifact?: {
     sql?: string;
     explanation?: string;
@@ -56,6 +57,7 @@ interface TiSQLArtifactChatProps {
     domain?: string;
   };
   onSQLGenerated?: (sql: string) => void;
+  onContinue?: () => void;
   initialSQL?: string;
   initialResults?: any;
   initialQuality?: any;
@@ -85,6 +87,7 @@ export function TiSQLArtifactChat({
   availableSources,
   productDefinition,
   onSQLGenerated,
+  onContinue,
   className
 }: TiSQLArtifactChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -96,6 +99,9 @@ export function TiSQLArtifactChat({
   const [patternsLoading, setPatternsLoading] = useState(true);
   const [qualityCards, setQualityCards] = useState<QualityCard[]>([]);
   const [editorCards, setEditorCards] = useState<EditorCard[]>([]);
+  const [hiddenResults, setHiddenResults] = useState<Set<string>>(new Set());
+  const [showResultsHistory, setShowResultsHistory] = useState(false); // NEW: Show all results vs latest only
+  const [showAdvanced, setShowAdvanced] = useState(false); // NEW: Toggle for showing/hiding SQL and technical details
   const [showThresholdConfig, setShowThresholdConfig] = useState(false);
   const [thresholdConfig, setThresholdConfig] = useState({
     completeness: 95,
@@ -103,7 +109,16 @@ export function TiSQLArtifactChat({
     validity: 95,
     nullPercentage: 5
   });
+  const [currentLoadingMessage, setCurrentLoadingMessage] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Progressive loading messages
+  const loadingMessages = [
+    { main: 'Analyzing your data sources...', sub: 'Reading table schemas and metadata' },
+    { main: 'Understanding connections...', sub: 'Mapping relationships between tables' },
+    { main: 'Identifying patterns...', sub: 'Detecting common query opportunities' },
+    { main: 'Preparing insights...', sub: 'Generating intelligent suggestions' }
+  ];
 
   // Helper function to remove SQL code blocks from message content
   const removeSQLCodeBlocks = (content: string): string => {
@@ -264,6 +279,17 @@ export function TiSQLArtifactChat({
     };
   };
 
+  // Cycle through loading messages
+  useEffect(() => {
+    if (!patternsLoading) return;
+
+    const interval = setInterval(() => {
+      setCurrentLoadingMessage((prev) => (prev + 1) % loadingMessages.length);
+    }, 800); // Change message every 800ms
+
+    return () => clearInterval(interval);
+  }, [patternsLoading, loadingMessages.length]);
+
   // Load pattern suggestions on mount
   useEffect(() => {
     async function loadPatterns() {
@@ -334,6 +360,16 @@ export function TiSQLArtifactChat({
     setIsLoading(true);
 
     try {
+      // Get current preview context from the latest message with results
+      const latestResult = messages.find(m => m.artifact?.results);
+      const currentPreview = latestResult
+        ? {
+            sql: latestResult.artifact?.sql,
+            columns: latestResult.artifact?.results?.columns,
+            rowCount: latestResult.artifact?.results?.rowCount,
+          }
+        : null;
+
       const response = await fetch('/api/tisql/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -342,6 +378,7 @@ export function TiSQLArtifactChat({
             role: m.role,
             content: m.content,
           })),
+          currentPreview,
         }),
       });
 
@@ -383,21 +420,58 @@ export function TiSQLArtifactChat({
         }
       }
 
-      // Extract SQL and execute query automatically
+      // Extract SQL and classify message type
       const sqlMatch = assistantContent.match(/```sql\n([\s\S]*?)\n```/);
+
       if (sqlMatch) {
         const sql = sqlMatch[1];
-        const artifact: SQLArtifact = {
-          sql,
-          explanation: assistantContent.split('```sql')[0].trim(),
-          assumptions: [],
-          confidence: 0.8,
-          warnings: []
-        };
-        setSQLArtifact(artifact);
 
-        // Auto-execute query and populate artifact
-        await executeQueryAndPopulateArtifact(sql, assistantId);
+        // Check if this SQL is a duplicate or very similar to existing
+        const existingSQLs = messages
+          .filter(m => m.artifact?.sql)
+          .map(m => m.artifact!.sql!);
+
+        const isDuplicate = existingSQLs.some(existingSQL =>
+          existingSQL.trim() === sql.trim() ||
+          // Simple similarity check: normalize whitespace and compare
+          existingSQL.replace(/\s+/g, ' ').trim() === sql.replace(/\s+/g, ' ').trim()
+        );
+
+        if (!isDuplicate) {
+          // This is new SQL - execute it
+          const artifact: SQLArtifact = {
+            sql,
+            explanation: assistantContent.split('```sql')[0].trim(),
+            assumptions: [],
+            confidence: 0.8,
+            warnings: []
+          };
+          setSQLArtifact(artifact);
+
+          // Mark as SQL generation type and execute
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === assistantId ? { ...m, type: 'sql-generation' } : m
+            )
+          );
+          await executeQueryAndPopulateArtifact(sql, assistantId);
+        } else {
+          // Duplicate SQL detected - just mark as conversation
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === assistantId
+                ? { ...m, type: 'conversation', content: assistantContent }
+                : m
+            )
+          );
+        }
+      } else {
+        // No SQL in response - pure conversation
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === assistantId ? { ...m, type: 'conversation' } : m
+          )
+        );
       }
     } catch (error) {
       console.error('Chat error:', error);
@@ -488,14 +562,9 @@ export function TiSQLArtifactChat({
   const handleSaveModel = (editorId: string, sql: string, modelName: string) => {
     console.log('Saving model:', { editorId, modelName, sql });
     // TODO: Implement actual dbt model save to git
-    // Update editor card
-    setEditorCards(prev =>
-      prev.map(card =>
-        card.id === editorId
-          ? { ...card, sql, modelName }
-          : card
-      )
-    );
+
+    // Auto-close editor card after save
+    setEditorCards(prev => prev.filter(card => card.id !== editorId));
   };
 
   const handleRunFromEditor = async (sql: string) => {
@@ -542,6 +611,16 @@ export function TiSQLArtifactChat({
     setIsLoading(true);
 
     try {
+      // Get current preview context from the latest message with results
+      const latestResult = messages.find(m => m.artifact?.results);
+      const currentPreview = latestResult
+        ? {
+            sql: latestResult.artifact?.sql,
+            columns: latestResult.artifact?.results?.columns,
+            rowCount: latestResult.artifact?.results?.rowCount,
+          }
+        : null;
+
       const response = await fetch('/api/tisql/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -550,6 +629,7 @@ export function TiSQLArtifactChat({
             role: m.role,
             content: m.content,
           })),
+          currentPreview,
         }),
       });
 
@@ -590,21 +670,58 @@ export function TiSQLArtifactChat({
         }
       }
 
-      // Extract SQL and execute query automatically
+      // Extract SQL and classify message type
       const sqlMatch = assistantContent.match(/```sql\n([\s\S]*?)\n```/);
+
       if (sqlMatch) {
         const sql = sqlMatch[1];
-        const artifact: SQLArtifact = {
-          sql,
-          explanation: assistantContent.split('```sql')[0].trim(),
-          assumptions: [],
-          confidence: 0.8,
-          warnings: []
-        };
-        setSQLArtifact(artifact);
 
-        // Auto-execute query and populate artifact
-        await executeQueryAndPopulateArtifact(sql, assistantId);
+        // Check if this SQL is a duplicate or very similar to existing
+        const existingSQLs = messages
+          .filter(m => m.artifact?.sql)
+          .map(m => m.artifact!.sql!);
+
+        const isDuplicate = existingSQLs.some(existingSQL =>
+          existingSQL.trim() === sql.trim() ||
+          // Simple similarity check: normalize whitespace and compare
+          existingSQL.replace(/\s+/g, ' ').trim() === sql.replace(/\s+/g, ' ').trim()
+        );
+
+        if (!isDuplicate) {
+          // This is new SQL - execute it
+          const artifact: SQLArtifact = {
+            sql,
+            explanation: assistantContent.split('```sql')[0].trim(),
+            assumptions: [],
+            confidence: 0.8,
+            warnings: []
+          };
+          setSQLArtifact(artifact);
+
+          // Mark as SQL generation type and execute
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === assistantId ? { ...m, type: 'sql-generation' } : m
+            )
+          );
+          await executeQueryAndPopulateArtifact(sql, assistantId);
+        } else {
+          // Duplicate SQL detected - just mark as conversation
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === assistantId
+                ? { ...m, type: 'conversation', content: assistantContent }
+                : m
+            )
+          );
+        }
+      } else {
+        // No SQL in response - pure conversation
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === assistantId ? { ...m, type: 'conversation' } : m
+          )
+        );
       }
     } catch (error) {
       console.error('Pattern generation error:', error);
@@ -621,6 +738,27 @@ export function TiSQLArtifactChat({
     }
   };
 
+  // Close handlers for cards
+  const handleCloseQuality = (cardId: string) => {
+    setQualityCards(prev => prev.filter(c => c.id !== cardId));
+    // Clear qualityCardId from source message so badge becomes clickable again
+    setMessages(prev =>
+      prev.map(m =>
+        m.artifact?.qualityCardId === cardId
+          ? { ...m, artifact: { ...m.artifact, qualityCardId: undefined }}
+          : m
+      )
+    );
+  };
+
+  const handleCloseEditor = (cardId: string) => {
+    setEditorCards(prev => prev.filter(c => c.id !== cardId));
+  };
+
+  const handleCloseResult = (messageId: string) => {
+    setHiddenResults(prev => new Set(prev).add(messageId));
+  };
+
   return (
     <div className={cn("flex h-full gap-6", className)}>
       {/* Compact Chat Window - Left Side */}
@@ -628,14 +766,47 @@ export function TiSQLArtifactChat({
         <div className="flex-1 flex flex-col rounded-2xl border border-border bg-white dark:bg-gray-950 shadow-lg overflow-hidden">
           {/* Chat Header */}
           <div className="px-4 py-3 border-b border-border bg-elevation-1">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold">SQL Assistant</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-sm font-semibold">Compose Data Product</span>
+              </div>
+              {/* Advanced Toggle */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className={cn(
+                  "h-7 gap-2 text-xs transition-colors",
+                  showAdvanced ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Code2 className="w-3.5 h-3.5" />
+                {showAdvanced ? 'Hide SQL' : 'Show SQL'}
+              </Button>
             </div>
           </div>
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {/* Show loading indicator before any messages exist */}
+            {messages.length === 0 && patternsLoading && (
+              <div className="p-4 rounded-xl border border-border bg-gradient-to-br from-primary/5 to-transparent animate-in fade-in duration-500">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
+                  <Sparkles className="w-4 h-4 text-primary animate-pulse flex-shrink-0" />
+                  <div className="flex-1 transition-all duration-300">
+                    <p className="text-sm font-medium text-foreground animate-in fade-in duration-300">
+                      {loadingMessages[currentLoadingMessage].main}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 animate-in fade-in duration-300">
+                      {loadingMessages[currentLoadingMessage].sub}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {messages.map((message) => (
               <div key={message.id}>
                 <div
@@ -651,8 +822,26 @@ export function TiSQLArtifactChat({
                   </div>
                 </div>
 
+                {/* Show loading indicator while analyzing data */}
+                {message.id === 'welcome' && patternsLoading && (
+                  <div className="mt-3 p-4 rounded-xl border border-border bg-gradient-to-br from-primary/5 to-transparent animate-in fade-in duration-500">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
+                      <Sparkles className="w-4 h-4 text-primary animate-pulse flex-shrink-0" />
+                      <div className="flex-1 transition-all duration-300">
+                        <p className="text-sm font-medium text-foreground animate-in fade-in duration-300">
+                          {loadingMessages[currentLoadingMessage].main}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 animate-in fade-in duration-300">
+                          {loadingMessages[currentLoadingMessage].sub}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Show pattern cards after welcome message */}
-                {message.id === 'welcome' && patterns.length > 0 && (
+                {message.id === 'welcome' && !patternsLoading && patterns.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {patterns.slice(0, 4).map((pattern) => {
                       // Get icon component dynamically
@@ -778,20 +967,22 @@ export function TiSQLArtifactChat({
         </div>
       </div>
 
-      {/* Masonry Grid for Artifact Cards - Right Side */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="columns-1 lg:columns-2 xl:columns-3 gap-6 space-y-6">
-          {/* Result Cards */}
-          {messages
-            .filter(m => m.artifact?.results)
-            .map((message) => (
-              <div key={message.id} className="break-inside-avoid animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Grid for Artifact Cards - Right Side */}
+      <div className="flex-1 overflow-y-auto p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-max">
+          {/* Result Cards - Wider (2 columns) */}
+          {(() => {
+            const resultsMessages = messages.filter(m => m.artifact?.results && !hiddenResults.has(m.id));
+            const displayedResults = showResultsHistory ? resultsMessages : resultsMessages.slice(-1);
+
+            return displayedResults.map((message) => (
+              <div key={message.id} className="lg:col-span-2 xl:col-span-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <ResultsArtifactCard
                   results={message.artifact!.results}
                   sql={message.artifact!.sql}
                   quality={message.artifact!.quality}
                   personaConfig={{
-                    sqlVisibility: 'collapsed',
+                    sqlVisibility: showAdvanced ? 'expanded' : 'hidden',
                     resultsFirst: true
                   }}
                   onExecute={() => {
@@ -807,36 +998,61 @@ export function TiSQLArtifactChat({
                     ? () => handleSpawnEditorCard(message.id, message.artifact!.sql!)
                     : undefined
                   }
+                  onClose={() => handleCloseResult(message.id)}
+                  onContinue={onContinue}
                 />
               </div>
-            ))}
+            ));
+          })()}
+
+          {/* History Toggle Button */}
+          {(() => {
+            const resultsCount = messages.filter(m => m.artifact?.results && !hiddenResults.has(m.id)).length;
+            if (resultsCount > 1 && !showResultsHistory) {
+              return (
+                <div className="lg:col-span-2 xl:col-span-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowResultsHistory(true)}
+                    className="w-full gap-2"
+                  >
+                    <Icons.History className="w-4 h-4" />
+                    View Previous Results ({resultsCount - 1})
+                  </Button>
+                </div>
+              );
+            }
+            return null;
+          })()}
 
           {/* Quality Gate Cards */}
           {qualityCards.map((card) => (
-            <div key={card.id} className="break-inside-avoid animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div key={card.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <QualityGatesCard
                 summary={card.quality}
                 onConfigure={() => setShowThresholdConfig(true)}
                 onExpand={() => {
-                  // TODO: Open full quality report
+                  // TODO: Implement fullscreen quality view
                   console.log('Expand quality report', card.id);
                 }}
+                onClose={() => handleCloseQuality(card.id)}
               />
             </div>
           ))}
 
           {/* DBT Editor Cards */}
           {editorCards.map((card) => (
-            <div key={card.id} className="break-inside-avoid animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div key={card.id} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
               <DBTModelEditorCard
                 initialSQL={card.sql}
                 modelName={card.modelName}
                 onSave={(sql, name) => handleSaveModel(card.id, sql, name)}
                 onRun={handleRunFromEditor}
                 onExpand={() => {
-                  // TODO: Open full-screen editor
+                  // TODO: Implement fullscreen editor
                   console.log('Expand editor', card.id);
                 }}
+                onClose={() => handleCloseEditor(card.id)}
               />
             </div>
           ))}

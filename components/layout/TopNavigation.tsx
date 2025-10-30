@@ -41,10 +41,13 @@ interface NavItem {
   hasDropdown?: boolean;
   badge?: string;
   dropdownItems?: Array<{
-    href: string;
+    href?: string;
     label: string;
     icon?: string;
     badge?: string;
+    description?: string;
+    separator?: boolean; // Visual separator with section label
+    sectionLabel?: string; // Section header label
   }>;
 }
 
@@ -58,6 +61,7 @@ interface NavLinkProps {
     label: string;
     icon?: string;
     badge?: string;
+    description?: string;
   }>;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -76,7 +80,24 @@ const NavLink = ({
   const router = useRouter();
   const { theme } = useTheme();
 
-  const isActive = href && (pathname === href || (href !== '/' && pathname.startsWith(href)));
+  // Check if current route is active
+  // Special case: /manage/connections paths are considered part of Connect menu
+  const isConnectRoute = href === '/connect' &&
+    (pathname.startsWith('/connect') || pathname.startsWith('/manage/connections'));
+
+  // Operations section includes /operations, /monitor, /manage (except connections), and /govern routes
+  const isOperationsRoute = href === '/operations' &&
+    (pathname.startsWith('/operations') ||
+     pathname.startsWith('/monitor') ||
+     (pathname.startsWith('/manage') && !pathname.startsWith('/manage/connections')) ||
+     pathname.startsWith('/govern'));
+
+  const isActive = href && (
+    pathname === href ||
+    (href !== '/' && pathname.startsWith(href) && href !== '/manage' && href !== '/monitor') ||
+    isConnectRoute ||
+    isOperationsRoute
+  );
 
   if (hasDropdown && dropdownItems) {
     return (
@@ -102,25 +123,40 @@ const NavLink = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 bg-popover/95 backdrop-blur-sm border-border/40">
           {dropdownItems.map((item, index) => {
+            // Handle separators with optional section labels
+            if (item.separator) {
+              return (
+                <div key={`separator-${index}`}>
+                  <DropdownMenuSeparator className="bg-border/40 my-2" />
+                  {item.sectionLabel && (
+                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal px-2 py-1">
+                      {item.sectionLabel}
+                    </DropdownMenuLabel>
+                  )}
+                </div>
+              );
+            }
+
             const isDropdownActive = pathname === item.href;
             return (
-              <div key={item.href}>
-                {index > 0 && index === dropdownItems.length - 1 && (
+              <div key={item.href || `item-${index}`}>
+                {index > 0 && index === dropdownItems.length - 1 && !item.separator && (
                   <DropdownMenuSeparator className="bg-border/40" />
                 )}
                 <DropdownMenuItem
-                  onClick={() => router.push(item.href)}
+                  onClick={() => item.href && router.push(item.href)}
                   className={cn(
                     "cursor-pointer transition-colors duration-150",
-                    isDropdownActive ? "bg-accent/20 text-primary" : ""
+                    isDropdownActive ? "bg-accent/20 text-primary" : "",
+                    item.description ? "py-3" : ""
                   )}
                 >
-                  <div className="flex items-center gap-3 w-full">
+                  <div className="flex items-start gap-3 w-full">
                     {item.icon && (
                       <UnifiedIcon
                         name={item.icon}
                         className={cn(
-                          "transition-colors duration-150",
+                          "transition-colors duration-150 mt-0.5",
                           isDropdownActive ? "text-primary" : "text-muted-foreground"
                         )}
                         size="sm"
@@ -139,6 +175,11 @@ const NavLink = ({
                           </Badge>
                         )}
                       </div>
+                      {item.description && (
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {item.description}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </DropdownMenuItem>
@@ -189,8 +230,8 @@ export const TopNavigation = () => {
   const navItems: NavItem[] = [
     {
       href: '/',
-      label: 'Overview',
-      icon: 'LayoutDashboard'
+      label: 'Home',
+      icon: 'Home'
     },
     {
       href: '/build',
@@ -198,37 +239,66 @@ export const TopNavigation = () => {
       icon: 'Hammer'
     },
     {
+      href: '/connect',
+      label: 'Connect',
+      icon: 'Database',
+      hasDropdown: true,
+      dropdownItems: [
+        {
+          href: '/connect/new?category=files',
+          label: 'Files',
+          icon: 'FileUp'
+        },
+        {
+          href: '/connect/new?category=database',
+          label: 'Databases',
+          icon: 'Database'
+        },
+        {
+          href: '/connect/new?category=file_storage',
+          label: 'Cloud',
+          icon: 'Cloud'
+        },
+        {
+          href: '/connect/new?category=api_saas',
+          label: 'API',
+          icon: 'Globe'
+        },
+        {
+          href: '/connect/new?category=messaging',
+          label: 'Messaging',
+          icon: 'MessageSquare'
+        },
+        { separator: true, label: '' },
+        { href: '/manage/connections', label: 'View All Sources', icon: 'List' }
+      ]
+    },
+    {
       href: '/discover',
       label: 'Discover',
       icon: 'Search'
     },
     {
-      href: '/monitor',
-      label: 'Monitor',
+      href: '/operations',
+      label: 'Operations',
       icon: 'Activity',
       hasDropdown: true,
       dropdownItems: [
-        { href: '/monitor', label: 'System Status', icon: 'Gauge' },
-        { href: '/manage/connections', label: 'Connections', icon: 'Database' },
-        { href: '/monitor/pipelines', label: 'Pipelines', icon: 'GitBranch' },
-        { href: '/manage', label: 'Data Products', icon: 'Package' }
-      ]
-    },
-    {
-      href: '/govern',
-      label: 'Govern',
-      icon: 'Shield',
-      hasDropdown: true,
-      dropdownItems: [
-        { href: '/manage/access', label: 'Access Control', icon: 'Key' },
-        { href: '/manage/quality', label: 'Quality Rules', icon: 'CheckCircle' },
-        { href: '/manage/compliance', label: 'Compliance', icon: 'FileCheck' }
+        { href: '/operations', label: 'Overview', icon: 'LayoutDashboard', description: 'System health and metrics' },
+        { href: '/manage/users', label: 'Users', icon: 'Users', description: 'User management and teams' },
+        { separator: true, label: '', sectionLabel: 'RESOURCES' },
+        { href: '/monitor/pipelines', label: 'Pipelines', icon: 'GitBranch', description: 'Monitor and manage data pipelines' },
+        { href: '/manage/connections', label: 'Connections', icon: 'Database', description: 'Data source connections' },
+        { href: '/manage', label: 'Data Products', icon: 'Package', description: 'Manage data products' },
+        { separator: true, label: '', sectionLabel: 'GOVERNANCE' },
+        { href: '/govern/quality', label: 'Quality Rules', icon: 'CheckCircle', description: 'Data quality standards' },
+        { href: '/manage/access', label: 'Access Control', icon: 'Key', description: 'Security and permissions' }
       ]
     }
   ];
 
   return (
-    <header className="fixed top-4 left-0 right-0 z-50 px-8">
+    <header className="top-navigation relative px-8 pt-4">
       <nav
         className={cn(
           "mx-auto max-w-7xl rounded-2xl",

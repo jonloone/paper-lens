@@ -24,7 +24,8 @@ import {
   Sparkles,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +35,7 @@ interface DBTModelEditorCardProps {
   onSave?: (sql: string, name: string) => void;
   onRun?: (sql: string) => void;
   onExpand?: () => void;
+  onClose?: () => void;
   className?: string;
 }
 
@@ -164,6 +166,7 @@ export function DBTModelEditorCard({
   onSave,
   onRun,
   onExpand,
+  onClose,
   className
 }: DBTModelEditorCardProps) {
   const [sql, setSQL] = useState(initialSQL);
@@ -360,6 +363,11 @@ export function DBTModelEditorCard({
             {onExpand && (
               <Button size="sm" variant="ghost" onClick={onExpand} className="h-7 w-7 p-0">
                 <Maximize2 className="w-3 h-3" />
+              </Button>
+            )}
+            {onClose && (
+              <Button size="sm" variant="ghost" onClick={onClose} className="h-7 w-7 p-0">
+                <X className="w-3 h-3" />
               </Button>
             )}
           </div>

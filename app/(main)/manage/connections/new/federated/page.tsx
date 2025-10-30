@@ -396,6 +396,7 @@ export default function FederatedSourceWizard() {
               placeholder="e.g., Product Catalog"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
           </div>
 
@@ -409,6 +410,7 @@ export default function FederatedSourceWizard() {
                 ...formData,
                 trino: { ...formData.trino, catalog_name: e.target.value }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
           </div>
         </div>
@@ -421,12 +423,13 @@ export default function FederatedSourceWizard() {
             value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
+            className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
           />
         </div>
       </div>
 
       {/* Metadata - Secondary card */}
-      <Card className="border border-border/50 bg-muted/20">
+      <Card className="bg-muted/50">
         <CardContent className="p-6 space-y-4">
           <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
             Metadata & Ownership
@@ -444,7 +447,7 @@ export default function FederatedSourceWizard() {
                 })}
                 disabled={!!connectorType}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus:bg-card focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors duration-200">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -492,6 +495,7 @@ export default function FederatedSourceWizard() {
                 placeholder="e.g., Data Platform"
                 value={formData.team}
                 onChange={(e) => setFormData({ ...formData, team: e.target.value })}
+                className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
               />
             </div>
 
@@ -503,6 +507,7 @@ export default function FederatedSourceWizard() {
                 placeholder="owner@company.com"
                 value={formData.owner}
                 onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
+                className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
               />
             </div>
           </div>
@@ -526,6 +531,7 @@ export default function FederatedSourceWizard() {
                 ...formData,
                 connection: { ...formData.connection, host: e.target.value }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
           </div>
 
@@ -540,6 +546,7 @@ export default function FederatedSourceWizard() {
                 ...formData,
                 connection: { ...formData.connection, port: parseInt(e.target.value) || 5432 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
           </div>
         </div>
@@ -555,6 +562,7 @@ export default function FederatedSourceWizard() {
                 ...formData,
                 connection: { ...formData.connection, database: e.target.value }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
           </div>
 
@@ -568,6 +576,7 @@ export default function FederatedSourceWizard() {
                 ...formData,
                 connection: { ...formData.connection, username: e.target.value }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
           </div>
         </div>
@@ -586,7 +595,7 @@ export default function FederatedSourceWizard() {
       </div>
 
       {/* Secret Management - Secondary card */}
-      <Card className="border border-border/50 bg-muted/20">
+      <Card className="bg-muted/50">
         <CardContent className="p-6 space-y-4">
           <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
             Secret Management
@@ -597,7 +606,7 @@ export default function FederatedSourceWizard() {
             value={secretStorageType}
             onValueChange={(value: SecretStorageType) => setSecretStorageType(value)}
           >
-            <SelectTrigger>
+            <SelectTrigger className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus:bg-card focus:border-primary focus:ring-2 focus:ring-primary/50 transition-colors duration-200">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -619,6 +628,7 @@ export default function FederatedSourceWizard() {
               placeholder="POSTGRES_PASSWORD"
               value={secretReference}
               onChange={(e) => setSecretReference(e.target.value)}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">
               Will be referenced as: <code className="bg-muted px-1 py-0.5 rounded">$&#123;ENV:{secretReference || 'POSTGRES_PASSWORD'}&#125;</code>
@@ -634,6 +644,7 @@ export default function FederatedSourceWizard() {
               placeholder="/secrets/db-password"
               value={secretReference}
               onChange={(e) => setSecretReference(e.target.value)}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">
               Will be referenced as: <code className="bg-muted px-1 py-0.5 rounded">$&#123;file:{secretReference || '/secrets/db-password'}&#125;</code>
@@ -653,6 +664,7 @@ export default function FederatedSourceWizard() {
                   const key = secretReference.split(':')[1] || 'password';
                   setSecretReference(`${e.target.value}:${key}`);
                 }}
+                className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
               />
             </div>
             <div className="space-y-2">
@@ -665,6 +677,7 @@ export default function FederatedSourceWizard() {
                   const secret = secretReference.split(':')[0] || 'trino-db-credentials';
                   setSecretReference(`${secret}:${e.target.value}`);
                 }}
+                className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
               />
             </div>
           </div>
@@ -691,6 +704,7 @@ export default function FederatedSourceWizard() {
                 ...formData,
                 connection: { ...formData.connection, password: e.target.value }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
           </div>
         )}
@@ -753,11 +767,11 @@ export default function FederatedSourceWizard() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Source Schema</Label>
-              <Input placeholder="public" id="source-schema-0" />
+              <Input placeholder="public" id="source-schema-0" className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200" />
             </div>
             <div>
               <Label>Trino Schema</Label>
-              <Input placeholder="product_data" id="trino-schema-0" />
+              <Input placeholder="product_data" id="trino-schema-0" className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200" />
             </div>
           </div>
 
@@ -768,7 +782,7 @@ export default function FederatedSourceWizard() {
       </div>
 
       {/* Connection Pool - Secondary card */}
-      <Card className="border border-border/50 bg-muted/20">
+      <Card className="bg-muted/50">
         <CardContent className="p-6 space-y-4">
           <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
             Connection Pool Settings
@@ -791,6 +805,7 @@ export default function FederatedSourceWizard() {
                   connectionPoolSize: parseInt(e.target.value) || 10
                 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">Target number of connections</p>
           </div>
@@ -808,6 +823,7 @@ export default function FederatedSourceWizard() {
                   connectionPoolMinSize: parseInt(e.target.value) || 2
                 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">Minimum idle connections</p>
           </div>
@@ -825,6 +841,7 @@ export default function FederatedSourceWizard() {
                   connectionPoolMaxSize: parseInt(e.target.value) || 20
                 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">Maximum connections allowed</p>
           </div>
@@ -833,7 +850,7 @@ export default function FederatedSourceWizard() {
       </Card>
 
       {/* Timeout Configuration - Secondary card */}
-      <Card className="border border-border/50 bg-muted/20">
+      <Card className="bg-muted/50">
         <CardContent className="p-6 space-y-4">
           <Label className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
             Timeout Configuration
@@ -856,6 +873,7 @@ export default function FederatedSourceWizard() {
                   connectionTimeoutMs: parseInt(e.target.value) || 30000
                 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">Max time to wait for connection from pool</p>
           </div>
@@ -873,6 +891,7 @@ export default function FederatedSourceWizard() {
                   queryTimeoutSeconds: parseInt(e.target.value) || 60
                 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">Max time for query execution</p>
           </div>
@@ -890,6 +909,7 @@ export default function FederatedSourceWizard() {
                   idleTimeoutMs: parseInt(e.target.value) || 600000
                 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">Close idle connections after this time (10min default)</p>
           </div>
@@ -907,6 +927,7 @@ export default function FederatedSourceWizard() {
                   maxLifetimeMs: parseInt(e.target.value) || 1800000
                 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">Close connections after this time regardless of use (30min default)</p>
           </div>
@@ -924,6 +945,7 @@ export default function FederatedSourceWizard() {
                   leakDetectionThresholdMs: parseInt(e.target.value) || 60000
                 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">Log warning if connection held longer than this (0 to disable)</p>
           </div>
@@ -941,6 +963,7 @@ export default function FederatedSourceWizard() {
                   validationTimeoutMs: parseInt(e.target.value) || 5000
                 }
               })}
+              className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
             />
             <p className="text-xs text-muted-foreground">Max time for validation query</p>
           </div>
@@ -959,6 +982,7 @@ export default function FederatedSourceWizard() {
                 validationQuery: e.target.value
               }
             })}
+            className="bg-input/10 border-2 border-input/40 ring-1 ring-input/20 hover:bg-input/20 hover:border-input/60 focus-visible:bg-card focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/50 transition-colors duration-200"
           />
           <p className="text-xs text-muted-foreground">Query to validate connections before use</p>
         </div>
@@ -1055,7 +1079,7 @@ export default function FederatedSourceWizard() {
         </p>
       </div>
 
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="h-5 w-5" />
@@ -1095,7 +1119,7 @@ export default function FederatedSourceWizard() {
       <Separator />
 
       {/* Deployment Target Selection */}
-      <Card>
+      <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Server className="h-5 w-5" />
@@ -1269,18 +1293,16 @@ ${propertiesFile}
           );
         }
       })()}
-    </div>
-  );
 
   return (
-    <div className="max-w-7xl mx-auto p-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
       {/* Header - Outside card for clear hierarchy */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Database className="h-4 w-4" />
           <span>Federated Query Source</span>
         </div>
-        <h1 className="text-3xl font-display tracking-tight">Configure Trino Catalog</h1>
+        <h1 className="text-6xl font-display font-normal tracking-tight">Configure Trino Catalog</h1>
         <p className="text-muted-foreground text-base">
           Set up a direct query connection to your source database
         </p>
@@ -1291,7 +1313,7 @@ ${propertiesFile}
 
       {/* Step Header */}
       <div className="space-y-1">
-        <h2 className="text-2xl font-display tracking-tight">
+        <h2 className="text-2xl tracking-tight">
           {currentStep === 0 && 'Infrastructure Prerequisites'}
           {currentStep === 1 && 'Connection Details'}
           {currentStep === 2 && 'Trino Configuration'}
@@ -1308,7 +1330,7 @@ ${propertiesFile}
       </div>
 
       {/* Step Content - Primary card */}
-      <Card className="border-2 shadow-lg">
+      <Card className="shadow-lg border-2">
         <CardContent className="p-8">
           {currentStep === 0 && renderStep0()}
           {currentStep === 1 && renderStep1()}

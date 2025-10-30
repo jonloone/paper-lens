@@ -56,6 +56,15 @@ class DeploymentTarget(str, Enum):
     CLOUD_MANAGED = "cloud-managed"
 
 
+class FileFormat(str, Enum):
+    """Supported file formats"""
+    CSV = "csv"
+    JSON = "json"
+    PARQUET = "parquet"
+    AVRO = "avro"
+    ORC = "orc"
+
+
 # ============================================================================
 # Base Models
 # ============================================================================
@@ -154,6 +163,36 @@ class StreamingConfig(BaseModel):
     iceberg_partition_spec: Optional[List[Dict[str, Any]]] = None
 
 
+class FileSourceConfig(BaseModel):
+    """Configuration for file-based data sources"""
+    s3_url: str
+    file_format: FileFormat
+    file_size_bytes: int
+    file_size_mb: float
+    row_count: int
+    column_count: int
+
+    # CSV-specific options
+    delimiter: Optional[str] = ","
+    quote_character: Optional[str] = '"'
+    has_headers: bool = True
+
+    # Schema
+    schema_fields: List[Dict[str, Any]] = []  # {name, type, nullable}
+
+    # Refresh configuration
+    refresh_schedule: Optional[str] = None  # Cron expression
+    last_refreshed_at: Optional[datetime] = None
+
+    # Trino catalog registration
+    trino_catalog: str = "files"
+    trino_schema: str = "default"
+    trino_table: str
+
+    # Partitioning (optional)
+    partition_columns: List[str] = []
+
+
 # ============================================================================
 # Source Models
 # ============================================================================
@@ -172,13 +211,14 @@ class SourceBase(BaseModel):
 
 class SourceCreate(SourceBase):
     """Model for creating a new source"""
-    connection_details: ConnectionDetails
+    connection_details: Optional[ConnectionDetails] = None  # Optional for file sources
 
     # Configuration based on connection mode
     federated_config: Optional[FederatedConfig] = None
     cdc_config: Optional[CDCConfig] = None
     batch_config: Optional[BatchConfig] = None
     streaming_config: Optional[StreamingConfig] = None
+    file_config: Optional[FileSourceConfig] = None  # NEW: File source configuration
 
     # Deployment
     deployment_target: DeploymentTarget = DeploymentTarget.KUBERNETES
@@ -413,13 +453,14 @@ class ConnectionConfig(BaseModel):
     tags: List[str] = []
 
     # Connection
-    connection_details: ConnectionDetails
+    connection_details: Optional[ConnectionDetails] = None  # Optional for file sources
 
     # Mode-specific config
     federated_config: Optional[FederatedConfig] = None
     cdc_config: Optional[CDCConfig] = None
     batch_config: Optional[BatchConfig] = None
     streaming_config: Optional[StreamingConfig] = None
+    file_config: Optional[FileSourceConfig] = None  # NEW: File source configuration
 
     # Deployment
     deployment_target: DeploymentTarget = DeploymentTarget.KUBERNETES

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import { buildSQLSchema } from '@/lib/utils/sql-autocomplete';
 
 interface TiSQLEditorProps {
   sql: string;
@@ -29,13 +30,16 @@ const EnhancedSQLEditor = dynamic(
         selectedCatalog,
         selectedEnvironment,
         onSave,
-        editorRef
+        editorRef,
+        sqlSchema
       } = props;
 
       const extensions = useMemo(() => {
         const exts = [
           curSqlGutter(),
-          sqlAutoCompletion(),
+          sqlAutoCompletion({
+            schema: sqlSchema
+          }),
           saveHelper({
             save: (view) => {
               if (onSave) {
@@ -45,7 +49,7 @@ const EnhancedSQLEditor = dynamic(
           })
         ];
         return exts;
-      }, [onSave]);
+      }, [onSave, sqlSchema]);
 
       return (
         <mod.EditorCacheProvider>
@@ -89,11 +93,19 @@ export function TiSQLEditor({
 }: TiSQLEditorProps) {
   const editorRef = useRef<any>(null);
 
+  // Build SQL schema for autocomplete from mock data
+  const sqlSchema = useMemo(() => {
+    const schema = buildSQLSchema();
+    console.log('[TiSQLEditor] Built SQL schema for tiSQL autocomplete:', schema);
+    console.log('[TiSQLEditor] Available tables:', Object.keys(schema));
+    return schema;
+  }, []);
+
   const handleSave = () => {
-    // Trigger save action if needed
-    if (onExecute) {
-      onExecute();
-    }
+    // Only save, don't execute
+    console.log('[TiSQLEditor] Save triggered (Cmd+S)');
+    // Note: We don't call onExecute here - that should only happen with explicit Run button
+    // The saveHelper extension uses this for Cmd+S keyboard shortcut
   };
 
   return (
@@ -105,6 +117,7 @@ export function TiSQLEditor({
         selectedEnvironment={selectedEnvironment}
         onSave={handleSave}
         editorRef={editorRef}
+        sqlSchema={sqlSchema}
       />
     </div>
   );

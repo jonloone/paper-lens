@@ -11,33 +11,44 @@ import {
   Database,
   BarChart2,
   Shield,
-  Settings,
-  Clock,
   TrendingUp,
   Users,
   CheckCircle2,
-  AlertCircle,
-  XCircle,
-  PlayCircle,
-  Zap,
+  Clock,
+  Sparkles,
+  ArrowRight,
   Target,
-  ExternalLink,
-  Check,
-  Radio,
-  Package,
-  GitBranch,
-  ArrowRight
+  Brain,
+  Zap,
+  FileText
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRecentPages } from '@/hooks/use-recent-pages';
 
-// Role detection - in production, get from auth context
-// For now, check environment or use default
-const getUserRole = (): 'producer' | 'consumer' => {
+// User detection - in production, get from auth context
+const getCurrentUser = () => {
   // TODO: Replace with actual auth context
-  // return user.role === 'data_engineer' || user.role === 'analytics_engineer' ? 'producer' : 'consumer';
-  return 'producer'; // Default for now
+  return {
+    id: 'finance_analyst_1',
+    name: 'Sarah Chen',
+    department: 'finance',
+    role: 'Senior Data Analyst'
+  };
 };
+
+interface AIRecommendation {
+  product_id: string;
+  product_name: string;
+  product_type: string;
+  domain: string;
+  description: string;
+  score: number;
+  source: string;
+  reasoning: string[];
+  similar_users_count?: number;
+  usage_count?: number;
+  quality_score?: number;
+}
 
 interface QuickAction {
   id: string;
@@ -45,419 +56,151 @@ interface QuickAction {
   description: string;
   icon: any;
   href: string;
-  roles: ('producer' | 'consumer')[];
+  gradient: string;
 }
 
-// Icon map for dynamic icon rendering
-const ICON_MAP: Record<string, any> = {
-  Rocket,
-  Search,
-  Activity,
-  Code,
-  Database,
-  BarChart2,
-  Shield,
-  Settings,
-};
-
-// Pipeline execution interface
-interface PipelineExecution {
-  executionId: string;
-  pipelineId: string;
-  status: 'queued' | 'running' | 'completed' | 'failed';
-  startTime: string;
-  endTime?: string;
-  metrics?: {
-    recordsProcessed: number;
-    duration: number;
-  };
-  pipelineType?: 'ingestion' | 'product';
-  ingestionMethod?: 'cdc' | 'batch' | 'stream';
-  source?: string;
-  destination?: string;
-  contract?: string;
-}
-
-// View mode type
-type ViewMode = 'engineer' | 'consumer' | 'hybrid';
-
-// Product Portfolio interface
-interface ProductPortfolio {
-  overall: 'healthy' | 'degraded' | 'critical';
-  totalContracts: number;
-  totalProducts: number;
-  healthDistribution: {
-    healthy: number;
-    atRisk: number;
-    critical: number;
-  };
-  metrics: {
-    qualityGatePassRate: number;
-    sloCompliance: number;
-    avgTimeToDeployHours: number;
-  };
-  summary: string;
-}
-
-// Issue interface
-interface Issue {
-  id: string;
-  severity: 'critical' | 'warning' | 'info';
-  title: string;
-  description: string;
-  businessImpact: string;
-  timestamp: string;
-  source: string;
-  affectedDomain?: string;
-}
-
-export default function OverviewPage() {
-  const userRole = getUserRole();
+export default function AIFirstHomepage() {
+  const currentUser = getCurrentUser();
   const recentPages = useRecentPages();
-  const [pipelineRuns, setPipelineRuns] = useState<PipelineExecution[]>([]);
-  const [loadingPipelines, setLoadingPipelines] = useState(true);
-  const [portfolio, setPortfolio] = useState<ProductPortfolio | null>(null);
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [loadingPortfolio, setLoadingPortfolio] = useState(true);
-  const [loadingIssues, setLoadingIssues] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>('engineer'); // Default to engineer view
+  const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Separate ingestion and product pipelines
-  const ingestionPipelines = pipelineRuns.filter(p => p.pipelineType === 'ingestion');
-  const productPipelines = pipelineRuns.filter(p => p.pipelineType === 'product');
-
-  // Fetch recent pipeline executions
+  // Fetch AI recommendations
   useEffect(() => {
-    const fetchPipelineRuns = async () => {
+    const fetchRecommendations = async () => {
       try {
-        const response = await fetch('/api/pipelines/execute');
-        const data = await response.json();
-        // Get last 8 executions
-        const recentRuns = Array.isArray(data) ? data.slice(0, 8) : [];
+        setLoadingRecommendations(true);
+        const response = await fetch('/api/recommendations/discover/hybrid', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: currentUser.id,
+            user_department: currentUser.department,
+            business_keywords: [],
+            limit: 6
+          })
+        });
 
-        // If no data from API, use mock data for demo
-        if (recentRuns.length === 0) {
-          const now = Date.now();
-          const mockRuns: PipelineExecution[] = [
-            // INGESTION PIPELINES
-            {
-              executionId: 'exec-ing-1',
-              pipelineId: 'salesforce_cdc_sync',
-              status: 'completed',
-              startTime: new Date(now - 7200000).toISOString(),
-              endTime: new Date(now - 7140000).toISOString(),
-              metrics: {
-                recordsProcessed: 15420,
-                duration: 60000
-              },
-              pipelineType: 'ingestion',
-              ingestionMethod: 'cdc',
-              source: 'Salesforce CRM',
-              destination: 'iceberg.foundation.salesforce_raw'
-            },
-            {
-              executionId: 'exec-ing-2',
-              pipelineId: 'mysql_batch_orders',
-              status: 'completed',
-              startTime: new Date(now - 14400000).toISOString(),
-              endTime: new Date(now - 14220000).toISOString(),
-              metrics: {
-                recordsProcessed: 124850,
-                duration: 180000
-              },
-              pipelineType: 'ingestion',
-              ingestionMethod: 'batch',
-              source: 'MySQL Production',
-              destination: 'iceberg.foundation.orders_raw'
-            },
-            {
-              executionId: 'exec-ing-3',
-              pipelineId: 'kafka_events_stream',
-              status: 'running',
-              startTime: new Date(now - 300000).toISOString(),
-              metrics: {
-                recordsProcessed: 48750,
-                duration: 0
-              },
-              pipelineType: 'ingestion',
-              ingestionMethod: 'stream',
-              source: 'Kafka Events Topic',
-              destination: 'iceberg.foundation.events_raw'
-            },
-            // DATA PRODUCT PIPELINES
-            {
-              executionId: 'exec-prod-1',
-              pipelineId: 'customer_360_refresh',
-              status: 'completed',
-              startTime: new Date(now - 3600000).toISOString(),
-              endTime: new Date(now - 3540000).toISOString(),
-              metrics: {
-                recordsProcessed: 124850,
-                duration: 60000
-              },
-              pipelineType: 'product',
-              contract: 'customer_360 v3.0'
-            },
-            {
-              executionId: 'exec-prod-2',
-              pipelineId: 'sales_aggregation_daily',
-              status: 'completed',
-              startTime: new Date(now - 7200000).toISOString(),
-              endTime: new Date(now - 7020000).toISOString(),
-              metrics: {
-                recordsProcessed: 50000,
-                duration: 180000
-              },
-              pipelineType: 'product',
-              contract: 'sales_metrics_daily v2.1'
-            },
-            {
-              executionId: 'exec-prod-3',
-              pipelineId: 'churn_model_training',
-              status: 'failed',
-              startTime: new Date(now - 10800000).toISOString(),
-              endTime: new Date(now - 10740000).toISOString(),
-              metrics: {
-                recordsProcessed: 12500,
-                duration: 60000
-              },
-              pipelineType: 'product',
-              contract: 'customer_churn_score v2.0'
-            }
-          ];
-          setPipelineRuns(mockRuns);
-        } else {
-          setPipelineRuns(recentRuns);
+        if (!response.ok) {
+          throw new Error('Failed to fetch recommendations');
         }
-      } catch (error) {
-        console.error('Failed to fetch pipeline runs:', error);
 
-        // Use mock data as fallback
-        const now = Date.now();
-        const mockRuns: PipelineExecution[] = [
-          // INGESTION PIPELINES
-          {
-            executionId: 'exec-ing-1',
-            pipelineId: 'salesforce_cdc_sync',
-            status: 'completed',
-            startTime: new Date(now - 7200000).toISOString(),
-            endTime: new Date(now - 7140000).toISOString(),
-            metrics: {
-              recordsProcessed: 15420,
-              duration: 60000
-            },
-            pipelineType: 'ingestion',
-            ingestionMethod: 'cdc',
-            source: 'Salesforce CRM',
-            destination: 'iceberg.foundation.salesforce_raw'
-          },
-          {
-            executionId: 'exec-ing-2',
-            pipelineId: 'mysql_batch_orders',
-            status: 'completed',
-            startTime: new Date(now - 14400000).toISOString(),
-            endTime: new Date(now - 14220000).toISOString(),
-            metrics: {
-              recordsProcessed: 124850,
-              duration: 180000
-            },
-            pipelineType: 'ingestion',
-            ingestionMethod: 'batch',
-            source: 'MySQL Production',
-            destination: 'iceberg.foundation.orders_raw'
-          },
-          {
-            executionId: 'exec-ing-3',
-            pipelineId: 'kafka_events_stream',
-            status: 'running',
-            startTime: new Date(now - 300000).toISOString(),
-            metrics: {
-              recordsProcessed: 48750,
-              duration: 0
-            },
-            pipelineType: 'ingestion',
-            ingestionMethod: 'stream',
-            source: 'Kafka Events Topic',
-            destination: 'iceberg.foundation.events_raw'
-          },
-          // DATA PRODUCT PIPELINES
-          {
-            executionId: 'exec-prod-1',
-            pipelineId: 'customer_360_refresh',
-            status: 'completed',
-            startTime: new Date(now - 3600000).toISOString(),
-            endTime: new Date(now - 3540000).toISOString(),
-            metrics: {
-              recordsProcessed: 124850,
-              duration: 60000
-            },
-            pipelineType: 'product',
-            contract: 'customer_360 v3.0'
-          },
-          {
-            executionId: 'exec-prod-2',
-            pipelineId: 'sales_aggregation_daily',
-            status: 'completed',
-            startTime: new Date(now - 7200000).toISOString(),
-            endTime: new Date(now - 7020000).toISOString(),
-            metrics: {
-              recordsProcessed: 50000,
-              duration: 180000
-            },
-            pipelineType: 'product',
-            contract: 'sales_metrics_daily v2.1'
-          },
-          {
-            executionId: 'exec-prod-3',
-            pipelineId: 'churn_model_training',
-            status: 'failed',
-            startTime: new Date(now - 10800000).toISOString(),
-            endTime: new Date(now - 10740000).toISOString(),
-            metrics: {
-              recordsProcessed: 12500,
-              duration: 60000
-            },
-            pipelineType: 'product',
-            contract: 'customer_churn_score v2.0'
-          }
-        ];
-        setPipelineRuns(mockRuns);
-      } finally {
-        setLoadingPipelines(false);
-      }
-    };
-
-    fetchPipelineRuns();
-  }, []);
-
-  // Fetch product portfolio health
-  useEffect(() => {
-    const fetchPortfolio = async () => {
-      try {
-        const response = await fetch('/api/overview');
         const data = await response.json();
-        setPortfolio(data.productPortfolio);
-      } catch (error) {
-        console.error('Failed to fetch product portfolio:', error);
+        setRecommendations(data.recommendations || []);
+      } catch (err) {
+        console.error('Error fetching recommendations:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load recommendations');
       } finally {
-        setLoadingPortfolio(false);
+        setLoadingRecommendations(false);
       }
     };
 
-    fetchPortfolio();
-  }, []);
+    fetchRecommendations();
+  }, [currentUser.id, currentUser.department]);
 
-  // Fetch active issues
-  useEffect(() => {
-    const fetchIssues = async () => {
-      try {
-        const response = await fetch('/api/monitor/issues');
-        const data = await response.json();
-        // Get top 3 critical/warning issues
-        const activeIssues = data.issues
-          .filter((issue: Issue) => issue.severity === 'critical' || issue.severity === 'warning')
-          .slice(0, 3);
-        setIssues(activeIssues);
-      } catch (error) {
-        console.error('Failed to fetch issues:', error);
-      } finally {
-        setLoadingIssues(false);
-      }
-    };
-
-    fetchIssues();
-  }, []);
-
-  // Quick actions - role-based (Producer vs Consumer)
-  const allQuickActions: QuickAction[] = [
-    // PRODUCER ACTIONS
+  // Quick actions with gradients
+  const quickActions: QuickAction[] = [
     {
       id: 'build',
-      title: 'Build Data Product',
-      description: 'Create new data product with guided workflow',
+      title: 'Build',
+      description: 'Create data product',
       icon: Rocket,
       href: '/build',
-      roles: ['producer']
+      gradient: 'from-blue-500/10 to-cyan-500/10'
     },
-    {
-      id: 'operations',
-      title: 'Monitor Operations',
-      description: 'View pipeline health and system status',
-      icon: Activity,
-      href: '/operations',
-      roles: ['producer']
-    },
-    {
-      id: 'develop',
-      title: 'Write SQL',
-      description: 'AI-powered SQL workstation',
-      icon: Code,
-      href: '/develop',
-      roles: ['producer']
-    },
-    {
-      id: 'sources',
-      title: 'Manage Sources',
-      description: 'Configure data source connections',
-      icon: Database,
-      href: '/operations/connections',
-      roles: ['producer']
-    },
-
-    // CONSUMER ACTIONS
     {
       id: 'discover',
-      title: 'Discover Data',
-      description: 'Search and explore data products',
+      title: 'Discover',
+      description: 'Explore data catalog',
       icon: Search,
       href: '/discover',
-      roles: ['consumer', 'producer']
+      gradient: 'from-purple-500/10 to-pink-500/10'
     },
     {
       id: 'query',
-      title: 'Run Query',
-      description: 'Execute SQL queries on data products',
+      title: 'Write SQL',
+      description: 'AI-powered workstation',
       icon: Code,
       href: '/develop',
-      roles: ['consumer']
+      gradient: 'from-green-500/10 to-emerald-500/10'
     },
     {
-      id: 'analyze',
-      title: 'Analyze Data',
-      description: 'View dashboards and reports',
-      icon: BarChart2,
-      href: '/discover',
-      roles: ['consumer']
+      id: 'connect',
+      title: 'Connect',
+      description: 'Add data sources',
+      icon: Database,
+      href: '/connect',
+      gradient: 'from-orange-500/10 to-amber-500/10'
     }
   ];
 
-  // Filter actions by role (show top 4)
-  const quickActions = allQuickActions
-    .filter(action => action.roles.includes(userRole))
-    .slice(0, 4);
+  // Get source badge color
+  const getSourceBadge = (source: string) => {
+    switch (source) {
+      case 'hybrid':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'collaborative':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'pattern':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      default:
+        return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  // Get product type badge
+  const getProductTypeBadge = (type: string) => {
+    switch (type) {
+      case 'Foundation':
+        return 'bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-400';
+      case 'Domain':
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400';
+      case 'Solution':
+        return 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400';
+      default:
+        return 'bg-muted text-muted-foreground';
+    }
+  };
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 space-y-6">
+
+        {/* Hero Section - User Context */}
+        <div className="space-y-2">
+          <div>
+            <h1 className="text-2xl font-bold">
+              Good {getTimeOfDay()}, {currentUser.name.split(' ')[0]}
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {currentUser.role} • {currentUser.department.charAt(0).toUpperCase() + currentUser.department.slice(1)} Team
+            </p>
+          </div>
+        </div>
 
         {/* Quick Actions */}
         <div>
-          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <h2 className="text-base font-semibold mb-3">Quick Actions</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (
                 <Link key={action.id} href={action.href}>
-                  <Card className="p-4 shadow-lg hover:shadow-xl transition-all cursor-pointer border-2 hover:border-primary/50 h-full group">
-                    <div className="space-y-2.5">
-                      <div className="w-11 h-11 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                        <Icon className="w-5.5 h-5.5 text-primary" />
+                  <Card className={cn(
+                    "p-4 transition-all duration-200 cursor-pointer group",
+                    "hover:shadow-lg hover:scale-[1.02] border-2 hover:border-primary/30",
+                    "bg-gradient-to-br", action.gradient
+                  )}>
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-background/80 backdrop-blur-sm flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                        <Icon className="w-5 h-5 text-primary" />
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-base mb-0.5">{action.title}</h3>
-                        <p className="text-sm text-muted-foreground leading-snug">
-                          {action.description}
-                        </p>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm mb-0.5">{action.title}</h3>
+                        <p className="text-xs text-muted-foreground">{action.description}</p>
                       </div>
                     </div>
                   </Card>
@@ -467,424 +210,193 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        {/* View Mode Selector */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">View:</span>
-          <div className="inline-flex rounded-lg bg-muted p-1">
-            <button
-              onClick={() => setViewMode('engineer')}
-              className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-                viewMode === 'engineer'
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Engineer
-            </button>
-            <button
-              onClick={() => setViewMode('consumer')}
-              className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-                viewMode === 'consumer'
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Consumer
-            </button>
-            <button
-              onClick={() => setViewMode('hybrid')}
-              className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
-                viewMode === 'hybrid'
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Hybrid
-            </button>
+        {/* AI Recommendations - Main Section */}
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-semibold">Recommended for You</h2>
           </div>
-        </div>
 
-        {/* Product Portfolio Health */}
-        {!loadingPortfolio && portfolio && (
-          <Card className={cn(
-            "p-4 border-l-4 bg-muted/50",
-            portfolio.overall === 'healthy' && "border-l-green-500",
-            portfolio.overall === 'degraded' && "border-l-yellow-500",
-            portfolio.overall === 'critical' && "border-l-red-500"
-          )}>
-            <div className="space-y-4">
-              {/* Header with Icon and Summary */}
-              <div className="flex items-start gap-3">
-                {portfolio.overall === 'healthy' && (
-                  <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                )}
-                {portfolio.overall === 'degraded' && (
-                  <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                )}
-                {portfolio.overall === 'critical' && (
-                  <XCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-base mb-1">
-                    Product Portfolio {portfolio.overall === 'healthy' ? 'Healthy' : portfolio.overall === 'degraded' ? 'Degraded' : 'Critical'}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {portfolio.summary}
-                  </p>
-                </div>
-              </div>
-
-              {/* Portfolio Metrics Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {/* Total Contracts */}
-                <div className="p-3 rounded-lg bg-muted/30">
-                  <div className="text-2xl font-bold">{portfolio.totalContracts}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Active Contracts</div>
-                </div>
-
-                {/* Total Products */}
-                <div className="p-3 rounded-lg bg-muted/30">
-                  <div className="text-2xl font-bold">{portfolio.totalProducts}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Data Products</div>
-                </div>
-
-                {/* Quality Gate Pass Rate */}
-                <div className="p-3 rounded-lg bg-muted/30">
-                  <div className="text-2xl font-bold">{portfolio.metrics.qualityGatePassRate}%</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Quality Pass Rate</div>
-                </div>
-
-                {/* SLO Compliance */}
-                <div className="p-3 rounded-lg bg-muted/30">
-                  <div className="text-2xl font-bold">{portfolio.metrics.sloCompliance}%</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">SLO Compliance</div>
-                </div>
-              </div>
-
-              {/* Health Distribution */}
-              <div className="flex items-center gap-4 text-sm">
-                <div className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  <span className="font-medium">{portfolio.healthDistribution.healthy}</span>
-                  <span className="text-muted-foreground">healthy</span>
-                </div>
-                {portfolio.healthDistribution.atRisk > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                    <span className="font-medium">{portfolio.healthDistribution.atRisk}</span>
-                    <span className="text-muted-foreground">at risk</span>
-                  </div>
-                )}
-                {portfolio.healthDistribution.critical > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                    <span className="font-medium">{portfolio.healthDistribution.critical}</span>
-                    <span className="text-muted-foreground">critical</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Contracts & Products Requiring Attention */}
-        {!loadingIssues && issues.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <AlertCircle className="w-5 h-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Contracts Requiring Attention</h2>
-              <span className={cn(
-                "px-2 py-0.5 rounded text-xs font-medium ml-2",
-                issues.filter(i => i.severity === 'critical').length > 0
-                  ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-              )}>
-                {issues.length}
-              </span>
-            </div>
-            <div className="space-y-3">
-              {issues.map((issue) => (
-                <Card key={issue.id} className={cn(
-                  "p-3 hover:shadow-lg transition-all border-l-4 bg-muted/50",
-                  issue.severity === 'critical' && "border-l-red-500",
-                  issue.severity === 'warning' && "border-l-yellow-500"
-                )}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className={cn(
-                        "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
-                        issue.severity === 'critical' && "bg-red-100 dark:bg-red-900/30",
-                        issue.severity === 'warning' && "bg-yellow-100 dark:bg-yellow-900/30"
-                      )}>
-                        {issue.severity === 'critical' && (
-                          <XCircle className="w-4.5 h-4.5 text-red-600 dark:text-red-400" />
-                        )}
-                        {issue.severity === 'warning' && (
-                          <AlertCircle className="w-4.5 h-4.5 text-yellow-600 dark:text-yellow-400" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <h3 className="font-medium text-sm">{issue.title}</h3>
-                          <span className={cn(
-                            "px-2 py-0.5 rounded text-xs font-medium",
-                            issue.severity === 'critical' && "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-                            issue.severity === 'warning' && "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400"
-                          )}>
-                            {issue.severity}
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {issue.description}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <span className="px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                            {issue.businessImpact}
-                          </span>
-                          <span className="text-muted-foreground">•</span>
-                          <span className="text-muted-foreground">{getTimeAgo(new Date(issue.timestamp).getTime())}</span>
-                          {issue.affectedDomain && (
-                            <>
-                              <span className="text-muted-foreground">•</span>
-                              <span className="px-2 py-0.5 rounded bg-muted/30 text-foreground">
-                                {issue.affectedDomain}
-                              </span>
-                            </>
-                          )}
-                          <span className="text-muted-foreground">•</span>
-                          <span className="text-muted-foreground">Source: {issue.source}</span>
-                        </div>
-                      </div>
-                    </div>
+          {loadingRecommendations ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i} className="p-4 animate-pulse">
+                  <div className="space-y-3">
+                    <div className="h-4 bg-muted rounded w-3/4"></div>
+                    <div className="h-3 bg-muted rounded w-1/2"></div>
+                    <div className="h-3 bg-muted rounded w-full"></div>
+                    <div className="h-3 bg-muted rounded w-5/6"></div>
                   </div>
                 </Card>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Recent Activity - Engineer View: Split into Ingestion and Products */}
-        {viewMode === 'engineer' && !loadingPipelines && (
-          <>
-            {/* Data Ingestion Activity */}
-            {ingestionPipelines.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Database className="w-5 h-5 text-muted-foreground" />
-                  <h2 className="text-lg font-semibold">Data Ingestion</h2>
-                  <span className="text-xs text-muted-foreground ml-1">(Foundation Products)</span>
-                </div>
-                <div className="space-y-3">
-                  {ingestionPipelines.map((run) => {
-                    const statusIcon = getStatusIcon(run.status);
-                    const statusColor = getStatusColor(run.status);
-                    const timeAgo = getTimeAgo(new Date(run.startTime).getTime());
-                    const duration = run.metrics?.duration ? formatDuration(run.metrics.duration) : null;
-
-                    return (
-                      <Card key={run.executionId} className="p-3 bg-muted/50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                            <div className={cn(
-                              "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
-                              statusColor
-                            )}>
-                              {run.ingestionMethod === 'cdc' && <Zap className="w-5 h-5 text-blue-600 dark:text-blue-400" />}
-                              {run.ingestionMethod === 'batch' && <Clock className="w-5 h-5 text-purple-600 dark:text-purple-400" />}
-                              {run.ingestionMethod === 'stream' && <Radio className="w-5 h-5 text-green-600 dark:text-green-400" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm">{run.source}</span>
-                                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
-                                <span className="text-xs text-muted-foreground truncate">{run.destination}</span>
-                              </div>
-                              <div className="flex items-center gap-2.5 text-xs text-muted-foreground mt-0.5">
-                                <span className={cn(
-                                  "px-1.5 py-0.5 rounded font-medium",
-                                  getStatusBadgeColor(run.status)
-                                )}>
-                                  {run.status}
-                                </span>
-                                <span>•</span>
-                                <span className="uppercase text-xs font-medium">{run.ingestionMethod}</span>
-                                <span>•</span>
-                                <span>{timeAgo}</span>
-                                {duration && <><span>•</span><span>{duration}</span></>}
-                                {run.metrics?.recordsProcessed && (
-                                  <><span>•</span><span>{run.metrics.recordsProcessed.toLocaleString()} records</span></>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            {statusIcon}
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
+          ) : error ? (
+            <Card className="p-6 border-2 border-dashed">
+              <div className="text-center">
+                <Brain className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <h3 className="font-semibold mb-1">Recommendations Unavailable</h3>
+                <p className="text-sm text-muted-foreground mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium"
+                >
+                  Retry
+                </button>
               </div>
-            )}
-
-            {/* Data Product Activity */}
-            {productPipelines.length > 0 && (
-              <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Package className="w-5 h-5 text-muted-foreground" />
-                  <h2 className="text-lg font-semibold">Data Product Builds</h2>
-                  <span className="text-xs text-muted-foreground ml-1">(Domain & Solution Products)</span>
-                </div>
-                <div className="space-y-3">
-                  {productPipelines.map((run) => {
-                    const statusIcon = getStatusIcon(run.status);
-                    const statusColor = getStatusColor(run.status);
-                    const timeAgo = getTimeAgo(new Date(run.startTime).getTime());
-                    const duration = run.metrics?.duration ? formatDuration(run.metrics.duration) : null;
-
-                    return (
-                      <Card key={run.executionId} className="p-3 bg-muted/50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                            <div className={cn(
-                              "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
-                              statusColor
-                            )}>
-                              <GitBranch className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h3 className="font-medium text-sm truncate">{run.pipelineId}</h3>
-                                <span className={cn(
-                                  "px-1.5 py-0.5 rounded text-xs font-medium",
-                                  getStatusBadgeColor(run.status)
-                                )}>
-                                  {run.status}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2.5 text-xs text-muted-foreground mt-0.5">
-                                {run.contract && <span className="font-medium">Contract: {run.contract}</span>}
-                                <span>•</span>
-                                <span>{timeAgo}</span>
-                                {duration && <><span>•</span><span>{duration}</span></>}
-                                {run.metrics?.recordsProcessed && (
-                                  <><span>•</span><span>{run.metrics.recordsProcessed.toLocaleString()} records</span></>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            {statusIcon}
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
+            </Card>
+          ) : recommendations.length === 0 ? (
+            <Card className="p-6 border-2 border-dashed">
+              <div className="text-center">
+                <Target className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <h3 className="font-semibold mb-1">Building Your Profile</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Start exploring data products to get personalized recommendations
+                </p>
+                <Link href="/discover">
+                  <button className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm font-medium">
+                    Discover Data Products
+                  </button>
+                </Link>
               </div>
-            )}
-          </>
-        )}
-
-        {/* Recent Activity - Consumer View: Simplified */}
-        {viewMode === 'consumer' && !loadingPipelines && pipelineRuns.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-5 h-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Recent Data Products</h2>
-            </div>
-            <div className="space-y-3">
-              {productPipelines.slice(0, 4).map((run) => (
-                <Card key={run.executionId} className="p-4 bg-muted/50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-sm mb-1">{run.pipelineId}</h3>
-                      {run.contract && (
-                        <p className="text-xs text-muted-foreground">{run.contract}</p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {run.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />}
-                      {run.status === 'running' && <PlayCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
-                      {run.status === 'failed' && <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />}
-                      <span className="text-xs text-muted-foreground">{getTimeAgo(new Date(run.startTime).getTime())}</span>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Recent Activity - Hybrid View: Tabbed */}
-        {viewMode === 'hybrid' && !loadingPipelines && pipelineRuns.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="w-5 h-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Recent Activity</h2>
-            </div>
-            <div className="space-y-3">
-              {pipelineRuns.slice(0, 5).map((run) => {
-                const statusIcon = getStatusIcon(run.status);
-                const statusColor = getStatusColor(run.status);
-                const timeAgo = getTimeAgo(new Date(run.startTime).getTime());
-
-                return (
-                  <Card key={run.executionId} className="p-3 bg-muted/50">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        <div className={cn(
-                          "w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0",
-                          statusColor
-                        )}>
-                          {run.pipelineType === 'ingestion' ? <Database className="w-5 h-5" /> : <Package className="w-5 h-5" />}
-                        </div>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recommendations.map((rec) => (
+                <Link
+                  key={rec.product_id}
+                  href={`/discover/${rec.product_id}`}
+                  className="group"
+                >
+                  <Card className="p-4 h-full transition-all duration-200 hover:shadow-lg hover:scale-[1.02] border-2 hover:border-primary/30 cursor-pointer">
+                    <div className="space-y-3">
+                      {/* Header with badges */}
+                      <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs px-2 py-0.5 rounded bg-muted/30 text-foreground">
-                              {run.pipelineType === 'ingestion' ? 'Ingestion' : 'Product'}
+                          <h3 className="font-semibold text-base mb-1 line-clamp-1 group-hover:text-primary transition-colors">
+                            {rec.product_name}
+                          </h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-xs font-medium",
+                              getProductTypeBadge(rec.product_type)
+                            )}>
+                              {rec.product_type}
                             </span>
-                            <h3 className="font-medium text-sm truncate">{run.pipelineId}</h3>
-                          </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                            <span>{timeAgo}</span>
-                            {run.contract && <><span>•</span><span>{run.contract}</span></>}
-                            {run.source && <><span>•</span><span>{run.source}</span></>}
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-xs font-medium",
+                              getSourceBadge(rec.source)
+                            )}>
+                              {rec.source === 'hybrid' ? 'Best Match' :
+                               rec.source === 'collaborative' ? 'Popular' : 'Trending'}
+                            </span>
                           </div>
                         </div>
                       </div>
-                      <div>
-                        {statusIcon}
+
+                      {/* Domain */}
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Database className="w-3.5 h-3.5" />
+                        <span>{rec.domain}</span>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {rec.description}
+                      </p>
+
+                      {/* Metrics */}
+                      <div className="flex items-center gap-4 text-xs">
+                        {rec.quality_score && (
+                          <div className="flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                            <span className="font-medium">{Math.round(rec.quality_score)}%</span>
+                            <span className="text-muted-foreground">Quality</span>
+                          </div>
+                        )}
+                        {rec.usage_count && (
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                            <span className="font-medium">{rec.usage_count}</span>
+                            <span className="text-muted-foreground">Uses</span>
+                          </div>
+                        )}
+                        {rec.similar_users_count && (
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                            <span className="font-medium">{rec.similar_users_count}</span>
+                            <span className="text-muted-foreground">Users</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Reasoning (first item) */}
+                      {rec.reasoning && rec.reasoning.length > 0 && (
+                        <div className="pt-2 border-t border-border/40">
+                          <div className="flex items-start gap-2">
+                            <Brain className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-muted-foreground line-clamp-2">
+                              {rec.reasoning[0]}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Match Score */}
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-primary to-primary/60 transition-all"
+                              style={{ width: `${Math.min(rec.score, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-primary">
+                            {Math.round(rec.score)}% match
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </Card>
-                );
-              })}
+                </Link>
+              ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Recently Opened - Only show if there's navigation history */}
+          {/* View All Link */}
+          {recommendations.length > 0 && (
+            <div className="mt-4 text-center">
+              <Link
+                href="/discover"
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
+              >
+                View all data products
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Recently Viewed - Only show if there are recent pages */}
         {recentPages.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-5 h-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Recently Opened</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <Clock className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-base font-semibold">Recently Viewed</h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {recentPages.slice(0, 6).map((page) => {
-                const Icon = ICON_MAP[page.icon] || Activity;
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {recentPages.slice(0, 4).map((page) => {
+                const IconMap: Record<string, any> = {
+                  Rocket, Search, Activity, Code, Database, BarChart2, Shield, FileText
+                };
+                const Icon = IconMap[page.icon] || FileText;
                 const timeAgo = getTimeAgo(page.timestamp);
+
                 return (
                   <Link key={page.path} href={page.path}>
-                    <Card className="p-3 hover:shadow-md transition-all cursor-pointer border hover:border-primary/30 group bg-muted/50">
+                    <Card className="p-3 hover:shadow-md transition-all cursor-pointer border hover:border-primary/30 group">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-lg bg-muted/30 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                          <Icon className="w-4.5 h-4.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                          <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-sm truncate">{page.title}</h3>
@@ -899,39 +411,47 @@ export default function OverviewPage() {
           </div>
         )}
 
-        {/* Connect Your Infrastructure CTA */}
-        <Card className="p-6 bg-muted/30 border-2 border-dashed">
-          <div className="flex items-center justify-between">
+        {/* Connect Your Data Sources CTA */}
+        <Card className="p-6 bg-muted/30 border-dashed">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-muted/50 flex items-center justify-center flex-shrink-0">
+              <Database className="w-6 h-6 text-muted-foreground" />
+            </div>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold mb-2">Connect to NexusOne Ecosystem</h3>
+              <h3 className="text-base font-semibold mb-2 text-foreground/80">Connect to NexusOne Ecosystem</h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Connect your existing infrastructure and tools to unlock intelligent orchestration, cross-system insights, and automated workflows across your entire data platform.
               </p>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Database className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-4 text-xs text-muted-foreground/70 mb-4">
+                <span className="flex items-center gap-1.5">
+                  <Activity className="w-3.5 h-3.5" />
                   Orchestration
                 </span>
-                <span className="flex items-center gap-1">
-                  <Activity className="w-3.5 h-3.5" />
+                <span className="flex items-center gap-1.5">
+                  <Database className="w-3.5 h-3.5" />
                   Catalogs
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <Code className="w-3.5 h-3.5" />
                   Query Engines
                 </span>
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5" />
                   Governance
                 </span>
               </div>
-            </div>
-            <div>
-              <Link href="/manage/connections/new">
-                <button className="px-6 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium">
-                  Connect Tools
-                </button>
-              </Link>
+              <div className="flex items-center gap-3">
+                <Link href="/connect">
+                  <button className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors text-sm font-medium text-foreground/80">
+                    Connect Data Sources
+                  </button>
+                </Link>
+                <Link href="/manage/connections">
+                  <button className="px-4 py-2 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors text-sm font-medium text-muted-foreground">
+                    View Connections
+                  </button>
+                </Link>
+              </div>
             </div>
           </div>
         </Card>
@@ -939,6 +459,14 @@ export default function OverviewPage() {
       </div>
     </div>
   );
+}
+
+// Helper function to get time of day greeting
+function getTimeOfDay(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
+  return 'evening';
 }
 
 // Helper function to get time ago string
@@ -950,62 +478,4 @@ function getTimeAgo(timestamp: number): string {
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
   return new Date(timestamp).toLocaleDateString();
-}
-
-// Helper function to get status icon
-function getStatusIcon(status: string) {
-  switch (status) {
-    case 'completed':
-      return <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400" />;
-    case 'running':
-      return <PlayCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
-    case 'failed':
-      return <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />;
-    case 'queued':
-      return <Clock className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
-    default:
-      return <AlertCircle className="w-5 h-5 text-muted-foreground" />;
-  }
-}
-
-// Helper function to get status background color
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'completed':
-      return 'bg-green-100 dark:bg-green-900/30';
-    case 'running':
-      return 'bg-blue-100 dark:bg-blue-900/30';
-    case 'failed':
-      return 'bg-red-100 dark:bg-red-900/30';
-    case 'queued':
-      return 'bg-yellow-100 dark:bg-yellow-900/30';
-    default:
-      return 'bg-muted';
-  }
-}
-
-// Helper function to get status badge color
-function getStatusBadgeColor(status: string): string {
-  switch (status) {
-    case 'completed':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-    case 'running':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-    case 'failed':
-      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-    case 'queued':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-    default:
-      return 'bg-muted text-muted-foreground';
-  }
-}
-
-// Helper function to format duration
-function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ${seconds % 60}s`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ${minutes % 60}m`;
 }

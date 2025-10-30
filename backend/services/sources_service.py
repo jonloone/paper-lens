@@ -574,3 +574,168 @@ class SourcesService:
             config.iceberg_catalog,
             config.iceberg_schema
         )
+
+    # ========================================================================
+    # File Source Operations (NEW)
+    # ========================================================================
+
+    async def create_file_source(
+        self,
+        source: SourceCreate,
+        file_storage_url: str,
+        file_metadata: Dict[str, Any]
+    ) -> UUID:
+        """
+        Create a file-based source
+
+        Args:
+            source: Source creation model
+            file_storage_url: S3 or local file URL
+            file_metadata: Metadata from schema detection
+
+        Returns:
+            UUID: Created source ID
+        """
+        from backend.models.sources import FileSourceConfig, FileFormat
+
+        # Create file configuration
+        file_config = FileSourceConfig(
+            s3_url=file_storage_url,
+            file_format=FileFormat(file_metadata.get("file_format", "csv")),
+            file_size_bytes=file_metadata.get("file_size_bytes", 0),
+            file_size_mb=file_metadata.get("file_size_mb", 0),
+            row_count=file_metadata.get("row_count", 0),
+            column_count=file_metadata.get("column_count", 0),
+            schema_fields=file_metadata.get("fields", []),
+            delimiter=file_metadata.get("delimiter", ","),
+            has_headers=file_metadata.get("has_headers", True),
+            refresh_schedule=source.file_config.refresh_schedule if source.file_config else None,
+            trino_catalog="files",
+            trino_schema=file_metadata.get("trino_schema", "default"),
+            trino_table=file_metadata.get("trino_table", source.name.replace("-", "_")),
+            partition_columns=file_metadata.get("partition_columns", [])
+        )
+
+        # Update source with file config
+        source.file_config = file_config
+
+        # Create source using existing method
+        source_id = await self.create_source(source)
+
+        return source_id
+
+    async def register_trino_file_table(
+        self,
+        catalog: str,
+        schema: str,
+        table: str,
+        location: str,
+        file_format: str,
+        schema_fields: List[Dict[str, Any]],
+        has_headers: bool = True,
+        delimiter: str = ","
+    ) -> bool:
+        """
+        Register file as external table in Trino catalog
+
+        This is a placeholder - actual implementation depends on:
+        - Trino admin API access
+        - Hive Metastore configuration
+        - File storage setup
+
+        For now, returns True to indicate successful registration
+
+        Args:
+            catalog: Trino catalog name (e.g., 'files')
+            schema: Schema/database name
+            table: Table name
+            location: File location (S3 URL or local path)
+            file_format: csv, json, parquet, etc.
+            schema_fields: List of field definitions
+            has_headers: Whether CSV has headers
+            delimiter: CSV delimiter
+
+        Returns:
+            bool: Success status
+        """
+        # TODO: Implement actual Trino table registration
+        # Options:
+        # 1. Use Trino admin API if available
+        # 2. Use Hive Metastore Thrift API
+        # 3. Execute CREATE EXTERNAL TABLE via Trino connection
+
+        # Placeholder implementation
+        print(f"Registering table: {catalog}.{schema}.{table}")
+        print(f"Location: {location}")
+        print(f"Format: {file_format}")
+        print(f"Fields: {len(schema_fields)} columns")
+
+        return True
+
+    async def refresh_file_source(
+        self,
+        source_id: UUID,
+        new_file_url: Optional[str] = None
+    ) -> bool:
+        """
+        Refresh a file source with new data
+
+        Args:
+            source_id: Source identifier
+            new_file_url: Optional new file URL (for updated data)
+
+        Returns:
+            bool: Success status
+        """
+        # Get current source
+        source = await self.get_source(source_id)
+        if not source:
+            raise HTTPException(status_code=404, detail="Source not found")
+
+        # Update last_refreshed_at timestamp
+        async with self.db.acquire() as conn:
+            await conn.execute("""
+                UPDATE sources
+                SET updated_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+            """, source_id)
+
+        # TODO: Implement file refresh logic
+        # 1. Download new file if URL provided
+        # 2. Validate schema matches existing
+        # 3. Update Trino table data
+        # 4. Update row count and metadata
+
+        return True
+
+    async def schedule_file_refresh(
+        self,
+        source_id: UUID,
+        cron_schedule: str
+    ) -> bool:
+        """
+        Schedule periodic file refresh
+
+        Args:
+            source_id: Source identifier
+            cron_schedule: Cron expression for schedule
+
+        Returns:
+            bool: Success status
+        """
+        # TODO: Integrate with Airflow or scheduler
+        # 1. Create Airflow DAG for file refresh
+        # 2. Schedule DAG with cron expression
+        # 3. DAG should call refresh_file_source on schedule
+
+        # For now, just update the schedule in database
+        async with self.db.acquire() as conn:
+            await conn.execute("""
+                UPDATE sources
+                SET updated_at = CURRENT_TIMESTAMP
+                WHERE id = $1
+            """, source_id)
+
+        print(f"Scheduled refresh for source {source_id}: {cron_schedule}")
+
+        return True

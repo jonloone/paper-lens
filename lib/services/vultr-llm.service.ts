@@ -24,10 +24,13 @@ export class VultrLLMService {
   private maxRetries: number = 3;
   private retryDelay: number = 1000; // milliseconds
 
-  constructor() {
-    this.apiKey = process.env.VULTR_API_KEY || 'NQCHCWXPSWQ3JL6IM5NT5EBD4FNOK5S7AEZA';
+  constructor(model?: string) {
+    this.apiKey = process.env.VULTR_API_KEY || '';
+    // Don't throw error - allow graceful degradation when API key is missing
+    // Services using this will fall back to non-LLM methods
     this.baseURL = 'https://api.vultrinference.com/v1';
-    this.model = 'mistral-nemo-instruct-2407';
+    // Allow model override, default to mistral-nemo for backward compatibility
+    this.model = model || 'mistral-nemo-instruct-2407';
   }
 
   /**
@@ -41,8 +44,13 @@ export class VultrLLMService {
    * Analyze a prompt and return the LLM response with retry logic
    */
   async analyze(request: LLMRequest): Promise<string> {
+    // Check if API key is available
+    if (!this.apiKey) {
+      throw new Error('VULTR_API_KEY is not configured - LLM analysis unavailable');
+    }
+
     let lastError: Error | null = null;
-    
+
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
         const messages = [
@@ -76,33 +84,38 @@ export class VultrLLMService {
             'Authorization': `Bearer ${this.apiKey}`,
           },
           body: JSON.stringify(requestBody),
-          signal: AbortSignal.timeout(30000), // 30 second timeout
+          signal: AbortSignal.timeout(60000), // 60 second timeout for LLM inference
         }).catch(error => {
           // Network or timeout errors
           if (error.name === 'AbortError') {
-            throw new Error('Request timeout after 30 seconds');
+            throw new Error('Request timeout after 60 seconds');
           }
           throw new Error(`Network error: ${error.message}`);
         });
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'Unknown error');
-          
+
           // Check for rate limiting
           if (response.status === 429) {
             throw new Error(`Rate limit exceeded. Please try again later.`);
           }
-          
+
           // Check for authentication errors
           if (response.status === 401) {
             throw new Error(`Authentication failed. Please check your API key.`);
           }
-          
+
+          // Check for gateway timeout (retry-able)
+          if (response.status === 504) {
+            throw new Error(`Gateway timeout (${response.status}): The LLM is taking longer than expected. Please try again.`);
+          }
+
           // Check for server errors (retry-able)
           if (response.status >= 500) {
             throw new Error(`Server error (${response.status}): ${errorText}`);
           }
-          
+
           // Client errors (non-retry-able)
           throw new Error(`API error (${response.status}): ${errorText}`);
         }

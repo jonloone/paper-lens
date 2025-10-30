@@ -3,6 +3,14 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { SourceSelectionInterface } from './SourceSelectionInterface';
 import { TiSQLArtifactChat } from '@/components/tisql/TiSQLArtifactChat';
+import { ViewSwitcher, WorkspaceView } from './ViewSwitcher';
+import { SQLEditorView } from './SQLEditorView';
+import { ResultsView } from './ResultsView';
+import { SourceManagementPanel } from './SourceManagementPanel';
+import { SourceSelectorModal } from './SourceSelectorModal';
+import { DeploymentConfigPanel } from './DeploymentConfigPanel';
+import { ReadinessIndicator } from './ReadinessIndicator';
+import { OwnershipConfirmationModal } from './OwnershipConfirmationModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +35,7 @@ import { BusinessObjectiveSelector } from '@/components/build/BusinessObjectiveS
 import { BusinessMetricsPanel } from '@/components/build/BusinessMetricsPanel';
 import { BusinessQuestionsCapture } from '@/components/build/BusinessQuestionsCapture';
 import { Card } from '@/components/ui/card';
+import { inferDeploymentConfig, toDeploymentConfig, type InferredDeploymentConfig } from '@/lib/services/deployment-inference';
 
 // Re-export ProductData for backward compatibility
 export type { ProductData };
@@ -51,12 +60,15 @@ function UnifiedProductWorkspaceInner({
   // Access context
   const {
     productData,
+    userSession,
     updateMetadata,
     updateSources,
     updateSQL,
     updateCustomQualityRules,
     updateValidationStatus,
-    updatePreviewResult
+    updatePreviewResult,
+    updateComprehensiveDeploymentConfig,
+    updateProductData
   } = useBuildFlow();
 
   // Business context
@@ -75,6 +87,14 @@ function UnifiedProductWorkspaceInner({
   const [lastAutoSaveTime, setLastAutoSaveTime] = useState<string | null>(null);
   const [showBusinessContext, setShowBusinessContext] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showOwnershipModal, setShowOwnershipModal] = useState(false);
+  const [currentView, setCurrentView] = useState<WorkspaceView>(WorkspaceView.CHAT);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [showSourceSelector, setShowSourceSelector] = useState(false);
+
+  // Inferred deployment config with reasoning
+  const [inferredConfig, setInferredConfig] = useState<InferredDeploymentConfig | null>(null);
+  const [hasManuallyEditedConfig, setHasManuallyEditedConfig] = useState(false);
 
   // Auto-save integration
   useEffect(() => {
@@ -110,6 +130,56 @@ function UnifiedProductWorkspaceInner({
     };
   }, [productData, onSaveDraft]);
 
+  // Deployment config inference - runs when key data changes
+  useEffect(() => {
+    // Skip if user has manually edited config
+    if (hasManuallyEditedConfig) return;
+
+    // Skip if no domain or name (too early in flow)
+    if (!productData.domain || productData.name === 'Untitled Product') return;
+
+    try {
+      // Run inference
+      const inferred = inferDeploymentConfig({
+        domain: productData.domain,
+        productType: productData.productType,
+        productName: productData.name,
+        businessMetrics: businessMetrics,
+        businessObjectives: businessObjectives,
+        currentUser: {
+          email: userSession.email,
+          team: userSession.team
+        }
+        // TODO: Add intentAnalysis when available
+        // TODO: Add template when available
+      });
+
+      // Store inferred config with reasoning
+      setInferredConfig(inferred);
+
+      // Apply inferred values to deployment config if it's still default/empty
+      const currentConfig = productData.deploymentConfig;
+      const isDefaultConfig =
+        !currentConfig ||
+        (currentConfig.ownership.owner === '' && currentConfig.ownership.team === '');
+
+      if (isDefaultConfig) {
+        updateComprehensiveDeploymentConfig(toDeploymentConfig(inferred));
+      }
+    } catch (error) {
+      console.error('Failed to infer deployment config:', error);
+    }
+  }, [
+    productData.domain,
+    productData.name,
+    productData.productType,
+    businessMetrics,
+    businessObjectives,
+    hasManuallyEditedConfig,
+    productData.deploymentConfig,
+    updateComprehensiveDeploymentConfig
+  ]);
+
   // Handle SQL generation from AI
   const handleSQLGenerated = useCallback((sql: string) => {
     updateSQL(sql);
@@ -123,8 +193,62 @@ function UnifiedProductWorkspaceInner({
     }
   }, [updatePreviewResult, updateValidationStatus]);
 
+  // Handle SQL execution from Editor view
+  const handleExecuteSQL = useCallback(async () => {
+    if (!productData.sql || isExecuting) return;
+
+    setIsExecuting(true);
+    try {
+      // TODO: Replace with actual Trino execution
+      // Mock execution for now
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const mockResult = {
+        columns: ['id', 'name', 'value'],
+        rows: [
+          ['1', 'Sample A', '100'],
+          ['2', 'Sample B', '200'],
+          ['3', 'Sample C', '300'],
+        ],
+        rowCount: 3,
+        executionTimeMs: 423,
+        limited: false
+      };
+
+      updatePreviewResult(mockResult);
+      setCurrentView(WorkspaceView.RESULTS);
+    } catch (error) {
+      console.error('SQL execution failed:', error);
+      alert('Failed to execute SQL. Please check your query.');
+    } finally {
+      setIsExecuting(false);
+    }
+  }, [productData.sql, isExecuting, updatePreviewResult]);
+
   // Handle source selection changes
   const handleSourcesChange = useCallback((sources: ProductData['selectedSources']) => {
+    updateSources(sources);
+  }, [updateSources]);
+
+  // Handle adding new sources
+  const handleAddSource = useCallback(() => {
+    setShowSourceSelector(true);
+  }, []);
+
+  // Handle adding sources from modal
+  const handleAddSources = useCallback((newSources: ProductData['selectedSources']) => {
+    updateSources([...productData.selectedSources, ...newSources]);
+    setShowSourceSelector(false);
+  }, [productData.selectedSources, updateSources]);
+
+  // Handle removing a source
+  const handleRemoveSource = useCallback((sourceId: string) => {
+    const updatedSources = productData.selectedSources.filter(s => s.id !== sourceId);
+    updateSources(updatedSources);
+  }, [productData.selectedSources, updateSources]);
+
+  // Handle reordering sources
+  const handleReorderSources = useCallback((sources: ProductData['selectedSources']) => {
     updateSources(sources);
   }, [updateSources]);
 
@@ -150,7 +274,7 @@ function UnifiedProductWorkspaceInner({
     }
   }, [productData, onSaveDraft]);
 
-  // Show review modal if business context exists, otherwise deploy directly
+  // Show ownership confirmation modal before deployment
   const handleDeploy = useCallback(() => {
     // Validation
     if (!productData.name.trim()) {
@@ -175,13 +299,22 @@ function UnifiedProductWorkspaceInner({
       businessQuestions.length > 0;
 
     if (hasBusinessContext) {
-      // Show review modal
+      // Show review modal first
       setShowReviewModal(true);
     } else {
-      // Deploy directly
-      performDeploy();
+      // Show ownership confirmation modal
+      setShowOwnershipModal(true);
     }
   }, [productData, businessObjectives, businessMetrics, businessQuestions]);
+
+  // Handle ownership confirmation
+  const handleOwnershipConfirm = useCallback((ownership: DeploymentConfig['ownership']) => {
+    // Update deployment config with confirmed ownership
+    updateComprehensiveDeploymentConfig({ ownership });
+    setShowOwnershipModal(false);
+    // Proceed with deployment
+    performDeploy();
+  }, [updateComprehensiveDeploymentConfig]);
 
   // Actual deployment function
   const performDeploy = useCallback(async () => {
@@ -215,6 +348,34 @@ function UnifiedProductWorkspaceInner({
       setIsDeploying(false);
     }
   }, [productData, onDeploy]);
+
+  // Handle readiness indicator navigation
+  const handleReadinessNavigate = useCallback((section: 'metadata' | 'sources' | 'context' | 'sql' | 'deployment') => {
+    switch (section) {
+      case 'metadata':
+        // Focus on the product name input
+        document.querySelector<HTMLInputElement>('input[placeholder="Untitled Data Product"]')?.focus();
+        break;
+      case 'sources':
+        // Open source selector if no sources, otherwise scroll to source panel
+        if (productData.selectedSources.length === 0) {
+          setShowSourceSelector(true);
+        }
+        break;
+      case 'context':
+        // Toggle business context panel
+        setShowBusinessContext(true);
+        break;
+      case 'sql':
+        // Switch to editor view
+        setCurrentView(WorkspaceView.EDITOR);
+        break;
+      case 'deployment':
+        // Scroll to deployment config panel (it's in the left panel)
+        // No action needed as it's always visible when sources are selected
+        break;
+    }
+  }, [productData.selectedSources.length]);
 
   // Determine which center content to show
   const showSourceSelection = productData.selectedSources.length === 0 && productData.createdFrom !== 'template';
@@ -335,10 +496,29 @@ function UnifiedProductWorkspaceInner({
                     </span>
                   </Badge>
                 )}
+
+                {/* Readiness Indicator */}
+                <ReadinessIndicator
+                  productData={productData}
+                  onNavigate={handleReadinessNavigate}
+                />
               </div>
             </div>
           </div>
         </div>
+
+        {/* View Switcher - Only show when SQL composer is active */}
+        {showSQLComposer && (
+          <div className="border-b border-border/50 bg-elevation-1 px-8 py-3 flex items-center justify-center">
+            <ViewSwitcher
+              currentView={currentView}
+              onViewChange={setCurrentView}
+              hasSQL={!!productData.sql}
+              hasResults={!!productData.previewResult}
+              rowCount={productData.previewResult?.rowCount}
+            />
+          </div>
+        )}
 
         {/* Business Context Section - Collapsible */}
         {showSQLComposer && (
@@ -425,37 +605,136 @@ function UnifiedProductWorkspaceInner({
           </div>
         )}
 
-        {/* Main Content Area - Full Width */}
-        <div className="flex-1 overflow-hidden">
-          {showSourceSelection && (
-            <SourceSelectionInterface
-              intent={productData.intent}
-              domain={productData.domain}
-              onSourcesSelected={handleSourcesChange}
-              onDomainChange={(domain) => updateMetadata({ domain })}
-            />
-          )}
-
+        {/* Main Content Area - 3-Panel Layout */}
+        <div className="flex-1 overflow-hidden flex">
+          {/* Left Panel: Source Management + Deployment Config (only when sources are selected) */}
           {showSQLComposer && (
-            <div className="h-full overflow-auto">
-              <TiSQLArtifactChat
-                availableSources={productData.selectedSources}
-                productDefinition={{
-                  name: productData.name,
-                  description: productData.description,
-                  domain: productData.domain
+            <div className="w-80 border-r border-border bg-elevation-1 flex flex-col h-full">
+              {/* Source Management Panel - Takes most of the space */}
+              <SourceManagementPanel
+                sources={productData.selectedSources}
+                onAddSource={handleAddSource}
+                onRemoveSource={handleRemoveSource}
+                onReorderSources={handleReorderSources}
+                className="flex-1 overflow-hidden border-r-0"
+              />
+
+              {/* Deployment Config Panel - Fixed at bottom */}
+              <DeploymentConfigPanel
+                productName={productData.name}
+                domain={productData.domain}
+                config={productData.deploymentConfig || {
+                  schedule: { type: 'manual', timezone: 'UTC' },
+                  output: { format: 'iceberg', location: '' },
+                  sla: {
+                    freshness: { maxAgeHours: 24, severity: 'warning' },
+                    completeness: { minPercentage: 95, severity: 'warning' }
+                  },
+                  ownership: { owner: '', team: '', stakeholders: [] }
                 }}
-                onSQLGenerated={handleSQLGenerated}
-                onContinue={handleDeploy}
-                initialSQL={productData.sql}
-                initialResults={productData.previewResult}
-                initialQuality={productData.validationStatus}
-                className="h-full"
+                inferredConfig={inferredConfig}
+                onConfigChange={(config) => {
+                  // Mark as manually edited to prevent inference override
+                  setHasManuallyEditedConfig(true);
+
+                  if (productData.deploymentConfig) {
+                    updateComprehensiveDeploymentConfig(config);
+                  } else {
+                    updateProductData({
+                      deploymentConfig: {
+                        ...{
+                          schedule: { type: 'manual', timezone: 'UTC' },
+                          output: { format: 'iceberg', location: '' },
+                          sla: {
+                            freshness: { maxAgeHours: 24, severity: 'warning' },
+                            completeness: { minPercentage: 95, severity: 'warning' }
+                          },
+                          ownership: { owner: '', team: '', stakeholders: [] }
+                        },
+                        ...config
+                      }
+                    });
+                  }
+                }}
+                onResetToDefaults={() => {
+                  if (inferredConfig) {
+                    setHasManuallyEditedConfig(false);
+                    updateComprehensiveDeploymentConfig(toDeploymentConfig(inferredConfig));
+                  }
+                }}
               />
             </div>
           )}
+
+          {/* Center Panel: Main Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {showSourceSelection && (
+              <SourceSelectionInterface
+                intent={productData.intent}
+                domain={productData.domain}
+                onSourcesSelected={handleSourcesChange}
+                onDomainChange={(domain) => updateMetadata({ domain })}
+              />
+            )}
+
+            {showSQLComposer && (
+              <div className="h-full flex flex-col">
+              {/* Chat View */}
+              {currentView === WorkspaceView.CHAT && (
+                <div className="h-full overflow-auto">
+                  <TiSQLArtifactChat
+                    availableSources={productData.selectedSources}
+                    productDefinition={{
+                      name: productData.name,
+                      description: productData.description,
+                      domain: productData.domain
+                    }}
+                    onSQLGenerated={handleSQLGenerated}
+                    onContinue={handleDeploy}
+                    initialSQL={productData.sql}
+                    initialResults={productData.previewResult}
+                    initialQuality={productData.validationStatus}
+                    className="h-full"
+                  />
+                </div>
+              )}
+
+              {/* Editor View */}
+              {currentView === WorkspaceView.EDITOR && (
+                <SQLEditorView
+                  sql={productData.sql}
+                  onSQLChange={(sql) => updateSQL(sql)}
+                  onExecute={handleExecuteSQL}
+                  selectedSources={productData.selectedSources}
+                  isExecuting={isExecuting}
+                  lastExecutionTime={productData.previewResult?.executionTimeMs}
+                />
+              )}
+
+              {/* Results View */}
+              {currentView === WorkspaceView.RESULTS && (
+                <ResultsView
+                  results={productData.previewResult}
+                  sql={productData.sql}
+                />
+              )}
+            </div>
+          )}
+          </div>
+          {/* End of Center Panel */}
         </div>
+        {/* End of 3-Panel Layout */}
       </div>
+      {/* End of Main Canvas */}
+
+      {/* Source Selector Modal */}
+      <SourceSelectorModal
+        open={showSourceSelector}
+        onClose={() => setShowSourceSelector(false)}
+        onSelect={handleAddSources}
+        excludeIds={productData.selectedSources.map(s => s.id)}
+        multiSelect={true}
+      />
 
       {/* Floating Action Bar - Bottom Right */}
       <div className="fixed bottom-6 right-6 flex items-center gap-3 z-50">
@@ -652,13 +931,27 @@ function UnifiedProductWorkspaceInner({
               <AlertCircle className="w-4 h-4 mr-2" />
               Edit Context
             </Button>
-            <Button onClick={performDeploy} className="gap-2">
+            <Button onClick={() => {
+              setShowReviewModal(false);
+              setShowOwnershipModal(true);
+            }} className="gap-2">
               <Rocket className="w-4 h-4" />
               Confirm & Activate
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Ownership Confirmation Modal */}
+      {inferredConfig && productData.deploymentConfig && (
+        <OwnershipConfirmationModal
+          open={showOwnershipModal}
+          onClose={() => setShowOwnershipModal(false)}
+          onConfirm={handleOwnershipConfirm}
+          inferredOwnership={inferredConfig.ownership}
+          currentOwnership={productData.deploymentConfig.ownership}
+        />
+      )}
     </div>
   );
 }

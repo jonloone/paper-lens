@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 // Mapping of old routes to new routes
 const redirectMap: Record<string, string> = {
   // Legacy Overview routes → Monitor
-  '/overview': '/',
+  // '/overview': '/', // REMOVED - /overview is now the canonical landing page
   '/team-activity': '/',
   '/quick-launch': '/',
   '/work-queue': '/',

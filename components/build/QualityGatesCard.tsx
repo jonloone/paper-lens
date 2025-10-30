@@ -12,30 +12,71 @@ import {
   ChevronUp,
   Settings,
   Maximize2,
-  Info
+  Info,
+  X,
+  Lock,
+  Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { QualitySummary, QualityCheck } from './QualitySummaryPanel';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+
+// New types for inherited vs custom rules
+interface InheritedQualityRule {
+  id: string;
+  type: 'completeness' | 'uniqueness' | 'validity' | 'timeliness' | 'accuracy';
+  sourceProductId: string;
+  sourceProductName: string;
+  column?: string;
+  threshold: number;
+  description: string;
+  canModify: false;
+}
+
+interface CustomQualityRule {
+  id: string;
+  type: 'completeness' | 'uniqueness' | 'validity' | 'timeliness' | 'accuracy';
+  column?: string;
+  threshold: number;
+  description: string;
+  enabled: boolean;
+}
 
 interface QualityGatesCardProps {
-  summary: QualitySummary;
+  summary?: QualitySummary; // Now optional - for backward compatibility
+  inheritedRules?: InheritedQualityRule[]; // NEW: Rules from upstream products
+  customRules?: CustomQualityRule[]; // NEW: User-defined rules
   onConfigure?: () => void;
   onExpand?: () => void;
+  onClose?: () => void;
+  onAddCustomRule?: () => void; // NEW: Handler to add custom rules
+  onEditCustomRule?: (ruleId: string) => void; // NEW: Handler to edit custom rules
   className?: string;
 }
 
 export function QualityGatesCard({
   summary,
+  inheritedRules,
+  customRules,
   onConfigure,
   onExpand,
+  onClose,
+  onAddCustomRule,
+  onEditCustomRule,
   className
 }: QualityGatesCardProps) {
   const [expandedCheckId, setExpandedCheckId] = useState<string | null>(null);
   const [showAllChecks, setShowAllChecks] = useState(false);
+  const [showInherited, setShowInherited] = useState(false); // NEW: Collapsed by default
 
-  const passedChecks = summary.checks.filter(c => c.status === 'pass').length;
-  const failedChecks = summary.checks.filter(c => c.status === 'fail').length;
-  const warningChecks = summary.checks.filter(c => c.status === 'warning').length;
+  // Backward compatibility - handle cases where summary might not exist
+  const passedChecks = summary?.checks.filter(c => c.status === 'pass').length || 0;
+  const failedChecks = summary?.checks.filter(c => c.status === 'fail').length || 0;
+  const warningChecks = summary?.checks.filter(c => c.status === 'warning').length || 0;
 
   const getScoreColor = (score: number) => {
     if (score >= 90) return 'text-green-600 dark:text-green-400';
@@ -60,11 +101,11 @@ export function QualityGatesCard({
     }
   };
 
-  const priorityChecks = [
+  const priorityChecks = summary ? [
     ...summary.checks.filter(c => c.status === 'fail'),
     ...summary.checks.filter(c => c.status === 'warning'),
     ...summary.checks.filter(c => c.status === 'pass')
-  ];
+  ] : [];
 
   const displayChecks = showAllChecks ? priorityChecks : priorityChecks.slice(0, 3);
 
@@ -85,11 +126,13 @@ export function QualityGatesCard({
             </div>
             <div>
               <h3 className="text-sm font-semibold text-foreground">Quality Gates</h3>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs text-muted-foreground">
-                  {summary.totalRows.toLocaleString()} rows analyzed
-                </span>
-              </div>
+              {summary && (
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-muted-foreground">
+                    {summary.totalRows.toLocaleString()} rows analyzed
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -104,26 +147,32 @@ export function QualityGatesCard({
                 <Maximize2 className="w-3 h-3" />
               </Button>
             )}
+            {onClose && (
+              <Button size="sm" variant="ghost" onClick={onClose} className="h-7 w-7 p-0">
+                <X className="w-3 h-3" />
+              </Button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Score Display */}
-      <div className="p-4 bg-elevation-0">
-        <div className="flex items-center justify-between">
-          {/* Large Score Badge */}
-          <div className={cn(
-            "px-4 py-3 rounded-xl border-2",
-            getScoreBgColor(summary.overallScore)
-          )}>
+      {/* Score Display - Only show if summary exists */}
+      {summary && (
+        <div className="p-4 bg-elevation-0">
+          <div className="flex items-center justify-between">
+            {/* Large Score Badge */}
             <div className={cn(
-              "text-3xl font-bold tracking-tight",
-              getScoreColor(summary.overallScore)
+              "px-4 py-3 rounded-xl border-2",
+              getScoreBgColor(summary.overallScore)
             )}>
-              {summary.overallScore}%
+              <div className={cn(
+                "text-3xl font-bold tracking-tight",
+                getScoreColor(summary.overallScore)
+              )}>
+                {summary.overallScore}%
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">Overall Score</div>
             </div>
-            <div className="text-xs text-muted-foreground mt-1">Overall Score</div>
-          </div>
 
           {/* Quick Stats Grid */}
           <div className="grid grid-cols-3 gap-2">
@@ -147,10 +196,12 @@ export function QualityGatesCard({
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
-      {/* Key Metrics */}
-      <div className="px-4 py-3 border-t border-border bg-elevation-0">
+      {/* Key Metrics - Only show if summary exists */}
+      {summary && (
+        <div className="px-4 py-3 border-t border-border bg-elevation-0">
         <h4 className="text-xs font-semibold text-foreground mb-2">Key Metrics</h4>
         <div className="space-y-2">
           {/* Completeness */}
@@ -198,10 +249,12 @@ export function QualityGatesCard({
             </span>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
-      {/* Quality Checks List with Drill-Down */}
-      <div className="px-4 py-3 border-t border-border bg-white dark:bg-gray-950">
+      {/* Quality Checks List with Drill-Down - Only show if summary exists */}
+      {summary && summary.checks && summary.checks.length > 0 && (
+        <div className="px-4 py-3 border-t border-border bg-white dark:bg-gray-950">
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-xs font-semibold text-foreground">Validation Checks</h4>
           {priorityChecks.length > 3 && (
@@ -309,19 +362,185 @@ export function QualityGatesCard({
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-border bg-elevation-0">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-muted-foreground">
-            {failedChecks + warningChecks} issues detected
-          </span>
-          <Button variant="link" size="sm" className="text-xs h-auto p-0">
-            View full report →
-          </Button>
         </div>
-      </div>
+      )}
+
+      {/* NEW: Inherited Quality Rules Section */}
+      {inheritedRules && inheritedRules.length > 0 && (
+        <div className="px-4 py-3 border-t border-border bg-elevation-0">
+          <Collapsible open={showInherited} onOpenChange={setShowInherited}>
+            <CollapsibleTrigger className="w-full">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Lock className="w-3.5 h-3.5 text-muted-foreground" />
+                  <h4 className="text-xs font-semibold text-foreground">
+                    Inherited from Sources
+                  </h4>
+                  <Badge variant="secondary" className="text-xs">
+                    {inheritedRules.length} rule{inheritedRules.length !== 1 && 's'}
+                  </Badge>
+                </div>
+                {showInherited ? (
+                  <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                )}
+              </div>
+            </CollapsibleTrigger>
+
+            <CollapsibleContent>
+              <div className="mt-3 space-y-3">
+                {/* Group rules by source product */}
+                {Array.from(new Set(inheritedRules.map(r => r.sourceProductName))).map(sourceName => {
+                  const rulesForSource = inheritedRules.filter(r => r.sourceProductName === sourceName);
+
+                  return (
+                    <div key={sourceName} className="space-y-1">
+                      <div className="text-xs font-medium text-muted-foreground px-2">
+                        {sourceName}
+                      </div>
+                      {rulesForSource.map(rule => (
+                        <div
+                          key={rule.id}
+                          className="flex items-center justify-between p-2 rounded-lg bg-muted/30 text-xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Lock className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                            <div>
+                              <div className="font-medium text-foreground capitalize">
+                                {rule.type}
+                                {rule.column && `: ${rule.column}`}
+                              </div>
+                              <div className="text-xs text-muted-foreground mt-0.5">
+                                {rule.description}
+                              </div>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                            {rule.threshold}%
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+                <div className="text-xs text-muted-foreground italic pt-2">
+                  These rules are defined by upstream products and cannot be modified
+                </div>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+      )}
+
+      {/* NEW: Custom Quality Rules Section */}
+      {(customRules || onAddCustomRule) && (
+        <div className="px-4 py-3 border-t border-border bg-white dark:bg-gray-950">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs font-semibold text-foreground">
+                Additional Checks
+              </h4>
+              {customRules && customRules.length > 0 && (
+                <Badge variant="secondary" className="text-xs">
+                  {customRules.length} rule{customRules.length !== 1 && 's'}
+                </Badge>
+              )}
+            </div>
+            {onAddCustomRule && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onAddCustomRule}
+                className="h-7 gap-1.5 text-xs"
+              >
+                <Plus className="w-3 h-3" />
+                Add Rule
+              </Button>
+            )}
+          </div>
+
+          {customRules && customRules.length > 0 ? (
+            <div className="space-y-1">
+              {customRules.map(rule => (
+                <div
+                  key={rule.id}
+                  className={cn(
+                    "flex items-center justify-between p-2 rounded-lg text-xs transition-opacity",
+                    rule.enabled
+                      ? "bg-elevation-1 hover:bg-elevation-2"
+                      : "bg-elevation-1/50 opacity-50"
+                  )}
+                >
+                  <div className="flex items-center gap-2 flex-1">
+                    <div
+                      className={cn(
+                        "w-2 h-2 rounded-full flex-shrink-0",
+                        rule.enabled ? "bg-green-500" : "bg-gray-400"
+                      )}
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-foreground capitalize">
+                        {rule.type}
+                        {rule.column && `: ${rule.column}`}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {rule.description}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {rule.threshold}%
+                    </Badge>
+                    {onEditCustomRule && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEditCustomRule(rule.id)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Settings className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <div className="text-xs text-muted-foreground mb-2">
+                No custom quality rules defined yet
+              </div>
+              {onAddCustomRule && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onAddCustomRule}
+                  className="gap-2 text-xs"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Your First Rule
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Footer - Only show if we have summary data */}
+      {summary && (
+        <div className="px-4 py-3 border-t border-border bg-elevation-0">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">
+              {failedChecks + warningChecks} issues detected
+            </span>
+            <Button variant="link" size="sm" className="text-xs h-auto p-0">
+              View full report →
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

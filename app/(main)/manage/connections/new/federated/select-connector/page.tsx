@@ -283,7 +283,7 @@ export default function ConnectorSelectionPage() {
   const selectedOption = connectorOptions.find(opt => opt.type === selectedConnector);
 
   return (
-    <div className="min-h-screen bg-background p-8">
+    <div className="min-h-screen p-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-2">
@@ -306,11 +306,11 @@ export default function ConnectorSelectionPage() {
             return (
               <Card
                 key={option.type}
-                className={`cursor-pointer transition-all ${
+                className={`shadow-lg border-2 cursor-pointer transition-all ${
                   isSelected
-                    ? 'border-primary shadow-md ring-2 ring-primary ring-offset-2'
+                    ? 'border-primary shadow-xl ring-2 ring-primary ring-offset-2'
                     : option.supported
-                    ? 'hover:border-primary hover:shadow-sm'
+                    ? 'hover:border-primary hover:shadow-xl'
                     : 'opacity-60 cursor-not-allowed'
                 }`}
                 onClick={() => option.supported && setSelectedConnector(option.type)}
@@ -371,7 +371,7 @@ export default function ConnectorSelectionPage() {
 
         {/* Prerequisites Section (shown when connector selected) */}
         {selectedOption && (
-          <Card className="border-primary/50 bg-blue-50/50">
+          <Card className="shadow-lg border-2 border-primary/50 bg-blue-50/50 dark:bg-blue-950/20">
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <AlertCircle className="h-5 w-5 text-blue-600" />

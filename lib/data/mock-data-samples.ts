@@ -3,6 +3,11 @@
  * Provides sample rows for common tables used in Build Flow SQL step
  */
 
+// Import new mock data modules
+import { eventsData, sessionsData, pageViewsData } from './mock-data-user-engagement';
+import { productViewsData, cartEventsData, supportTicketsData, productRecommendationsData, wishlistItemsData } from './mock-data-product-analytics';
+import { dailyMetricsData, hourlyEventsData } from './mock-data-metrics';
+
 export interface MockDataRow {
   [key: string]: any;
 }
@@ -121,12 +126,31 @@ export const aviationConnectivityData: MockDataRow[] = [
 // Table Registry
 // ============================================================================
 export const mockDataTables: Record<string, MockDataRow[]> = {
+  // Original e-commerce tables
   'customers': customersData,
   'orders': ordersData,
   'order_items': orderItemsData,
   'products': productsData,
+
+  // SATCOM tables
   'maritime_tracking': maritimeTrackingData,
   'aviation_connectivity': aviationConnectivityData,
+
+  // User engagement (time-series event data)
+  'events': eventsData,
+  'sessions': sessionsData,
+  'page_views': pageViewsData,
+
+  // Product analytics (complex joins)
+  'product_views': productViewsData,
+  'cart_events': cartEventsData,
+  'support_tickets': supportTicketsData,
+  'product_recommendations': productRecommendationsData,
+  'wishlist_items': wishlistItemsData,
+
+  // Time-series metrics
+  'daily_metrics': dailyMetricsData,
+  'hourly_events': hourlyEventsData,
 };
 
 /**

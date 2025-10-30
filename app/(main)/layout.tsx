@@ -1,16 +1,22 @@
 "use client"
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import { TopNavigation } from '@/components/layout/TopNavigation';
-import { Dock } from '@/components/layout/Dock';
+import { RightDock } from '@/components/layout/RightDock';
 
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  // Hide nav and dock when in build workspace (when path contains /build but user is past the main build page)
+  const hideNavAndDock = pathname === '/build' || pathname?.startsWith('/build/');
+
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen relative">
       {/* Single Unified Background Layer */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Base Noise Texture - Dark Mode */}
@@ -37,16 +43,16 @@ export default function MainLayout({
         }} />
       </div>
 
-      {/* Top Navigation */}
-      <TopNavigation />
+      {/* Top Navigation - Hidden on /build workspace */}
+      {!hideNavAndDock && <TopNavigation />}
 
-      {/* Main Content Area - Account for top nav and dock */}
-      <main className="pt-24 pb-24 relative z-10">
+      {/* Main Content Area */}
+      <main className="relative z-10">
         {children}
       </main>
 
-      {/* Dock - Bottom */}
-      <Dock />
+      {/* RightDock - Hidden on /build workspace */}
+      {!hideNavAndDock && <RightDock />}
     </div>
   );
 }

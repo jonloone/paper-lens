@@ -277,9 +277,9 @@ export function getProductDetailPersona(role: UserRole): ProductDetailPersona {
 
 export function getDefaultTabForPersona(persona: ProductDetailPersona): string {
   const defaultTabs: Record<ProductDetailPersona, string> = {
-    data_analyst: 'quickstart',      // Focus on getting data quickly
-    data_engineer: 'quality',         // Focus on technical quality
-    business_stakeholder: 'overview'  // Focus on business context
+    data_analyst: 'overview',         // Start with business context
+    data_engineer: 'overview',        // Start with business context
+    business_stakeholder: 'overview'  // Start with business context
   };
   return defaultTabs[persona];
 }

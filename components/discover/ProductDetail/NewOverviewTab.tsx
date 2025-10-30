@@ -3,7 +3,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Users, TrendingUp, Clock, Code2, BarChart3, Mail, FileText, Database, DollarSign, Package, Settings, Target, Activity, ArrowUp, ArrowDown } from 'lucide-react';
+import { CheckCircle, Users, TrendingUp, Clock, Code2, BarChart3, Mail, FileText, Database, DollarSign, Package, Settings, Target, Activity, ArrowUp, ArrowDown, BookOpen, Lightbulb } from 'lucide-react';
+import { WhoUsesThisCard } from './WhoUsesThisCard';
+import { KeyConceptsCard } from './KeyConceptsCard';
+import { UseCasesCard } from './UseCasesCard';
+import { ProductAIChat } from './ProductAIChat';
 
 interface NewOverviewTabProps {
   product: any;
@@ -29,11 +33,100 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
 
   return (
     <div className="space-y-6">
-      {/* Technical Specifications */}
-      <Card className="bg-muted/50 border-l-4 border-l-primary">
+      {/* Fitness Indicators - Moved from hero card */}
+      <Card className="elevation-surface-4 bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Code2 className="h-5 w-5 text-primary" />
+          <CardTitle className="text-lg">At a Glance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-2">
+                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <p className="text-2xl font-bold">{product.quality.dataQuality}%</p>
+              <p className="text-xs text-muted-foreground mt-1">Data Quality</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-2">
+                <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <p className="text-2xl font-bold capitalize">{product.sla.freshness}</p>
+              <p className="text-xs text-muted-foreground mt-1">Freshness</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-2">
+                <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <p className="text-2xl font-bold">{product.usage.uniqueConsumers.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground mt-1">Active Users</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center mb-2">
+                <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <p className="text-2xl font-bold">{product.sla.uptime}%</p>
+              <p className="text-xs text-muted-foreground mt-1">SLA Uptime</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Business Context - Component-Based with AI */}
+      {product.businessContext && (
+        <>
+          {/* Description Card */}
+          {product.businessContext.description && (
+            <Card className="elevation-surface-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  What is this?
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-base text-muted-foreground leading-relaxed">
+                  {product.businessContext.description}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 2-Column Grid for Visual Components */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-6">
+              <WhoUsesThisCard
+                targetConsumers={product.businessContext.targetConsumers || []}
+                maxVisible={5}
+              />
+              <UseCasesCard
+                useCases={product.businessContext.useCases || []}
+                maxVisible={3}
+              />
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              <KeyConceptsCard
+                glossaryTerms={product.businessContext.glossaryTerms || []}
+                maxVisible={3}
+                showCalculations={false}
+              />
+              <ProductAIChat
+                productName={product.displayName}
+                productType={product.productType}
+              />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Technical Specifications */}
+      <Card className="elevation-surface-4 border-l-4 border-l-primary">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Code2 className="h-4 w-4 text-primary" />
             Technical Specifications
           </CardTitle>
         </CardHeader>
@@ -80,9 +173,9 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
       </Card>
 
       {/* Dependencies */}
-      <Card className="bg-muted/50">
+      <Card className="elevation-surface-4">
         <CardHeader>
-          <CardTitle className="text-lg">Dependencies</CardTitle>
+          <CardTitle>Dependencies</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -116,9 +209,9 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
       </Card>
 
       {/* Performance Metrics */}
-      <Card className="bg-muted/50">
+      <Card className="elevation-surface-4">
         <CardHeader>
-          <CardTitle className="text-lg">Performance Metrics</CardTitle>
+          <CardTitle>Performance Metrics</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-6">
@@ -142,9 +235,9 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
       </Card>
 
       {/* Owner & Support - New Card */}
-      <Card className="bg-muted/50">
+      <Card className="elevation-surface-4">
         <CardHeader>
-          <CardTitle className="text-lg">Owner & Support</CardTitle>
+          <CardTitle>Owner & Support</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid md:grid-cols-2 gap-4">
@@ -173,10 +266,10 @@ export function NewOverviewTab({ product, relatedProducts = [] }: NewOverviewTab
 
       {/* Related Products - Moved from page bottom */}
       {relatedProducts.length > 0 && (
-        <Card className="bg-muted/50">
+        <Card className="elevation-surface-4">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Related Products</CardTitle>
+              <CardTitle>Related Products</CardTitle>
               <a href="/discover" className="text-sm font-medium text-primary hover:underline whitespace-nowrap">
                 View all <span aria-hidden="true">&rarr;</span>
               </a>

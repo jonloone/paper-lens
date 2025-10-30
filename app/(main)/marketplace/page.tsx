@@ -501,7 +501,7 @@ export default function DataMarketplace() {
   // Product detail view
   if (selectedProduct) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         {/* Header */}
         <div className="border-b bg-card/50 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-6 py-4">
@@ -983,7 +983,7 @@ export default function DataMarketplace() {
   
   // Main marketplace view
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Header */}
       <div className="border-b bg-card/50 backdrop-blur-sm sticky top-14 z-40">
         <div className="max-w-7xl mx-auto px-6 py-6">

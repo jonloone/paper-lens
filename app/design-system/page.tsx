@@ -525,7 +525,7 @@ export default function DesignSystemPage() {
   }, []);
 
   return (
-    <div className="nexus-enhanced min-h-screen bg-background dot-grid-background design-system-background">
+    <div className="nexus-enhanced min-h-screen dot-grid-background design-system-background">
       {/* Top Navigation Bar */}
       <TopNavigation />
 

@@ -41,18 +41,51 @@ class KuzuKnowledgeGraph:
         try:
             # Check if schema already exists
             existing_tables = self._get_existing_tables()
+            logger.info(f"Existing tables: {existing_tables}")
 
             if "DataContract" in existing_tables:
-                logger.info("Schema already initialized")
+                logger.info("✅ Base schema already initialized - skipping base table creation")
+                # Check if Living Context Graph schema exists
+                if "IntentNode" not in existing_tables:
+                    logger.info("Extending schema with Living Context Graph...")
+                    from backend.services.kuzu_schema import LivingContextSchema
+                    LivingContextSchema.create_schema(self.conn)
+                    LivingContextSchema.create_indexes(self.conn)
+                else:
+                    logger.info("✅ Living Context Graph schema already initialized")
                 return
 
-            logger.info("Initializing Kuzu schema...")
+            logger.info("Initializing Kuzu schema for first time...")
 
-            # Create node tables
-            self._create_node_tables()
+            # Create node tables (wrapped in try-except in case table exists)
+            try:
+                self._create_node_tables()
+            except Exception as e:
+                if "already exists" in str(e):
+                    logger.warning(f"Some tables already exist, continuing: {e}")
+                else:
+                    raise
 
-            # Create relationship tables
-            self._create_relationship_tables()
+            # Create relationship tables (wrapped in try-except in case table exists)
+            try:
+                self._create_relationship_tables()
+            except Exception as e:
+                if "already exists" in str(e):
+                    logger.warning(f"Some relationships already exist, continuing: {e}")
+                else:
+                    raise
+
+            # Create Living Context Graph schema
+            logger.info("Adding Living Context Graph schema...")
+            from backend.services.kuzu_schema import LivingContextSchema
+            try:
+                LivingContextSchema.create_schema(self.conn)
+                LivingContextSchema.create_indexes(self.conn)
+            except Exception as e:
+                if "already exists" in str(e):
+                    logger.warning(f"Living Context Graph schema already exists: {e}")
+                else:
+                    raise
 
             logger.info("✅ Kuzu schema initialized successfully")
 
@@ -73,7 +106,7 @@ class KuzuKnowledgeGraph:
             return []
 
     def _create_node_tables(self):
-        """Create node type tables"""
+        """Create node type tables (wrapped in try-except for already existing tables)"""
 
         # DataContract node - represents ODCS contracts
         self.conn.execute("""
@@ -1021,6 +1054,327 @@ class KuzuKnowledgeGraph:
         except Exception as e:
             logger.error(f"Failed to get table usage summary: {e}")
             return {"error": str(e)}
+
+    # ========================================================================
+    # Feedback Loop Methods (for ARTA Rules Engine)
+    # ========================================================================
+
+    def record_feedback(
+        self,
+        user_id: str,
+        table_id: str,
+        feedback_type: str,
+        signal_strength: float,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """
+        Record user feedback on recommendations.
+
+        Creates a FeedbackEvent node and updates recommendation edges.
+
+        Args:
+            user_id: User providing feedback
+            table_id: Table being rated
+            feedback_type: "positive" or "negative"
+            signal_strength: Weight of the signal (0.5-2.0)
+            metadata: Additional context (source, explanation, etc.)
+        """
+        try:
+            # Create FeedbackEvent node
+            feedback_id = f"feedback_{user_id}_{table_id}_{datetime.now().timestamp()}"
+
+            query = """
+                MATCH (u:UserProfile {user_id: $user_id})
+                MATCH (t:DataTable {id: $table_id})
+                CREATE (f:FeedbackEvent {
+                    id: $feedback_id,
+                    user_id: $user_id,
+                    table_id: $table_id,
+                    feedback_type: $feedback_type,
+                    signal_strength: $signal_strength,
+                    timestamp: $timestamp,
+                    metadata: $metadata
+                })
+                CREATE (u)-[:GAVE_FEEDBACK]->(f)-[:ABOUT]->(t)
+                RETURN f.id
+            """
+
+            result = self.conn.execute(query, {
+                "feedback_id": feedback_id,
+                "user_id": user_id,
+                "table_id": table_id,
+                "feedback_type": feedback_type,
+                "signal_strength": signal_strength,
+                "timestamp": datetime.now(),
+                "metadata": json.dumps(metadata or {})
+            })
+
+            logger.info(f"✅ Recorded {feedback_type} feedback from {user_id} for {table_id}")
+            return {"success": True, "feedback_id": feedback_id}
+
+        except Exception as e:
+            logger.error(f"Failed to record feedback: {e}")
+            return {"success": False, "error": str(e)}
+
+    def strengthen_recommendation_edge(
+        self,
+        user_id: str,
+        table_id: str,
+        weight_multiplier: float = 1.2
+    ) -> Dict[str, Any]:
+        """
+        Strengthen the recommendation edge between user and table.
+
+        Used when positive feedback is received.
+        """
+        try:
+            # Check if edge exists, if not create it
+            check_query = """
+                MATCH (u:UserProfile {user_id: $user_id})
+                MATCH (t:DataTable {id: $table_id})
+                OPTIONAL MATCH (u)-[r:RECOMMENDED]->(t)
+                RETURN r
+            """
+
+            result = self.conn.execute(check_query, {
+                "user_id": user_id,
+                "table_id": table_id
+            })
+
+            if result.has_next() and result.get_next()[0] is not None:
+                # Update existing edge
+                update_query = """
+                    MATCH (u:UserProfile {user_id: $user_id})-[r:RECOMMENDED]->(t:DataTable {id: $table_id})
+                    SET r.weight = r.weight * $multiplier,
+                        r.last_updated = $timestamp
+                    RETURN r.weight
+                """
+                self.conn.execute(update_query, {
+                    "user_id": user_id,
+                    "table_id": table_id,
+                    "multiplier": weight_multiplier,
+                    "timestamp": datetime.now()
+                })
+            else:
+                # Create new edge
+                create_query = """
+                    MATCH (u:UserProfile {user_id: $user_id})
+                    MATCH (t:DataTable {id: $table_id})
+                    CREATE (u)-[r:RECOMMENDED {
+                        weight: $initial_weight,
+                        last_updated: $timestamp
+                    }]->(t)
+                    RETURN r.weight
+                """
+                self.conn.execute(create_query, {
+                    "user_id": user_id,
+                    "table_id": table_id,
+                    "initial_weight": weight_multiplier,
+                    "timestamp": datetime.now()
+                })
+
+            logger.info(f"✅ Strengthened recommendation edge: {user_id} -> {table_id}")
+            return {"success": True}
+
+        except Exception as e:
+            logger.error(f"Failed to strengthen recommendation edge: {e}")
+            return {"success": False, "error": str(e)}
+
+    def weaken_recommendation_edge(
+        self,
+        user_id: str,
+        table_id: str,
+        weight_multiplier: float = 0.8
+    ) -> Dict[str, Any]:
+        """
+        Weaken the recommendation edge between user and table.
+
+        Used when negative feedback is received.
+        """
+        try:
+            # Check if edge exists
+            check_query = """
+                MATCH (u:UserProfile {user_id: $user_id})-[r:RECOMMENDED]->(t:DataTable {id: $table_id})
+                RETURN r.weight
+            """
+
+            result = self.conn.execute(check_query, {
+                "user_id": user_id,
+                "table_id": table_id
+            })
+
+            if result.has_next():
+                current_weight = result.get_next()[0]
+                new_weight = current_weight * weight_multiplier
+
+                if new_weight < 0.1:
+                    # Remove edge if weight too low
+                    delete_query = """
+                        MATCH (u:UserProfile {user_id: $user_id})-[r:RECOMMENDED]->(t:DataTable {id: $table_id})
+                        DELETE r
+                    """
+                    self.conn.execute(delete_query, {
+                        "user_id": user_id,
+                        "table_id": table_id
+                    })
+                    logger.info(f"✅ Removed weak recommendation edge: {user_id} -> {table_id}")
+                else:
+                    # Update edge weight
+                    update_query = """
+                        MATCH (u:UserProfile {user_id: $user_id})-[r:RECOMMENDED]->(t:DataTable {id: $table_id})
+                        SET r.weight = r.weight * $multiplier,
+                            r.last_updated = $timestamp
+                        RETURN r.weight
+                    """
+                    self.conn.execute(update_query, {
+                        "user_id": user_id,
+                        "table_id": table_id,
+                        "multiplier": weight_multiplier,
+                        "timestamp": datetime.now()
+                    })
+                    logger.info(f"✅ Weakened recommendation edge: {user_id} -> {table_id}")
+
+            return {"success": True}
+
+        except Exception as e:
+            logger.error(f"Failed to weaken recommendation edge: {e}")
+            return {"success": False, "error": str(e)}
+
+    def update_quality_threshold(
+        self,
+        department: str,
+        new_threshold: int,
+        reason: str,
+        triggered_by: str
+    ) -> Dict[str, Any]:
+        """
+        Update the quality threshold for a department.
+
+        Used when users repeatedly reject low-quality recommendations.
+        """
+        try:
+            # Create or update DepartmentConfig node
+            query = """
+                MERGE (d:DepartmentConfig {department: $department})
+                SET d.quality_threshold = $new_threshold,
+                    d.last_updated = $timestamp,
+                    d.updated_by = $triggered_by,
+                    d.update_reason = $reason
+                RETURN d.quality_threshold
+            """
+
+            self.conn.execute(query, {
+                "department": department,
+                "new_threshold": new_threshold,
+                "timestamp": datetime.now(),
+                "triggered_by": triggered_by,
+                "reason": reason
+            })
+
+            logger.info(f"✅ Updated quality threshold for {department}: {new_threshold}")
+            return {"success": True, "new_threshold": new_threshold}
+
+        except Exception as e:
+            logger.error(f"Failed to update quality threshold: {e}")
+            return {"success": False, "error": str(e)}
+
+    def update_hybrid_weights(
+        self,
+        user_id: str,
+        collaborative_adjustment: float,
+        pattern_adjustment: float,
+        reason: str
+    ) -> Dict[str, Any]:
+        """
+        Update user-specific hybrid recommendation weights.
+
+        Used when fast selections indicate strong alignment.
+        """
+        try:
+            # Update user profile with custom weights
+            query = """
+                MATCH (u:UserProfile {user_id: $user_id})
+                SET u.collaborative_weight = COALESCE(u.collaborative_weight, 0.4) + $collaborative_adj,
+                    u.pattern_weight = COALESCE(u.pattern_weight, 0.6) + $pattern_adj,
+                    u.weights_updated_at = $timestamp,
+                    u.weight_update_reason = $reason
+                RETURN u.collaborative_weight, u.pattern_weight
+            """
+
+            result = self.conn.execute(query, {
+                "user_id": user_id,
+                "collaborative_adj": collaborative_adjustment,
+                "pattern_adj": pattern_adjustment,
+                "timestamp": datetime.now(),
+                "reason": reason
+            })
+
+            if result.has_next():
+                row = result.get_next()
+                logger.info(f"✅ Updated hybrid weights for {user_id}: collab={row[0]:.2f}, pattern={row[1]:.2f}")
+                return {
+                    "success": True,
+                    "collaborative_weight": row[0],
+                    "pattern_weight": row[1]
+                }
+
+            return {"success": False, "error": "User not found"}
+
+        except Exception as e:
+            logger.error(f"Failed to update hybrid weights: {e}")
+            return {"success": False, "error": str(e)}
+
+    def record_cross_department_discovery(
+        self,
+        user_id: str,
+        user_department: str,
+        table_id: str,
+        table_department: str,
+        learning_type: str,
+        weight: float
+    ) -> Dict[str, Any]:
+        """
+        Record cross-department discovery pattern.
+
+        Tracks when users discover valuable tables from other departments.
+        """
+        try:
+            discovery_id = f"discovery_{user_id}_{table_id}_{datetime.now().timestamp()}"
+
+            query = """
+                MATCH (u:UserProfile {user_id: $user_id})
+                MATCH (t:DataTable {id: $table_id})
+                CREATE (d:CrossDepartmentDiscovery {
+                    id: $discovery_id,
+                    user_id: $user_id,
+                    user_department: $user_department,
+                    table_id: $table_id,
+                    table_department: $table_department,
+                    learning_type: $learning_type,
+                    weight: $weight,
+                    timestamp: $timestamp
+                })
+                CREATE (u)-[:DISCOVERED]->(d)-[:FOUND_TABLE]->(t)
+                RETURN d.id
+            """
+
+            self.conn.execute(query, {
+                "discovery_id": discovery_id,
+                "user_id": user_id,
+                "user_department": user_department,
+                "table_id": table_id,
+                "table_department": table_department,
+                "learning_type": learning_type,
+                "weight": weight,
+                "timestamp": datetime.now()
+            })
+
+            logger.info(f"✅ Recorded cross-department discovery: {user_department} -> {table_department}")
+            return {"success": True, "discovery_id": discovery_id}
+
+        except Exception as e:
+            logger.error(f"Failed to record cross-department discovery: {e}")
+            return {"success": False, "error": str(e)}
 
     def close(self):
         """Close database connection and release resources"""

@@ -3,7 +3,6 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import '../styles/elevation.css';
 @import '../styles/design-system.css';
-@import '../styles/copilotkit-theme.css';
 @import url('/fonts/pixelarticons.css');
 
 /* Chonky File Browser Styles - Keep for now as it's still used */
@@ -307,8 +306,8 @@
 /* Dark mode adjustments for dot grid */
 .dark .dot-grid-background::before {
   background-image:
-    radial-gradient(circle at 1px 1px, rgba(91, 110, 255, 0.08) 1px, transparent 0);
-  opacity: 0.6;
+    radial-gradient(circle at 1px 1px, rgba(91, 110, 255, 0.15) 1px, transparent 0);
+  opacity: 0.9;
 }
 
 .dark .dot-grid-background::after {
@@ -402,6 +401,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Full-screen workstation mode - hide nav and dock */
+.hide-nav-dock .top-navigation,
+.hide-nav-dock .application-dock {
+  display: none !important;
+}
+
+.hide-nav-dock main {
+  padding-bottom: 0 !important;
+}
 
 /* Headlines are now styled per theme - see theme-specific headline styles section */
 /* Default headline styling handled by theme classes below */
@@ -3244,3 +3253,132 @@ body {
     @apply bg-background text-foreground;
   }
 }
+/* ================================================
+   Material Design Dark Mode Elevation System
+   ================================================ */
+
+/* 
+ * Material Design Elevation Scale for Dark Mode
+ * Surfaces should LIGHTEN as they elevate
+ * Combined with subtle shadows for depth perception
+ */
+
+/* Base Surface - Page Background (0dp) */
+.dark .elevation-surface-0 {
+  background-color: hsl(224 71% 3%);  /* #0d1117 */
+}
+
+/* Elevation 1dp - Lowest cards */
+.dark .elevation-surface-1 {
+  background-color: hsl(220 39.1% 9%); /* Card container level */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Elevation 2dp - Low emphasis cards */
+.dark .elevation-surface-2 {
+  background-color: hsl(220 13% 14%); /* +7% white overlay */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Elevation 4dp - Standard cards */
+.dark .elevation-surface-4 {
+  background-color: hsl(217.5 23.1% 20.4%); /* Content card level */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Elevation 8dp - Emphasized cards, dialogs */
+.dark .elevation-surface-8 {
+  background-color: hsl(220 13% 18%); /* +12% white overlay */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Elevation 16dp - Navigation drawers, floating sheets */
+.dark .elevation-surface-16 {
+  background-color: hsl(220 13% 22%); /* +15% white overlay */
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+}
+
+/* Elevation 24dp - Modals, popovers */
+.dark .elevation-surface-24 {
+  background-color: hsl(220 13% 24%); /* +16% white overlay */
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+}
+
+/* Light mode elevation - Use shadows only, not color changes */
+.elevation-surface-1 {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.elevation-surface-2 {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.elevation-surface-4 {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.elevation-surface-8 {
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12), 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.elevation-surface-16 {
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12), 0 16px 32px rgba(0, 0, 0, 0.08);
+}
+
+.elevation-surface-24 {
+  box-shadow: 0 32px 64px rgba(0, 0, 0, 0.12), 0 24px 48px rgba(0, 0, 0, 0.08);
+}
+
+/* ================================================
+   Dark Mode Surface Utilities
+   ================================================ */
+
+/* For subtle nested surfaces */
+.dark .surface-subtle {
+  background-color: hsl(220 13% 14%);
+}
+
+/* For elevated muted backgrounds */
+.dark .surface-muted-elevated {
+  background-color: hsl(217 33% 19%);
+}
+
+/* Tab container specific - needs to be more visible than content */
+.dark .tab-container-elevated {
+  background-color: hsl(217 33% 20%);
+  border-bottom: 1px solid hsl(217 32% 24%);
+}
+
+/* Active tab - should be same as card surface for continuity */
+.dark .tab-active-surface {
+  background-color: hsl(220 13% 18%); /* Matches elevation-surface-8 */
+}
+
+/* Hero card gradient - prominent focus element */
+.dark .hero-card-gradient {
+  background-image: linear-gradient(to right top, #051937, #0c1427, #0c1528);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ================================================
+   Background Patterns
+   ================================================ */
+
+/* Dot grid pattern for card elevation */
+.bg-dot-grid {
+  background-color: hsl(var(--elevation-0));
+  background-image: radial-gradient(circle, hsl(var(--border) / 0.15) 1.5px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+
+.dark .bg-dot-grid {
+  background-image: radial-gradient(circle, hsl(var(--border) / 0.20) 1.5px, transparent 1.5px);
+}
+
+/* Hide navigation and dock in full-screen mode (e.g., Step 3 SQL Workstation) */
+body.hide-nav-dock nav,
+body.hide-nav-dock [class*="dock"],
+body.hide-nav-dock [class*="Dock"] {
+  display: none !important;
+}
+

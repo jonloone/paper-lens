@@ -13,7 +13,10 @@ import {
   Copy,
   Check,
   Play,
-  Sparkles
+  Sparkles,
+  X,
+  ArrowRight,
+  Save
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PreviewResult } from './ResultsPreviewPanel';
@@ -30,6 +33,9 @@ interface ResultsArtifactCardProps {
   onExecute?: () => void;
   onViewQuality?: () => void;
   onEditSQL?: () => void;
+  onExpand?: () => void;
+  onClose?: () => void;
+  onContinue?: () => void;
   className?: string;
 }
 
@@ -44,6 +50,9 @@ export function ResultsArtifactCard({
   onExecute,
   onViewQuality,
   onEditSQL,
+  onExpand,
+  onClose,
+  onContinue,
   className
 }: ResultsArtifactCardProps) {
   const [showSQL, setShowSQL] = useState(personaConfig.sqlVisibility === 'expanded');
@@ -76,7 +85,7 @@ export function ResultsArtifactCard({
             </div>
             <div>
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                Query Results
+                Data Product Preview
                 <Sparkles className="w-3 h-3 text-primary" />
               </h3>
               <div className="flex items-center gap-2 mt-0.5">
@@ -120,9 +129,16 @@ export function ResultsArtifactCard({
             <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
               <Download className="w-3 h-3" />
             </Button>
-            <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
-              <Maximize2 className="w-3 h-3" />
-            </Button>
+            {onExpand && (
+              <Button size="sm" variant="ghost" onClick={onExpand} className="h-7 w-7 p-0">
+                <Maximize2 className="w-3 h-3" />
+              </Button>
+            )}
+            {onClose && (
+              <Button size="sm" variant="ghost" onClick={onClose} className="h-7 w-7 p-0">
+                <X className="w-3 h-3" />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -177,9 +193,22 @@ export function ResultsArtifactCard({
           <span className="text-xs text-muted-foreground">
             Showing 5 of {results.rowCount.toLocaleString()} rows • {results.columns.length} columns
           </span>
-          <Button variant="link" size="sm" className="text-xs h-auto p-0">
-            Show all data →
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="link" size="sm" className="text-xs h-auto p-0">
+              Show all data →
+            </Button>
+            {onContinue && (
+              <Button
+                size="sm"
+                onClick={onContinue}
+                className="gap-1.5 h-7 text-xs bg-primary hover:bg-primary/90"
+              >
+                <Save className="w-3 h-3" />
+                Compose Product
+                <ArrowRight className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
