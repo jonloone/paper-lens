@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -13,6 +13,9 @@ import { DBTModelEditorCard } from '@/components/build/DBTModelEditorCard';
 import { ThresholdConfigModal } from '@/components/build/ThresholdConfigModal';
 import { PreviewResult } from '@/components/build/ResultsPreviewPanel';
 import { QualitySummary, QualityCheck } from '@/components/build/QualitySummaryPanel';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
+import { DomainSelector } from './DomainSelector';
+import { Domain, filterSourcesByDomain, getDomainById } from '@/lib/data/tisql-domains';
 
 interface Message {
   id: string;
@@ -57,11 +60,20 @@ interface TiSQLArtifactChatProps {
     domain?: string;
   };
   onSQLGenerated?: (sql: string) => void;
+  onQueryResults?: (results: { columns: string[]; rows: any[][]; rowCount: number; executionTimeMs: number }) => void;
   onContinue?: () => void;
   initialSQL?: string;
   initialResults?: any;
   initialQuality?: any;
   className?: string;
+  autoLoadPatterns?: boolean; // If true, automatically load AI pattern suggestions on mount (default: false)
+  showPatternsButton?: boolean; // If true, show "Get AI Suggestions" button for manual trigger (default: false)
+  hideHeader?: boolean; // If true, hide the chat header (default: false)
+  chatOnly?: boolean; // If true, only show chat interface without artifact cards (default: false)
+  initialDomain?: string; // If provided, use this domain instead of managing internally (for external control)
+  activeViewMode?: 'results' | 'editor'; // Current view mode (Results or Editor tab)
+  currentSQL?: string; // Live SQL content from the editor
+  isEditorActive?: boolean; // Whether the user is currently in Editor mode
 }
 
 interface SQLArtifact {
@@ -87,8 +99,17 @@ export function TiSQLArtifactChat({
   availableSources,
   productDefinition,
   onSQLGenerated,
+  onQueryResults,
   onContinue,
-  className
+  className,
+  autoLoadPatterns = false,
+  showPatternsButton = false,
+  hideHeader = false,
+  chatOnly = false,
+  initialDomain,
+  activeViewMode,
+  currentSQL,
+  isEditorActive
 }: TiSQLArtifactChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -96,7 +117,8 @@ export function TiSQLArtifactChat({
   const [sqlArtifact, setSQLArtifact] = useState<SQLArtifact | null>(null);
   const [copied, setCopied] = useState(false);
   const [patterns, setPatterns] = useState<PatternSuggestion[]>([]);
-  const [patternsLoading, setPatternsLoading] = useState(true);
+  const [patternsLoading, setPatternsLoading] = useState(autoLoadPatterns); // Only show loading if auto-loading
+  const [patternsRequested, setPatternsRequested] = useState(false); // Track manual pattern requests
   const [qualityCards, setQualityCards] = useState<QualityCard[]>([]);
   const [editorCards, setEditorCards] = useState<EditorCard[]>([]);
   const [hiddenResults, setHiddenResults] = useState<Set<string>>(new Set());
@@ -112,6 +134,18 @@ export function TiSQLArtifactChat({
   const [currentLoadingMessage, setCurrentLoadingMessage] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Domain selection state (use initialDomain if provided, otherwise default to 'all')
+  const [selectedDomain, setSelectedDomain] = useState<string>(initialDomain || 'all');
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [domainsLoading, setDomainsLoading] = useState(true);
+
+  // Sync selectedDomain when initialDomain changes (for external control)
+  useEffect(() => {
+    if (initialDomain !== undefined) {
+      setSelectedDomain(initialDomain);
+    }
+  }, [initialDomain]);
+
   // Progressive loading messages
   const loadingMessages = [
     { main: 'Analyzing your data sources...', sub: 'Reading table schemas and metadata' },
@@ -125,25 +159,83 @@ export function TiSQLArtifactChat({
     return content.replace(/```sql\n[\s\S]*?\n```/g, '').trim();
   };
 
+  // Filter available sources based on selected domain
+  const filteredSources = useMemo(() => {
+    if (!selectedDomain || selectedDomain === 'all') {
+      return availableSources;
+    }
+    return filterSourcesByDomain(availableSources, selectedDomain);
+  }, [availableSources, selectedDomain]);
+
   // Execute SQL query and generate quality summary
   const executeQueryAndPopulateArtifact = async (
     sql: string,
     messageId: string
   ): Promise<void> => {
+    // Set executing state with visual feedback
+    setMessages(prev =>
+      prev.map(m =>
+        m.id === messageId
+          ? {
+              ...m,
+              artifact: {
+                sql,
+                explanation: m.content.split('```sql')[0].trim(),
+                isExecuting: true
+              }
+            }
+          : m
+      )
+    );
+
+    // Add a temporary "Executing..." message for user feedback
+    const executingMsgId = `executing-${Date.now()}`;
+    setMessages(prev => [...prev, {
+      id: executingMsgId,
+      role: 'assistant',
+      content: '⏳ Executing SQL query...'
+    }]);
+
     try {
+      // Derive catalog and schema from selected domain
+      const currentDomain = getDomainById(selectedDomain);
+      let catalog = 'iceberg';
+      let schema = 'production';
+
+      // Extract catalog and schema from domain schemas if available
+      if (currentDomain && currentDomain.schemas.length > 0 && currentDomain.id !== 'all') {
+        // Use first schema as default, parse format: catalog.schema.*
+        const firstSchema = currentDomain.schemas[0];
+        const parts = firstSchema.split('.');
+
+        if (parts.length >= 2) {
+          catalog = parts[0]; // e.g., 'bronze', 'silver', 'gold', 'lakehouse', 'nexusone'
+          schema = parts[1].replace('*', ''); // Remove wildcard
+
+          // Map lakehouse catalog to iceberg (our backend catalog)
+          if (catalog === 'lakehouse') {
+            catalog = 'iceberg';
+          }
+        }
+      }
+
       // Execute preview
       const response = await fetch('/api/tisql/preview-results', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sql,
-          catalog: 'iceberg',
-          schema: 'production',
-          limit: 100
+          catalog,
+          schema,
+          limit: 100,
+          domainId: selectedDomain
         })
       });
 
       const data = await response.json();
+
+      // Remove executing message
+      setMessages(prev => prev.filter(m => m.id !== executingMsgId));
 
       if (data.success) {
         const previewResult: PreviewResult = {
@@ -176,9 +268,43 @@ export function TiSQLArtifactChat({
               : m
           )
         );
+
+        // Pass results to parent component
+        if (onQueryResults) {
+          console.log('[TiSQLArtifactChat] Passing query results to parent:', {
+            columns: data.columns?.length,
+            rows: data.rows?.length,
+            rowCount: data.rowCount
+          });
+          onQueryResults({
+            columns: data.columns || [],
+            rows: data.rows || [],
+            rowCount: data.rowCount || 0,
+            executionTimeMs: data.executionTimeMs || 0
+          });
+        }
+
+        // Generate intelligent summary of results
+        const summary = await generateResultsSummary(sql, data);
+        setMessages(prev => [...prev, {
+          id: `success-${Date.now()}`,
+          role: 'assistant',
+          content: summary
+        }]);
+      } else {
+        // API returned success: false
+        setMessages(prev => [...prev, {
+          id: `error-${Date.now()}`,
+          role: 'assistant',
+          content: `❌ Query execution failed: ${data.error || 'Unknown error'}. Please check your SQL syntax.`
+        }]);
       }
     } catch (error) {
       console.error('Query execution error:', error);
+
+      // Remove executing message
+      setMessages(prev => prev.filter(m => m.id !== executingMsgId));
+
       // Update message to show execution failed
       setMessages(prev =>
         prev.map(m =>
@@ -194,7 +320,138 @@ export function TiSQLArtifactChat({
             : m
         )
       );
+
+      // Add error message for user
+      setMessages(prev => [...prev, {
+        id: `error-${Date.now()}`,
+        role: 'assistant',
+        content: `❌ Failed to execute query: ${error instanceof Error ? error.message : 'Network error'}. Please try again.`
+      }]);
     }
+  };
+
+  // Generate intelligent summary of query results
+  const generateResultsSummary = async (sql: string, data: any): Promise<string> => {
+    try {
+      const { columns = [], rows = [], rowCount = 0 } = data;
+
+      // Analyze the data to provide context
+      const sampleRows = rows.slice(0, 5); // Take first 5 rows as sample
+      const hasAggregation = /\b(COUNT|SUM|AVG|MAX|MIN|GROUP\s+BY)\b/i.test(sql);
+      const hasDateColumn = columns.some((col: string) =>
+        col.toLowerCase().includes('date') ||
+        col.toLowerCase().includes('month') ||
+        col.toLowerCase().includes('time')
+      );
+
+      // Build summary prompt
+      const summaryPrompt = `Analyze this SQL query result and provide a well-formatted markdown summary with key takeaways.
+
+SQL Query:
+\`\`\`sql
+${sql}
+\`\`\`
+
+Results:
+- Total rows: ${rowCount.toLocaleString()}
+- Columns: ${columns.join(', ')}
+- Sample data (first few rows):
+${sampleRows.map((row: any[]) => columns.map((col: string, i: number) => `${col}: ${row[i]}`).join(', ')).join('\n')}
+
+Your summary must use this EXACT markdown format:
+
+**Key Insights**
+[1-2 sentences describing the main findings or trends in the data]
+
+**Takeaways**
+- [Bullet point 1: specific notable finding with numbers]
+- [Bullet point 2: another specific insight or pattern]
+- [Bullet point 3: recommendation or implication (if applicable)]
+
+REQUIREMENTS:
+- Use the exact markdown structure above with bold headers
+- Include specific numbers and metrics from the data
+- Focus on actionable insights, not just descriptions
+- Keep it concise but meaningful (total 3-5 sentences)
+- DO NOT say "query executed successfully" or similar generic statements
+
+Example:
+**Key Insights**
+Customer acquisition showed strong growth from 543 in Aug to 1,006 in Dec, representing 85% increase over 4 months. The trend indicates accelerating market penetration.
+
+**Takeaways**
+- Peak growth occurred in Nov-Dec (+20% month-over-month)
+- Q4 customer volume exceeded Q3 by 47%
+- Momentum suggests meeting annual target 2 months early`;
+
+      // Call the LLM for summarization
+      const response = await fetch('/api/tisql/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: 'You are a data analyst expert who provides structured, scannable markdown summaries with specific insights and numbers.' },
+            { role: 'user', content: summaryPrompt }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate summary');
+      }
+
+      // Parse streaming response (format: 0:"text"\n)
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let summary = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('0:')) {
+              try {
+                // Parse the JSON-encoded chunk (format: 0:"text")
+                const jsonPart = line.slice(2); // Remove "0:" prefix
+                const text = JSON.parse(jsonPart);
+                summary += text;
+              } catch (e) {
+                // Skip malformed lines
+                console.warn('Failed to parse chunk:', line);
+              }
+            }
+          }
+        }
+      }
+
+      // Fallback if summary generation fails or is empty
+      if (!summary.trim()) {
+        return generateFallbackSummary(sql, data);
+      }
+
+      return summary.trim();
+    } catch (error) {
+      console.error('Error generating summary:', error);
+      return generateFallbackSummary(sql, data);
+    }
+  };
+
+  // Generate fallback summary if LLM fails
+  const generateFallbackSummary = (sql: string, data: any): string => {
+    const { columns = [], rowCount = 0 } = data;
+    const hasAggregation = /\b(COUNT|SUM|AVG|MAX|MIN)\b/i.test(sql);
+    const hasGroupBy = /GROUP\s+BY/i.test(sql);
+
+    if (hasAggregation || hasGroupBy) {
+      return `Query returned ${rowCount} aggregated ${rowCount === 1 ? 'row' : 'rows'} grouped by ${columns[0] || 'category'}. ${columns.length > 1 ? `Showing metrics: ${columns.slice(1).join(', ')}.` : ''} View the chart or table for detailed insights.`;
+    }
+
+    return `Query returned ${rowCount.toLocaleString()} ${rowCount === 1 ? 'row' : 'rows'} with ${columns.length} columns. ${columns.length > 0 ? `Columns: ${columns.join(', ')}.` : ''} Results are displayed in the panel on the right.`;
   };
 
   // Generate quality summary from preview results
@@ -290,9 +547,10 @@ export function TiSQLArtifactChat({
     return () => clearInterval(interval);
   }, [patternsLoading, loadingMessages.length]);
 
-  // Load pattern suggestions on mount
+  // Load pattern suggestions on mount (only if autoLoadPatterns is true)
   useEffect(() => {
     async function loadPatterns() {
+      setPatternsLoading(true);
       try {
         const response = await fetch('/api/tisql/analyze-sources', {
           method: 'POST',
@@ -340,14 +598,54 @@ export function TiSQLArtifactChat({
       }
     }
 
-    if (availableSources.length > 0) {
-      loadPatterns();
+    if (availableSources && availableSources.length > 0) {
+      // Auto-load patterns if enabled, or if manually requested
+      if (autoLoadPatterns || patternsRequested) {
+        loadPatterns();
+      } else {
+        // Show simple welcome message without loading patterns
+        setMessages([
+          {
+            id: 'welcome',
+            role: 'assistant',
+            content: `Ready to explore your data. Ask me anything or write SQL queries directly.`,
+          },
+        ]);
+        setPatternsLoading(false);
+      }
     }
-  }, [availableSources]);
+  }, [availableSources, autoLoadPatterns, patternsRequested]);
+
+  // Fetch available domains on mount
+  useEffect(() => {
+    async function fetchDomains() {
+      try {
+        const response = await fetch('/api/tisql/domains');
+        if (!response.ok) throw new Error('Failed to fetch domains');
+
+        const data = await response.json();
+        if (data.success && data.domains) {
+          setDomains(data.domains);
+        }
+      } catch (error) {
+        console.error('Error fetching domains:', error);
+        // Set empty domains array on error, component will handle gracefully
+        setDomains([]);
+      } finally {
+        setDomainsLoading(false);
+      }
+    }
+
+    fetchDomains();
+  }, []); // Run once on mount
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    console.log('[TiSQLChat] handleSubmit called with input:', input);
+    if (!input.trim() || isLoading) {
+      console.log('[TiSQLChat] Submission blocked - input empty or loading:', { input: input.trim(), isLoading });
+      return;
+    }
 
     const userMessage: Message = {
       id: `user-${Date.now()}`,
@@ -355,6 +653,7 @@ export function TiSQLArtifactChat({
       content: input.trim(),
     };
 
+    console.log('[TiSQLChat] Sending message to API:', userMessage);
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
@@ -370,6 +669,9 @@ export function TiSQLArtifactChat({
           }
         : null;
 
+      // Get current domain context
+      const currentDomain = getDomainById(selectedDomain);
+
       const response = await fetch('/api/tisql/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -379,6 +681,18 @@ export function TiSQLArtifactChat({
             content: m.content,
           })),
           currentPreview,
+          domainContext: currentDomain ? {
+            id: currentDomain.id,
+            name: currentDomain.name,
+            schemas: currentDomain.schemas,
+            keyMetrics: currentDomain.keyMetrics,
+            commonQueries: currentDomain.commonQueries,
+          } : null,
+          editorContext: isEditorActive ? {
+            mode: activeViewMode,
+            currentSQL: currentSQL,
+            isActive: isEditorActive,
+          } : null,
         }),
       });
 
@@ -421,10 +735,16 @@ export function TiSQLArtifactChat({
       }
 
       // Extract SQL and classify message type
+      console.log('[TiSQLChat] Attempting SQL extraction from response length:', assistantContent.length);
+      console.log('[TiSQLChat] Response preview:', assistantContent.substring(0, 200));
+      console.log('[TiSQLChat] Contains ```sql?', assistantContent.includes('```sql'));
+
       const sqlMatch = assistantContent.match(/```sql\n([\s\S]*?)\n```/);
+      console.log('[TiSQLChat] SQL regex match result:', sqlMatch ? 'FOUND' : 'NOT FOUND');
 
       if (sqlMatch) {
         const sql = sqlMatch[1];
+        console.log('[TiSQLChat] Extracted SQL length:', sql.length, 'chars');
 
         // Check if this SQL is a duplicate or very similar to existing
         const existingSQLs = messages
@@ -447,6 +767,16 @@ export function TiSQLArtifactChat({
             warnings: []
           };
           setSQLArtifact(artifact);
+
+          // Notify parent component immediately when SQL is generated
+          console.log('[TiSQLArtifactChat] SQL extracted, length:', sql.length);
+          console.log('[TiSQLArtifactChat] Calling onSQLGenerated callback');
+          if (onSQLGenerated) {
+            onSQLGenerated(sql);
+            console.log('[TiSQLArtifactChat] onSQLGenerated callback invoked successfully');
+          } else {
+            console.warn('[TiSQLArtifactChat] onSQLGenerated callback not provided!');
+          }
 
           // Mark as SQL generation type and execute
           setMessages(prev =>
@@ -474,16 +804,21 @@ export function TiSQLArtifactChat({
         );
       }
     } catch (error) {
-      console.error('Chat error:', error);
+      console.error('[TiSQLChat] CATCH BLOCK - Chat error:', error);
+      console.error('[TiSQLChat] Error details:', {
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
       setMessages(prev => [
         ...prev,
         {
           id: `error-${Date.now()}`,
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
         },
       ]);
     } finally {
+      console.log('[TiSQLChat] FINALLY BLOCK - Setting isLoading to false');
       setIsLoading(false);
     }
   };
@@ -621,6 +956,9 @@ export function TiSQLArtifactChat({
           }
         : null;
 
+      // Get current domain context
+      const currentDomain = getDomainById(selectedDomain);
+
       const response = await fetch('/api/tisql/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -630,6 +968,18 @@ export function TiSQLArtifactChat({
             content: m.content,
           })),
           currentPreview,
+          domainContext: currentDomain ? {
+            id: currentDomain.id,
+            name: currentDomain.name,
+            schemas: currentDomain.schemas,
+            keyMetrics: currentDomain.keyMetrics,
+            commonQueries: currentDomain.commonQueries,
+          } : null,
+          editorContext: isEditorActive ? {
+            mode: activeViewMode,
+            currentSQL: currentSQL,
+            isActive: isEditorActive,
+          } : null,
         }),
       });
 
@@ -671,10 +1021,16 @@ export function TiSQLArtifactChat({
       }
 
       // Extract SQL and classify message type
+      console.log('[TiSQLChat] Attempting SQL extraction from response length:', assistantContent.length);
+      console.log('[TiSQLChat] Response preview:', assistantContent.substring(0, 200));
+      console.log('[TiSQLChat] Contains ```sql?', assistantContent.includes('```sql'));
+
       const sqlMatch = assistantContent.match(/```sql\n([\s\S]*?)\n```/);
+      console.log('[TiSQLChat] SQL regex match result:', sqlMatch ? 'FOUND' : 'NOT FOUND');
 
       if (sqlMatch) {
         const sql = sqlMatch[1];
+        console.log('[TiSQLChat] Extracted SQL length:', sql.length, 'chars');
 
         // Check if this SQL is a duplicate or very similar to existing
         const existingSQLs = messages
@@ -697,6 +1053,16 @@ export function TiSQLArtifactChat({
             warnings: []
           };
           setSQLArtifact(artifact);
+
+          // Notify parent component immediately when SQL is generated
+          console.log('[TiSQLArtifactChat] SQL extracted, length:', sql.length);
+          console.log('[TiSQLArtifactChat] Calling onSQLGenerated callback');
+          if (onSQLGenerated) {
+            onSQLGenerated(sql);
+            console.log('[TiSQLArtifactChat] onSQLGenerated callback invoked successfully');
+          } else {
+            console.warn('[TiSQLArtifactChat] onSQLGenerated callback not provided!');
+          }
 
           // Mark as SQL generation type and execute
           setMessages(prev =>
@@ -759,36 +1125,59 @@ export function TiSQLArtifactChat({
     setHiddenResults(prev => new Set(prev).add(messageId));
   };
 
-  return (
-    <div className={cn("flex h-full gap-6", className)}>
-      {/* Compact Chat Window - Left Side */}
-      <div className="flex flex-col w-[400px] flex-shrink-0">
+  // If chatOnly mode, render just the chat interface
+  if (chatOnly) {
+    console.log('[TiSQLChat] Rendering in chatOnly mode, current input:', input, 'isLoading:', isLoading);
+    return (
+      <div className={cn("flex flex-col h-full", className)}>
         <div className="flex-1 flex flex-col rounded-2xl border border-border bg-white dark:bg-gray-950 shadow-lg overflow-hidden">
           {/* Chat Header */}
-          <div className="px-4 py-3 border-b border-border bg-elevation-1">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold">Compose Data Product</span>
+          {!hideHeader && (
+            <div className="px-4 py-3 border-b border-border bg-elevation-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {/* Domain Selector */}
+                  {!domainsLoading && domains.length > 0 && (
+                    <DomainSelector
+                      selectedDomain={selectedDomain}
+                      onDomainChange={setSelectedDomain}
+                      domains={domains}
+                      compact={false}
+                    />
+                  )}
+                  {/* Get AI Suggestions Button (only if enabled and not loaded) */}
+                  {showPatternsButton && !patternsRequested && patterns.length === 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPatternsRequested(true)}
+                      className="h-7 gap-2 text-xs"
+                      disabled={patternsLoading}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Get AI Suggestions
+                    </Button>
+                  )}
+                  {/* Advanced Toggle */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className={cn(
+                      "h-7 gap-2 text-xs transition-colors",
+                      showAdvanced ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Code2 className="w-3.5 h-3.5" />
+                    {showAdvanced ? 'Hide SQL' : 'Show SQL'}
+                  </Button>
+                </div>
               </div>
-              {/* Advanced Toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className={cn(
-                  "h-7 gap-2 text-xs transition-colors",
-                  showAdvanced ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Code2 className="w-3.5 h-3.5" />
-                {showAdvanced ? 'Hide SQL' : 'Show SQL'}
-              </Button>
             </div>
-          </div>
+          )}
 
           {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto px-4 pb-4 pt-3 space-y-3">
             {/* Show loading indicator before any messages exist */}
             {messages.length === 0 && patternsLoading && (
               <div className="p-4 rounded-xl border border-border bg-gradient-to-br from-primary/5 to-transparent animate-in fade-in duration-500">
@@ -818,7 +1207,270 @@ export function TiSQLArtifactChat({
                   )}
                 >
                   <div className="whitespace-pre-wrap">
-                    {message.role === 'assistant' ? removeSQLCodeBlocks(message.content) : message.content}
+                    {message.role === 'assistant' ? (
+                      <MarkdownRenderer
+                        content={removeSQLCodeBlocks(message.content)}
+                        className="text-sm"
+                      />
+                    ) : (
+                      message.content
+                    )}
+                  </div>
+                </div>
+
+                {/* Show loading indicator while analyzing data */}
+                {message.id === 'welcome' && patternsLoading && (
+                  <div className="mt-3 p-4 rounded-xl border border-border bg-gradient-to-br from-primary/5 to-transparent animate-in fade-in duration-500">
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
+                      <Sparkles className="w-4 h-4 text-primary animate-pulse flex-shrink-0" />
+                      <div className="flex-1 transition-all duration-300">
+                        <p className="text-sm font-medium text-foreground animate-in fade-in duration-300">
+                          {loadingMessages[currentLoadingMessage].main}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 animate-in fade-in duration-300">
+                          {loadingMessages[currentLoadingMessage].sub}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show pattern cards after welcome message */}
+                {message.id === 'welcome' && !patternsLoading && patterns.length > 0 && (
+                  <div className="mt-3 space-y-2">
+                    {patterns.slice(0, 4).map((pattern) => {
+                      // Get icon component dynamically
+                      const IconComponent = (Icons as any)[pattern.icon] || Icons.Database;
+
+                      return (
+                        <button
+                          key={pattern.id}
+                          onClick={() => handlePatternClick(pattern)}
+                          disabled={isLoading}
+                          className={cn(
+                            "w-full text-left p-3 rounded-xl border border-border",
+                            "bg-white dark:bg-gray-950 hover:bg-elevation-1",
+                            "transition-all duration-200 hover:shadow-md hover:scale-[1.02]",
+                            "disabled:opacity-50 disabled:cursor-not-allowed",
+                            "group"
+                          )}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Icon */}
+                            <div className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                              "bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/30",
+                              "group-hover:from-primary/30 group-hover:to-primary/20 transition-colors"
+                            )}>
+                              <IconComponent className="w-4 h-4 text-primary" />
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-semibold text-foreground">
+                                  {pattern.title}
+                                </span>
+                                <span className={cn(
+                                  "text-xs px-1.5 py-0.5 rounded-md",
+                                  pattern.estimatedComplexity === 'simple'
+                                    ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                                    : pattern.estimatedComplexity === 'moderate'
+                                    ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+                                    : "bg-red-500/10 text-red-700 dark:text-red-400"
+                                )}>
+                                  {pattern.estimatedComplexity}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {pattern.description}
+                              </p>
+                              {pattern.tables.length > 0 && (
+                                <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                  {pattern.tables.slice(0, 2).map((table, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="text-xs px-1.5 py-0.5 rounded bg-elevation-1 text-muted-foreground font-mono"
+                                    >
+                                      {table}
+                                    </span>
+                                  ))}
+                                  {pattern.tables.length > 2 && (
+                                    <span className="text-xs text-muted-foreground">
+                                      +{pattern.tables.length - 2} more
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+
+                    {patterns.length > 4 && (
+                      <div className="text-center">
+                        <span className="text-xs text-muted-foreground">
+                          +{patterns.length - 4} more patterns available
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {isLoading && (
+              <div className="flex items-center gap-2 text-muted-foreground px-3 py-2">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span className="text-xs">Thinking...</span>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Area */}
+          <form onSubmit={handleSubmit} className="p-3 border-t border-border bg-elevation-0">
+            <div className="relative">
+              <Textarea
+                value={input}
+                onChange={(e) => {
+                  console.log('[TiSQLChat chatOnly] Input changed:', e.target.value);
+                  setInput(e.target.value);
+                }}
+                placeholder="Ask about your data..."
+                className="min-h-[60px] resize-none rounded-xl text-sm pr-10"
+                onKeyDown={(e) => {
+                  console.log('[TiSQLChat chatOnly] Key pressed:', e.key, 'shiftKey:', e.shiftKey);
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    console.log('[TiSQLChat chatOnly] Enter pressed without shift, calling handleSubmit');
+                    handleSubmit(e);
+                  }
+                }}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isLoading || !input.trim()}
+                className="absolute bottom-2 right-2 h-7 w-7 p-0 rounded-lg"
+                onClick={() => console.log('[TiSQLChat chatOnly] Send button clicked')}
+              >
+                {isLoading ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Send className="w-3 h-3" />
+                )}
+              </Button>
+            </div>
+          </form>
+        </div>
+
+        {/* Threshold Configuration Modal */}
+        <ThresholdConfigModal
+          open={showThresholdConfig}
+          onClose={() => setShowThresholdConfig(false)}
+          onSave={(config) => {
+            setThresholdConfig(config);
+            console.log('Updated thresholds:', config);
+          }}
+          currentConfig={thresholdConfig}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("flex h-full gap-6", className)}>
+      {/* Compact Chat Window - Left Side */}
+      <div className="flex flex-col w-[400px] flex-shrink-0">
+        <div className="flex-1 flex flex-col rounded-2xl border border-border bg-white dark:bg-gray-950 shadow-lg overflow-hidden">
+          {/* Chat Header */}
+          {!hideHeader && (
+            <div className="px-4 py-3 border-b border-border bg-elevation-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {/* Domain Selector */}
+                  {!domainsLoading && domains.length > 0 && (
+                    <DomainSelector
+                      selectedDomain={selectedDomain}
+                      onDomainChange={setSelectedDomain}
+                      domains={domains}
+                      compact={false}
+                    />
+                  )}
+                  {/* Get AI Suggestions Button (only if enabled and not loaded) */}
+                  {showPatternsButton && !patternsRequested && patterns.length === 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPatternsRequested(true)}
+                      className="h-7 gap-2 text-xs"
+                      disabled={patternsLoading}
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Get AI Suggestions
+                    </Button>
+                  )}
+                  {/* Advanced Toggle */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className={cn(
+                      "h-7 gap-2 text-xs transition-colors",
+                      showAdvanced ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Code2 className="w-3.5 h-3.5" />
+                    {showAdvanced ? 'Hide SQL' : 'Show SQL'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4 pt-3 space-y-3">
+            {/* Show loading indicator before any messages exist */}
+            {messages.length === 0 && patternsLoading && (
+              <div className="p-4 rounded-xl border border-border bg-gradient-to-br from-primary/5 to-transparent animate-in fade-in duration-500">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
+                  <Sparkles className="w-4 h-4 text-primary animate-pulse flex-shrink-0" />
+                  <div className="flex-1 transition-all duration-300">
+                    <p className="text-sm font-medium text-foreground animate-in fade-in duration-300">
+                      {loadingMessages[currentLoadingMessage].main}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5 animate-in fade-in duration-300">
+                      {loadingMessages[currentLoadingMessage].sub}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {messages.map((message) => (
+              <div key={message.id}>
+                <div
+                  className={cn(
+                    "px-3 py-2 rounded-xl text-sm",
+                    message.role === 'user'
+                      ? 'bg-gradient-to-r from-primary to-primary/90 text-primary-foreground ml-8'
+                      : 'bg-elevation-1 border border-border text-foreground mr-8'
+                  )}
+                >
+                  <div className="whitespace-pre-wrap">
+                    {message.role === 'assistant' ? (
+                      <MarkdownRenderer
+                        content={removeSQLCodeBlocks(message.content)}
+                        className="text-sm"
+                      />
+                    ) : (
+                      message.content
+                    )}
                   </div>
                 </div>
 
