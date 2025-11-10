@@ -14,9 +14,13 @@ import {
   shouldUseDashboard,
   DashboardLayout,
 } from '@/lib/services/dashboard-visualization-analyzer';
+import {
+  generateIntelligentDashboard,
+  IntelligentDashboardLayout,
+} from '@/lib/services/dashboard-intelligence-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, Info, ChevronDown, ChevronUp, Layout, Database, Table2 } from 'lucide-react';
+import { BarChart3, Info, ChevronDown, ChevronUp, Layout, Database, Table2, Loader2 } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -58,6 +62,9 @@ export function SmartResultsView({
 }: SmartResultsViewProps) {
   const [showReasoning, setShowReasoning] = useState(false);
   const [chartCollapsed, setChartCollapsed] = useState(false);
+  const [dashboardLayout, setDashboardLayout] = useState<IntelligentDashboardLayout | DashboardLayout | null>(null);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(false);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
 
   // Get columns and rows
   const cols = rawColumns || result.columns.map((c) => c.name);
@@ -67,14 +74,15 @@ export function SmartResultsView({
 
   // Check if we should use dashboard layout
   const useDashboard = useMemo(() => {
-    return shouldUseDashboard(cols, rows);
+    const shouldUse = shouldUseDashboard(cols, rows);
+    console.log('[SmartResultsView] useDashboard decision:', {
+      shouldUse,
+      rows: rows.length,
+      cols: cols.length,
+      sampleRow: rows[0]
+    });
+    return shouldUse;
   }, [cols, rows]);
-
-  // Analyze for dashboard layout
-  const dashboardLayout: DashboardLayout | null = useMemo(() => {
-    if (!useDashboard) return null;
-    return analyzeDashboardLayout(cols, rows, sql);
-  }, [cols, rows, sql, useDashboard]);
 
   // Analyze query results for single visualization (fallback)
   const suggestion: VisualizationSuggestion | null = useMemo(() => {
@@ -85,7 +93,14 @@ export function SmartResultsView({
   // Determine if chart should be shown
   const shouldShowChart = useMemo(() => {
     // If using dashboard, show it
-    if (useDashboard && dashboardLayout) return true;
+    if (useDashboard && dashboardLayout) {
+      console.log('[SmartResultsView] shouldShowChart: TRUE (dashboard mode)', {
+        useDashboard,
+        hasDashboardLayout: !!dashboardLayout,
+        dashboardTitle: dashboardLayout?.title
+      });
+      return true;
+    }
 
     // Otherwise check single visualization
     if (!suggestion || suggestion.type === 'table') return false;
@@ -97,6 +112,81 @@ export function SmartResultsView({
     setShowReasoning(false);
     setChartCollapsed(false);
   }, [result]);
+
+  // Generate intelligent dashboard layout using CrewAI
+  useEffect(() => {
+    async function generateDashboard() {
+      console.log('[SmartResultsView] 🎯 generateDashboard called', {
+        useDashboard,
+        rowCount: rows.length,
+        colCount: cols.length,
+        hasSql: !!sql,
+        sqlPreview: sql?.substring(0, 50) + '...'
+      });
+
+      // Don't generate if we shouldn't use dashboard
+      if (!useDashboard) {
+        console.log('[SmartResultsView] ⏭️ Skipping dashboard - useDashboard is false');
+        setDashboardLayout(null);
+        setIsLoadingDashboard(false);
+        return;
+      }
+
+      console.log('[SmartResultsView] 🔄 Starting dashboard generation...');
+      setIsLoadingDashboard(true);
+      setDashboardError(null);
+
+      try {
+        console.log('[SmartResultsView] 🤖 Calling generateIntelligentDashboard API...');
+        // Call CrewAI-powered dashboard intelligence API
+        const intelligentDashboard = await generateIntelligentDashboard({
+          sql: sql || '',
+          columns: cols,
+          rows: rows,
+          row_count: result.rowCount,
+        });
+
+        console.log('[SmartResultsView] ✅ Intelligent dashboard generated successfully:', {
+          title: intelligentDashboard.title,
+          description: intelligentDashboard.description,
+          viewCount: intelligentDashboard.views.length,
+          statCount: intelligentDashboard.summaryStats.length,
+          views: intelligentDashboard.views.map((v: any) => ({
+            chartType: v.chartType,
+            title: v.title,
+            dataMapping: v.dataMapping
+          }))
+        });
+        console.log('[SmartResultsView] 📊 Full dashboard data:', JSON.stringify(intelligentDashboard, null, 2));
+        setDashboardLayout(intelligentDashboard);
+      } catch (error) {
+        console.error('[SmartResultsView] ❌ Failed to generate intelligent dashboard:', error);
+        console.error('[SmartResultsView] ❌ Error type:', error instanceof Error ? error.constructor.name : typeof error);
+        console.error('[SmartResultsView] ❌ Error message:', error instanceof Error ? error.message : String(error));
+        setDashboardError(error instanceof Error ? error.message : 'Dashboard generation failed');
+
+        // Fallback to rule-based dashboard generation
+        try {
+          console.log('[SmartResultsView] ⚠️ Attempting fallback to rule-based dashboard...');
+          const fallbackDashboard = analyzeDashboardLayout(cols, rows, sql);
+          setDashboardLayout(fallbackDashboard);
+          console.log('[SmartResultsView] ⚠️ Using fallback rule-based dashboard:', {
+            title: fallbackDashboard.title,
+            chartCount: fallbackDashboard.charts.length
+          });
+        } catch (fallbackError) {
+          console.error('[SmartResultsView] 💥 Fallback dashboard generation also failed:', fallbackError);
+          setDashboardLayout(null);
+        }
+      } finally {
+        console.log('[SmartResultsView] 🏁 Dashboard generation complete, setting loading=false');
+        setIsLoadingDashboard(false);
+      }
+    }
+
+    console.log('[SmartResultsView] 🚀 useEffect triggered - calling generateDashboard()');
+    generateDashboard();
+  }, [cols, rows, sql, result.rowCount, useDashboard]);
 
   // Calculate container dimensions for chart
   const chartDimensions = useMemo(() => {
@@ -141,16 +231,65 @@ export function SmartResultsView({
           </div>
         )}
 
-        {/* Dashboard Layout - When applicable */}
-        {useDashboard && dashboardLayout && shouldShowChart && !chartCollapsed && (
-          <div className="border-b border-border">
-            <DashboardView
-              dashboard={dashboardLayout}
-              columns={cols}
-              rows={rows}
-            />
+        {/* Dashboard Loading State */}
+        {useDashboard && isLoadingDashboard && (
+          <div className="border-b border-border p-12 flex items-center justify-center bg-muted/10">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="text-center">
+                <div className="text-sm font-medium text-foreground">
+                  Generating intelligent dashboard...
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  AI agents are analyzing your data patterns
+                </div>
+              </div>
+            </div>
           </div>
         )}
+
+        {/* Dashboard Error State */}
+        {useDashboard && dashboardError && !isLoadingDashboard && (
+          <div className="border-b border-border p-6 bg-destructive/10">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-destructive mt-0.5" />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-destructive">
+                  Dashboard generation failed
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {dashboardError}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dashboard Layout - When applicable */}
+        {(() => {
+          const renderConditions = {
+            useDashboard,
+            hasDashboardLayout: !!dashboardLayout,
+            shouldShowChart,
+            chartCollapsed,
+            isLoadingDashboard,
+            shouldRender: useDashboard && dashboardLayout && shouldShowChart && !chartCollapsed && !isLoadingDashboard
+          };
+          console.log('[SmartResultsView] Dashboard render conditions:', renderConditions);
+
+          if (useDashboard && dashboardLayout && shouldShowChart && !chartCollapsed && !isLoadingDashboard) {
+            return (
+              <div className="border-b border-border">
+                <DashboardView
+                  dashboard={dashboardLayout}
+                  columns={cols}
+                  rows={rows}
+                />
+              </div>
+            );
+          }
+          return null;
+        })()}
 
       {/* Single Chart Section - Collapsible (when not using dashboard) */}
       {!useDashboard && suggestion && shouldShowChart && !chartCollapsed && (

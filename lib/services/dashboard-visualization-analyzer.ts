@@ -128,6 +128,10 @@ function generateComplementaryViews(
       });
 
     // Distribution view (if we have numeric data)
+    // TODO: This needs proper data transformation before it can work
+    // Currently disabled because it creates fake column names ('range', 'count')
+    // that don't exist in the actual data
+    /*
     if (numericColumns.length > 0 && primaryVisualization.yColumns.length > 0) {
       const yColIdx = columns.indexOf(primaryVisualization.yColumns[0]);
 
@@ -175,6 +179,7 @@ function generateComplementaryViews(
         }
       }
     }
+    */
 
     // Top/Bottom comparison view
     if (primaryVisualization.type === 'bar' && rows.length >= 10) {
@@ -239,26 +244,34 @@ export function analyzeDashboardLayout(
 
 /**
  * Check if dashboard layout should be used (vs single chart)
+ *
+ * With CrewAI intelligence, we're more permissive and let the AI determine
+ * the best visualization approach. The AI can handle various data types and
+ * create meaningful dashboards even with mixed data.
  */
 export function shouldUseDashboard(
   columns: string[],
   rows: any[][]
 ): boolean {
-  // Use dashboard for:
-  // - Medium-sized datasets (5-100 rows)
-  // - Multiple numeric columns (3+)
-  // - Grouped/aggregated data
+  // Use CrewAI dashboard intelligence for most queries
+  // Let the AI decide what visualizations make sense
 
-  if (rows.length < 5 || rows.length > 100) {
+  // Minimum: At least 3 rows to have meaningful data
+  if (rows.length < 3) {
     return false;
   }
 
-  const numericColumns = columns
-    .map((col, idx) => ({ name: col, idx }))
-    .filter(({ idx }) => {
-      const sample = rows.slice(0, 10).map(row => row[idx]);
-      return sample.every(v => typeof v === 'number' && !isNaN(v));
-    });
+  // Maximum: Keep under 1000 rows for performance
+  // (Very large datasets should use pagination or aggregation first)
+  if (rows.length > 1000) {
+    return false;
+  }
 
-  return numericColumns.length >= 1;
+  // Minimum: At least 2 columns (one for labels, one for values)
+  if (columns.length < 2) {
+    return false;
+  }
+
+  // If we have enough rows and columns, use AI-powered dashboard
+  return true;
 }
