@@ -2,6 +2,9 @@
 /* JetBrains Mono for code/terminal - only load what we need */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import '../styles/elevation.css';
+@import '../styles/motion-tokens.css';
+@import '../styles/spacing-tokens.css';
+@import '../styles/focus-management.css';
 @import '../styles/design-system.css';
 @import url('/fonts/pixelarticons.css');
 
@@ -3382,3 +3385,185 @@ body.hide-nav-dock [class*="Dock"] {
   display: none !important;
 }
 
+/* ========================================
+   AI Chat Summary - Takeaways & Key Insights Styling
+   ======================================== */
+
+/* Main summary heading (first h3) - Make it large and prominent */
+.prose h3:first-of-type {
+  font-family: 'Reckless', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 2rem !important; /* text-3xl - larger for main summary */
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--foreground) !important;
+  margin-top: 1rem !important;
+  margin-bottom: 0.75rem !important; /* Reduced from my-6 */
+}
+
+/* Takeaways container - reduce top margin */
+.prose h3:first-of-type + div,
+.prose div.mt-6 {
+  margin-top: 1rem !important; /* Reduced from mt-6 (1.5rem) to 1rem */
+}
+
+/* Takeaways heading (inside div) */
+.prose h3.text-base {
+  font-family: 'Roobert', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 1.125rem !important; /* text-lg */
+  font-weight: 600 !important;
+  color: var(--foreground) !important;
+  margin-bottom: 0.75rem !important;
+  letter-spacing: -0.01em;
+}
+
+/* Enhanced list styling for takeaways */
+.prose ul {
+  margin-top: 0.5rem !important;
+  margin-bottom: 0 !important;
+  list-style: none !important;
+  padding-left: 0 !important;
+}
+
+.prose ul li {
+  position: relative;
+  padding-left: 1.75rem !important;
+  margin-bottom: 0.375rem !important; /* Reduced spacing between bullets */
+  line-height: 1.5 !important;
+  color: var(--foreground) !important; /* Changed from muted to foreground */
+  font-size: 0.9375rem !important;
+}
+
+.prose ul li::before {
+  content: '•';
+  position: absolute;
+  left: 0.5rem;
+  top: 0.125rem;
+  color: var(--primary) !important;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+/* Override inline my-6 class on first h3 */
+.prose h3.my-6 {
+  margin-top: 1rem !important;
+  margin-bottom: 0.75rem !important;
+}
+
+/* Container spacing adjustments */
+.prose {
+  max-width: none !important;
+}
+
+/* Ensure proper spacing between sections */
+.prose h3 + ul {
+  margin-top: 0.5rem !important;
+}
+
+/* Scroll Fade Effects - Subtle feather fade for scrollable containers */
+.scroll-fade-subtle {
+  position: relative;
+  /* Content opacity mask - base layer */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 64px,
+    black calc(100% - 80px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 64px,
+    black calc(100% - 80px),
+    transparent 100%
+  );
+}
+
+/* Top edge: Blur (lower) + Gradient (higher) - Gradient not affected by blur */
+.scroll-fade-subtle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  /* Glass blur effect as base */
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  /* Gradient overlay on top - clear and unblurred */
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  /* Subtle depth via box-shadow */
+  box-shadow:
+    inset 0 0 20px rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Bottom edge: Blur (lower) + Gradient (higher) - Gradient not affected by blur */
+.scroll-fade-subtle::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  /* Glass blur effect as base */
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  /* Gradient overlay on top - clear and unblurred */
+  background: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  /* Subtle depth via box-shadow */
+  box-shadow:
+    inset 0 0 20px rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.15);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Alternative fade with more prominence (80-120px) */
+.scroll-fade-medium {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 100px,
+    black calc(100% - 100px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 100px,
+    black calc(100% - 100px),
+    transparent 100%
+  );
+}
+
+/* Strong fade for dramatic effect (150-200px) */
+.scroll-fade-strong {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 175px,
+    black calc(100% - 175px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 175px,
+    black calc(100% - 175px),
+    transparent 100%
+  );
+}

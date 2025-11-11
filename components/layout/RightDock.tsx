@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { launchPlayground } from '@/lib/utils/playground';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,7 @@ interface DataAsset {
   owner?: string;
   tags?: string[];
   icon?: any;
+  logoPath?: string; // Path to logo image in /public
   color?: string;
   bgColor?: string;
   actions?: Array<{ label: string; link: string }>;
@@ -65,6 +67,7 @@ const DATA_ASSETS: DataAsset[] = [
     name: 'DataHub',
     type: 'tool',
     icon: Database,
+    logoPath: '/tech-icons/datahub.svg',
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-500/10',
     description: 'Metadata management and data discovery',
@@ -86,6 +89,7 @@ const DATA_ASSETS: DataAsset[] = [
     name: 'Apache Airflow',
     type: 'tool',
     icon: Workflow,
+    logoPath: '/tech-icons/apache-airflow.svg',
     color: 'text-purple-400',
     bgColor: 'bg-purple-500/10',
     description: 'Workflow orchestration and scheduling',
@@ -107,6 +111,7 @@ const DATA_ASSETS: DataAsset[] = [
     name: 'Trino',
     type: 'tool',
     icon: Terminal,
+    logoPath: '/tech-icons/trino.svg',
     color: 'text-cyan-400',
     bgColor: 'bg-cyan-500/10',
     description: 'Distributed SQL query engine',
@@ -128,6 +133,7 @@ const DATA_ASSETS: DataAsset[] = [
     name: 'DataDog',
     type: 'tool',
     icon: Activity,
+    logoPath: '/tech-icons/datadog.svg',
     color: 'text-red-400',
     bgColor: 'bg-red-500/10',
     description: 'Infrastructure and application monitoring',
@@ -145,6 +151,7 @@ const DATA_ASSETS: DataAsset[] = [
     name: 'Apache Ranger',
     type: 'tool',
     icon: Shield,
+    logoPath: '/tech-icons/ranger.svg',
     color: 'text-orange-400',
     bgColor: 'bg-orange-500/10',
     description: 'Access control and audit',
@@ -529,7 +536,7 @@ export function RightDock(props?: RightDockProps) {
         className="fixed right-0 top-1/2 -translate-y-1/2 z-40 pointer-events-none"
         style={{
           width: isExpanded ? '500px' : '150px',
-          height: isExpanded ? '600px' : '200px',
+          height: isExpanded ? 'calc(65vh)' : '200px',
           background: 'radial-gradient(ellipse 60% 80% at 80% 50%, hsl(var(--primary) / 0.15), transparent 70%)',
           transition: 'height 500ms cubic-bezier(0.23, 1, 0.32, 1) 0ms, width 500ms cubic-bezier(0.23, 1, 0.32, 1) 200ms',
           willChange: 'width, height'
@@ -540,14 +547,15 @@ export function RightDock(props?: RightDockProps) {
       <div
         className={cn(
           'fixed right-4 top-1/2 -translate-y-1/2 z-50',
-          'bg-blue-600/30 backdrop-blur-xl',
+          'backdrop-blur-[32px]',
           'border-2 border-blue-400/50',
           'rounded-2xl shadow-2xl',
           'overflow-hidden'
         )}
         style={{
           width: isExpanded ? '484px' : '64px',
-          height: isExpanded ? '600px' : '200px',
+          height: isExpanded ? 'calc(65vh)' : '200px',
+          backgroundColor: 'hsl(var(--card) / 0.6)',
           transition: 'height 500ms cubic-bezier(0.23, 1, 0.32, 1) 0ms, width 500ms cubic-bezier(0.23, 1, 0.32, 1) 200ms',
           willChange: 'width, height'
         }}
@@ -824,36 +832,35 @@ export function RightDock(props?: RightDockProps) {
               {/* Tools Mode */}
               {mode === 'tools' && (
             <div className="flex flex-col h-full">
-                {/* Header */}
-                <div className="px-4 py-3 bg-white/10 border-b border-white/10 rounded-tl-2xl">
-                  <p className="text-sm font-medium text-foreground">
-                    Contextual Tools
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Tools relevant to your current page
-                  </p>
-                </div>
-
                 {/* Tools Grid */}
-                <ScrollArea className="flex-1 p-4">
-                  <div className="space-y-3">
+                <ScrollArea className="flex-1 p-4 scroll-fade-subtle">
+                  <div className="space-y-3 py-12">
                     {contextualTools.map((tool) => {
                       const Icon = tool.icon || Database;
                       return (
                         <div
                           key={tool.id}
-                          className="p-4 rounded-lg border border-border bg-background hover:bg-accent/5 transition-colors"
+                          className="p-4 rounded-lg border border-border bg-background"
                         >
                         <div className="flex items-start gap-3 mb-3">
                           <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", tool.bgColor)}>
-                            <Icon className={cn("w-5 h-5", tool.color)} />
+                            {tool.logoPath ? (
+                              <Image
+                                src={tool.logoPath}
+                                alt={`${tool.name} logo`}
+                                width={24}
+                                height={24}
+                                className="w-6 h-6 object-contain"
+                              />
+                            ) : (
+                              <Icon className={cn("w-5 h-5", tool.color)} />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="font-semibold text-foreground text-sm mb-1">{tool.name}</div>
-                            {tool.status && <StatusIndicator status={tool.status} />}
+                            <p className="text-sm text-muted-foreground">{tool.description}</p>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground mb-3">{tool.description}</p>
 
                         {/* Tags */}
                         <div className="flex flex-wrap gap-1 mb-3">
