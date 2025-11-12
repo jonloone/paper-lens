@@ -116,7 +116,8 @@ const tools: ToolCard[] = [
     href: '/tools/nifi',
     category: 'entitlement',
     iconColor: 'text-blue-400',
-    iconBg: 'bg-blue-400/10'
+    iconBg: 'bg-blue-400/10',
+    logoPath: '/tech-icons/apache-nifi.svg'
   },
   {
     id: 'superset',
@@ -126,7 +127,8 @@ const tools: ToolCard[] = [
     href: '/tools/superset',
     category: 'entitlement',
     iconColor: 'text-violet-500',
-    iconBg: 'bg-violet-500/10'
+    iconBg: 'bg-violet-500/10',
+    logoPath: '/tech-icons/apache-superset.svg'
   },
   {
     id: 'datahub',
