@@ -85,17 +85,26 @@ const NavLink = ({
   const isConnectRoute = href === '/connect' &&
     (pathname.startsWith('/connect') || pathname.startsWith('/manage/connections'));
 
-  // Operations section includes /operations, /monitor, /manage (except connections), and /govern routes
+  // Analyze section includes /analyze, /discover, and old /explore routes
+  const isAnalyzeRoute = href === '/analyze' &&
+    (pathname.startsWith('/analyze') || pathname.startsWith('/explore') || pathname.startsWith('/discover'));
+
+  // Govern section includes /govern routes
+  const isGovernRoute = href === '/govern' &&
+    pathname.startsWith('/govern');
+
+  // Operations section includes /operations, /monitor, /manage (except connections) routes
   const isOperationsRoute = href === '/operations' &&
     (pathname.startsWith('/operations') ||
      pathname.startsWith('/monitor') ||
-     (pathname.startsWith('/manage') && !pathname.startsWith('/manage/connections')) ||
-     pathname.startsWith('/govern'));
+     (pathname.startsWith('/manage') && !pathname.startsWith('/manage/connections')));
 
   const isActive = href && (
     pathname === href ||
     (href !== '/' && pathname.startsWith(href) && href !== '/manage' && href !== '/monitor') ||
     isConnectRoute ||
+    isAnalyzeRoute ||
+    isGovernRoute ||
     isOperationsRoute
   );
 
@@ -280,14 +289,40 @@ export const TopNavigation = () => {
       ]
     },
     {
-      href: '/explore',
-      label: 'Explore',
-      icon: 'Search'
+      href: '/analyze',
+      label: 'Analyze',
+      icon: 'Search',
+      hasDropdown: true,
+      dropdownItems: [
+        {
+          href: '/analyze/chat',
+          label: 'Chat',
+          icon: 'MessageSquare',
+          description: 'Ask questions about your data'
+        },
+        {
+          href: '/analyze/workbench',
+          label: 'Workbench',
+          icon: 'BarChart3',
+          description: 'Create visualizations with AI'
+        },
+        {
+          href: '/discover',
+          label: 'Discover',
+          icon: 'Compass',
+          description: 'Browse data products and catalog'
+        }
+      ]
     },
     {
-      href: '/discover',
-      label: 'Discover',
-      icon: 'Search'
+      href: '/govern',
+      label: 'Govern',
+      icon: 'Shield',
+      hasDropdown: true,
+      dropdownItems: [
+        { href: '/govern/quality', label: 'Quality Rules', icon: 'CheckCircle', description: 'Data quality standards' },
+        { href: '/manage/access', label: 'Access Control', icon: 'Key', description: 'Security and permissions' }
+      ]
     },
     {
       href: '/operations',
@@ -296,14 +331,13 @@ export const TopNavigation = () => {
       hasDropdown: true,
       dropdownItems: [
         { href: '/operations', label: 'Overview', icon: 'LayoutDashboard', description: 'System health and metrics' },
-        { href: '/manage/users', label: 'Users', icon: 'Users', description: 'User management and teams' },
-        { separator: true, label: '', sectionLabel: 'RESOURCES' },
-        { href: '/monitor/pipelines', label: 'Pipelines', icon: 'GitBranch', description: 'Monitor and manage data pipelines' },
+        { separator: true, label: '', sectionLabel: 'MONITORING' },
+        { href: '/operations/monitor', label: 'Monitor', icon: 'Activity', description: 'System health and pipelines' },
+        { href: '/monitor/pipelines', label: 'Pipelines', icon: 'GitBranch', description: 'Data pipeline monitoring' },
+        { separator: true, label: '', sectionLabel: 'MANAGEMENT' },
+        { href: '/operations/manage', label: 'Manage', icon: 'Settings', description: 'Infrastructure and connections' },
         { href: '/manage/connections', label: 'Connections', icon: 'Database', description: 'Data source connections' },
-        { href: '/manage', label: 'Data Products', icon: 'Package', description: 'Manage data products' },
-        { separator: true, label: '', sectionLabel: 'GOVERNANCE' },
-        { href: '/govern/quality', label: 'Quality Rules', icon: 'CheckCircle', description: 'Data quality standards' },
-        { href: '/manage/access', label: 'Access Control', icon: 'Key', description: 'Security and permissions' }
+        { href: '/manage/users', label: 'Users', icon: 'Users', description: 'User management and teams' }
       ]
     }
   ];
@@ -464,10 +498,10 @@ export const TopNavigation = () => {
                 </Link>
                 {item.dropdownItems && (
                   <div className="ml-4 mt-2 space-y-1">
-                    {item.dropdownItems.map((subItem) => (
+                    {item.dropdownItems.filter(subItem => !subItem.separator).map((subItem) => (
                       <Link
                         key={subItem.href}
-                        href={subItem.href}
+                        href={subItem.href || '/'}
                         className="block px-4 py-2 text-sm text-muted-foreground/80 hover:text-foreground hover:bg-accent/30 rounded-lg"
                         onClick={() => setMobileMenuOpen(false)}
                       >
