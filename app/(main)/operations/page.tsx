@@ -84,6 +84,7 @@ import {
   GitBranch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDensitySpacing } from '@/contexts/DensityContext';
 
 // Realistic pipeline data based on confirmed API capabilities
 interface Pipeline {
@@ -396,22 +397,22 @@ const StatusBadge: React.FC<{ status: Pipeline['status'] }> = ({ status }) => {
   const getStatusStyles = (status: Pipeline['status']) => {
     switch(status) {
       case 'failed':
-        return 'bg-red-500 text-white hover:bg-red-600';
+        return 'bg-red-500 text-white hover:bg-red-600 [transition:var(--transition-colors)]';
       case 'running':
-        return 'bg-blue-500 text-white hover:bg-blue-600';
+        return 'bg-blue-500 text-white hover:bg-blue-600 [transition:var(--transition-colors)]';
       case 'idle':
-        return 'bg-gray-400 text-white hover:bg-gray-500';
+        return 'bg-gray-400 text-white hover:bg-gray-500 [transition:var(--transition-colors)]';
       case 'scheduled':
-        return 'bg-amber-500 text-white hover:bg-amber-600';
+        return 'bg-amber-500 text-white hover:bg-amber-600 [transition:var(--transition-colors)]';
       case 'paused':
-        return 'bg-gray-500 text-white hover:bg-gray-600';
+        return 'bg-gray-500 text-white hover:bg-gray-600 [transition:var(--transition-colors)]';
       default:
-        return 'bg-gray-400 text-white hover:bg-gray-500';
+        return 'bg-gray-400 text-white hover:bg-gray-500 [transition:var(--transition-colors)]';
     }
   };
 
   return (
-    <Badge className={getStatusStyles(status)}>
+    <Badge className={getStatusStyles(status)} aria-label={`Pipeline status: ${status}`}>
       {status}
     </Badge>
   );
@@ -419,22 +420,24 @@ const StatusBadge: React.FC<{ status: Pipeline['status'] }> = ({ status }) => {
 
 const HealthIndicator: React.FC<HealthIndicatorProps> = ({ runs, mounted = true }) => {
   const successCount = runs.filter(success => success).length;
-  
+
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex gap-0.5">
+    <div className="flex items-center gap-2" role="status" aria-label={`Pipeline health: ${successCount} of ${runs.length} runs successful`}>
+      <div className="flex gap-0.5" role="list" aria-label="Recent run history">
         {runs.map((success, i) => (
           <div
             key={i}
             className={cn(
-              "h-4 w-1",
+              "h-4 w-1 [transition:var(--transition-colors)]",
               success ? "bg-green-500" : "bg-red-500"
             )}
             title={success ? 'Success' : 'Failed'}
+            role="listitem"
+            aria-label={success ? 'Successful run' : 'Failed run'}
           />
         ))}
       </div>
-      <span className="text-xs text-muted-foreground">
+      <span className="text-xs text-muted-foreground/85">
         {successCount}/{runs.length}
       </span>
     </div>
@@ -442,6 +445,9 @@ const HealthIndicator: React.FC<HealthIndicatorProps> = ({ runs, mounted = true 
 };
 
 export default function PipelineHealthMonitor() {
+  // Density-aware spacing
+  const spacing = useDensitySpacing();
+
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [domainFilter, setDomainFilter] = useState('all');
@@ -626,11 +632,11 @@ export default function PipelineHealthMonitor() {
             <div className="flex items-center gap-1 mt-1">
               {pipeline.trend === 'increasing' && <TrendingUp className="h-3 w-3 text-amber-600" />}
               {pipeline.trend === 'decreasing' && <TrendingDown className="h-3 w-3 text-green-600" />}
-              {pipeline.trend === 'stable' && <Minus className="h-3 w-3 text-muted-foreground" />}
+              {pipeline.trend === 'stable' && <Minus className="h-3 w-3 text-muted-foreground/85" aria-hidden="true" />}
               <span className={cn(
                 "text-sm capitalize",
-                pipeline.trend === 'increasing' ? "text-amber-600" : 
-                pipeline.trend === 'decreasing' ? "text-green-600" : "text-muted-foreground"
+                pipeline.trend === 'increasing' ? "text-amber-600" :
+                pipeline.trend === 'decreasing' ? "text-green-600" : "text-muted-foreground/85"
               )}>
                 {pipeline.trend || 'stable'} vs last week
               </span>
@@ -662,8 +668,8 @@ export default function PipelineHealthMonitor() {
         {/* Recent runs timeline */}
         <div className="mt-4">
           <div className="flex justify-between items-center mb-2">
-            <p className="text-xs text-muted-foreground">Recent Run Pattern</p>
-            <p className="text-xs text-muted-foreground">Last run: {mounted ? formatRelativeTime(pipeline.lastRun) : 'Loading...'}</p>
+            <p className="text-xs text-muted-foreground/85">Recent Run Pattern</p>
+            <p className="text-xs text-muted-foreground/85">Last run: {mounted ? formatRelativeTime(pipeline.lastRun) : 'Loading...'}</p>
           </div>
           <HealthIndicator runs={pipeline.recentRuns} mounted={mounted} />
         </div>
@@ -675,19 +681,22 @@ export default function PipelineHealthMonitor() {
   const ComplexityBadge: React.FC<{ complexity: 'Low' | 'Medium' | 'High' | 'Intensive' }> = ({ complexity }) => {
     const getComplexityStyles = (complexity: 'Low' | 'Medium' | 'High' | 'Intensive') => {
       switch(complexity) {
-        case 'Low': return 'bg-green-100 text-green-800 border-green-200';
-        case 'Medium': return 'bg-blue-100 text-blue-800 border-blue-200';
-        case 'High': return 'bg-amber-100 text-amber-800 border-amber-200';
-        case 'Intensive': return 'bg-red-100 text-red-800 border-red-200';
-        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+        case 'Low': return 'bg-green-100 text-green-800 border-green-200 [transition:var(--transition-colors)]';
+        case 'Medium': return 'bg-blue-100 text-blue-800 border-blue-200 [transition:var(--transition-colors)]';
+        case 'High': return 'bg-amber-100 text-amber-800 border-amber-200 [transition:var(--transition-colors)]';
+        case 'Intensive': return 'bg-red-100 text-red-800 border-red-200 [transition:var(--transition-colors)]';
+        default: return 'bg-gray-100 text-gray-800 border-gray-200 [transition:var(--transition-colors)]';
       }
     };
 
     return (
-      <span className={cn(
-        "inline-flex items-center px-2 py-1 text-xs font-medium rounded-md border",
-        getComplexityStyles(complexity)
-      )}>
+      <span
+        className={cn(
+          "inline-flex items-center px-2 py-1 text-xs font-medium rounded-md border",
+          getComplexityStyles(complexity)
+        )}
+        aria-label={`Query complexity: ${complexity}`}
+      >
         {complexity}
       </span>
     );
@@ -719,11 +728,11 @@ export default function PipelineHealthMonitor() {
             <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">Query Analysis</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground">Data Scanned</p>
+                <p className="text-xs text-muted-foreground/85">Data Scanned</p>
                 <p className="text-lg font-mono">{pipeline.dataScanned?.toLocaleString()} GB</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Partitions Accessed</p>
+                <p className="text-xs text-muted-foreground/85">Partitions Accessed</p>
                 <p className="text-lg font-mono">{pipeline.partitionsAccessed?.toLocaleString()}</p>
               </div>
             </div>
@@ -735,11 +744,11 @@ export default function PipelineHealthMonitor() {
             <h4 className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wide">System Resources</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground">Memory Allocated</p>
+                <p className="text-xs text-muted-foreground/85">Memory Allocated</p>
                 <p className="text-lg font-mono">{(pipeline.currentResources.memoryMB / 1024).toFixed(1)} GB</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">CPU Cores</p>
+                <p className="text-xs text-muted-foreground/85">CPU Cores</p>
                 <p className="text-lg font-mono">{pipeline.currentResources.cpuCores}</p>
               </div>
             </div>
@@ -792,8 +801,8 @@ export default function PipelineHealthMonitor() {
           {/* Upstream Dependencies */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-muted-foreground">DEPENDS ON</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground/85">DEPENDS ON</span>
+              <span className="text-xs text-muted-foreground/85">
                 {enhancedLineage.upstream.length} sources
               </span>
             </div>
@@ -805,7 +814,7 @@ export default function PipelineHealthMonitor() {
                 >
                   <div>
                     <p className="text-sm font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.platform}</p>
+                    <p className="text-xs text-muted-foreground/85">{item.platform}</p>
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {item.type.toUpperCase()}
@@ -822,8 +831,8 @@ export default function PipelineHealthMonitor() {
           {/* Downstream Dependencies */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-muted-foreground">FEEDS INTO</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground/85">FEEDS INTO</span>
+              <span className="text-xs text-muted-foreground/85">
                 {enhancedLineage.downstream.length} consumers
               </span>
             </div>
@@ -835,7 +844,7 @@ export default function PipelineHealthMonitor() {
                 >
                   <div>
                     <p className="text-sm font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.platform}</p>
+                    <p className="text-xs text-muted-foreground/85">{item.platform}</p>
                   </div>
                   <Badge variant="outline" className="text-xs">
                     {item.type.toUpperCase()}
@@ -866,7 +875,7 @@ export default function PipelineHealthMonitor() {
             <div className="space-y-2">
               <div className="font-mono text-sm">{pipeline.lastError.taskId}</div>
               <div className="text-xs">{pipeline.lastError.message}</div>
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground/85">
                 {formatRelativeTime(pipeline.lastError.timestamp)}
               </div>
             </div>
@@ -983,13 +992,13 @@ export default function PipelineHealthMonitor() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <div className="border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <header className="border-b" role="banner">
+        <div className={cn("max-w-7xl mx-auto", spacing.section)}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl">Pipeline Operations</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {statusCounts.total} pipelines • 
+              <h1 className="text-2xl font-bold">Pipeline Operations</h1>
+              <p className="text-sm text-muted-foreground/85 mt-2" role="status" aria-live="polite">
+                {statusCounts.total} pipelines •
                 {statusCounts.critical > 0 && <span className="text-red-500 font-medium"> {statusCounts.critical} critical</span>}
                 {statusCounts.warning > 0 && <span className="text-amber-600 font-medium"> • {statusCounts.warning} need attention</span>}
                 {statusCounts.healthy > 0 && <span className="text-green-600"> • {statusCounts.healthy} healthy</span>}
@@ -1000,8 +1009,11 @@ export default function PipelineHealthMonitor() {
                 variant={autoRefresh ? "secondary" : "outline"}
                 size="sm"
                 onClick={() => setAutoRefresh(!autoRefresh)}
+                className="[transition:var(--transition-button)]"
+                aria-label={autoRefresh ? "Auto-refresh enabled" : "Enable auto-refresh"}
+                aria-pressed={autoRefresh}
               >
-                <RefreshCw className={cn("h-4 w-4", autoRefresh && "animate-spin")} />
+                <RefreshCw className={cn("h-4 w-4", autoRefresh && "animate-spin")} aria-hidden="true" />
                 {autoRefresh && <span className="ml-2">Auto</span>}
               </Button>
             </div>
@@ -1009,24 +1021,25 @@ export default function PipelineHealthMonitor() {
 
           {/* Status counts shown in header description instead */}
         </div>
-      </div>
+      </header>
 
       {/* Filters and Active Filter Display */}
-      <div className="max-w-7xl mx-auto px-6 py-4 space-y-3">
-        <div className="flex items-center gap-3">
+      <section className={cn("max-w-7xl mx-auto", spacing.section, spacing.stackCompact)} role="search" aria-label="Pipeline filters">
+        <div className={cn("flex items-center", spacing.stack)}>
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/85" aria-hidden="true" />
             <Input
               placeholder="Search pipelines..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
+              aria-label="Search pipelines by name or owner"
             />
           </div>
 
           <Select value={domainFilter} onValueChange={setDomainFilter}>
-            <SelectTrigger className="w-[140px]">
-              <Database className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[140px]" aria-label="Filter by domain">
+              <Database className="h-4 w-4 mr-2" aria-hidden="true" />
               <SelectValue placeholder="All Domains" />
             </SelectTrigger>
             <SelectContent>
@@ -1040,8 +1053,8 @@ export default function PipelineHealthMonitor() {
           </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[140px]">
-              <Filter className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[140px]" aria-label="Filter by status">
+              <Filter className="h-4 w-4 mr-2" aria-hidden="true" />
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
@@ -1054,8 +1067,8 @@ export default function PipelineHealthMonitor() {
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[140px]">
-              <ArrowUpDown className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[140px]" aria-label="Sort pipelines by">
+              <ArrowUpDown className="h-4 w-4 mr-2" aria-hidden="true" />
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
@@ -1070,44 +1083,49 @@ export default function PipelineHealthMonitor() {
 
         {/* Active Filters Display */}
         {activeFilters.length > 0 && (
-          <div className="flex items-center gap-2 p-2 bg-muted/50 rounded">
-            <span className="text-sm font-medium">Filtered:</span>
-            {activeFilters.map((filter, idx) => (
-              <Badge key={idx} variant="secondary" className="gap-1">
-                {filter.type === 'domain' && `Domain: ${filter.value}`}
-                {filter.type === 'status' && `Status: ${filter.value}`}
-                {filter.type === 'search' && `Search: ${filter.value}`}
-                <X 
-                  className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive" 
-                  onClick={() => {
-                    if (filter.type === 'domain') setDomainFilter('all');
-                    if (filter.type === 'status') setStatusFilter('all');
-                    if (filter.type === 'search') setSearch('');
-                  }}
-                />
-              </Badge>
-            ))}
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => {
-                setDomainFilter('all');
-                setStatusFilter('all');
-                setSearch('');
-              }}
-            >
-              Clear all filters
-            </Button>
+          <div className={cn("flex items-center flex-wrap bg-muted/50 rounded", spacing.cardCompact)} role="status" aria-label="Active filters">
+            <span className="text-sm font-medium text-foreground/85">Filtered:</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {activeFilters.map((filter, idx) => (
+                <Badge key={idx} variant="secondary" className="gap-1 [transition:var(--transition-colors)]">
+                  {filter.type === 'domain' && `Domain: ${filter.value}`}
+                  {filter.type === 'status' && `Status: ${filter.value}`}
+                  {filter.type === 'search' && `Search: ${filter.value}`}
+                  <X
+                    className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive [transition:var(--transition-colors)]"
+                    onClick={() => {
+                      if (filter.type === 'domain') setDomainFilter('all');
+                      if (filter.type === 'status') setStatusFilter('all');
+                      if (filter.type === 'search') setSearch('');
+                    }}
+                    aria-label={`Remove ${filter.type} filter: ${filter.value}`}
+                  />
+                </Badge>
+              ))}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDomainFilter('all');
+                  setStatusFilter('all');
+                  setSearch('');
+                }}
+                className="[transition:var(--transition-colors)]"
+                aria-label="Clear all active filters"
+              >
+                Clear all filters
+              </Button>
+            </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Main Content - Clean Table without Duplicate Filters */}
-      <div className="max-w-7xl mx-auto px-6 pb-6">
-        <Card className="border-0 shadow-sm">
-          
-          <CardContent>
-            <Table>
+      <section className={cn("max-w-7xl mx-auto", spacing.section)} role="region" aria-label="Pipeline list">
+        <Card elevation="subtle" className="border-0">
+
+          <CardContent className={spacing.card}>
+            <Table role="table" aria-label="Pipeline operations table">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[250px]">Pipeline</TableHead>
@@ -1123,55 +1141,58 @@ export default function PipelineHealthMonitor() {
                 <TooltipProvider>
                   {filteredPipelines.map(pipeline => {
                     const statusColor = getStatusColor(pipeline.status);
-                    
+
                     return (
-                      <TableRow 
+                      <TableRow
                         key={pipeline.id}
                         ref={el => pipelineRefs.current[pipeline.name] = el}
                         className={cn(
-                          "hover:bg-muted/50 cursor-pointer transition-all",
+                          "hover:bg-muted/50 cursor-pointer [transition:var(--transition-colors)]",
                           pipeline.status === 'failed' && "bg-red-500/5",
                           pipeline.performance && pipeline.performance.percentChange > 50 && "bg-amber-500/5"
                         )}
                         onMouseEnter={() => setHoveredPipeline(pipeline)}
                         onMouseLeave={() => setHoveredPipeline(null)}
                         onClick={() => setSelectedPipeline(pipeline)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`View details for ${pipeline.name} pipeline`}
                       >
                         <TableCell>
                           <div>
-                            <Link 
+                            <Link
                               href={`/develop/pipelines/studio?id=${pipeline.id}&mode=operations`}
-                              className="font-medium hover:underline hover:text-primary"
+                              className="font-medium hover:underline hover:text-primary [transition:var(--transition-colors)]"
                               onClick={(e) => e.stopPropagation()}
                             >
                               {pipeline.name}
                             </Link>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-muted-foreground/85">
                               {pipeline.team} • {pipeline.environment}
                             </div>
                           </div>
                         </TableCell>
-                        
+
                         <TableCell>
                           <StatusBadge status={pipeline.status} />
                         </TableCell>
-                        
+
                         <TableCell className="text-sm">
                           {pipeline.schedule}
                         </TableCell>
-                        
+
                         <TableCell>
                           <div className="flex items-center gap-2 text-sm">
                             <span className="font-mono">{pipeline.avgRuntime}</span>
                             {pipeline.trend === 'increasing' && (
-                              <TrendingUp className="h-3 w-3 text-amber-600" />
+                              <TrendingUp className="h-3 w-3 text-amber-600" aria-label="Runtime increasing" />
                             )}
                             {pipeline.trend === 'decreasing' && (
-                              <TrendingDown className="h-3 w-3 text-green-600" />
+                              <TrendingDown className="h-3 w-3 text-green-600" aria-label="Runtime decreasing" />
                             )}
                           </div>
                         </TableCell>
-                        
+
                         <TableCell>
                           {pipeline.queryComplexity && (
                             <Badge variant={getComplexityVariant(pipeline.queryComplexity)}>
@@ -1179,11 +1200,11 @@ export default function PipelineHealthMonitor() {
                             </Badge>
                           )}
                         </TableCell>
-                        
+
                         <TableCell>
                           <HealthIndicator runs={pipeline.recentRuns} mounted={mounted} />
                         </TableCell>
-                        
+
                         <TableCell className="text-right">
                           <div className="flex gap-1 justify-end">
                             <Button
@@ -1193,14 +1214,18 @@ export default function PipelineHealthMonitor() {
                                 e.stopPropagation();
                                 router.push(`/develop/pipelines/studio?id=${pipeline.id}&mode=operations`);
                               }}
+                              className="[transition:var(--transition-button)]"
+                              aria-label={`Open ${pipeline.name} in Studio`}
                             >
-                              <GitBranch className="h-4 w-4 mr-1" />
+                              <GitBranch className="h-4 w-4 mr-1" aria-hidden="true" />
                               View
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => setSelectedPipeline(pipeline)}
+                              className="[transition:var(--transition-button)]"
+                              aria-label={`View details for ${pipeline.name}`}
                             >
                               Details
                             </Button>
@@ -1212,15 +1237,15 @@ export default function PipelineHealthMonitor() {
                 </TooltipProvider>
               </TableBody>
             </Table>
-            
+
             {filteredPipelines.length === 0 && (
-              <div className="p-8 text-center text-muted-foreground">
+              <div className={cn("text-center text-muted-foreground/85", spacing.cardGenerous)} role="status">
                 No pipelines match your filters
               </div>
             )}
           </CardContent>
         </Card>
-      </div>
+      </section>
 
       {/* Pipeline Detail Panel */}
       {selectedPipeline && (

@@ -77,21 +77,30 @@ export class VultrLLMService {
           stream: false // Non-streaming for simplicity in agent context
         };
 
-        const response = await fetch(`${this.baseURL}/chat/completions`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
-          },
-          body: JSON.stringify(requestBody),
-          signal: AbortSignal.timeout(60000), // 60 second timeout for LLM inference
-        }).catch(error => {
+        // Create abort controller for timeout handling
+        const abortController = new AbortController();
+        const timeoutId = setTimeout(() => abortController.abort(), 240000); // 240 second timeout (4 minutes)
+
+        let response;
+        try {
+          response = await fetch(`${this.baseURL}/chat/completions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`,
+            },
+            body: JSON.stringify(requestBody),
+            signal: abortController.signal,
+          });
+          clearTimeout(timeoutId);
+        } catch (error: any) {
+          clearTimeout(timeoutId);
           // Network or timeout errors
           if (error.name === 'AbortError') {
-            throw new Error('Request timeout after 60 seconds');
+            throw new Error('Request timeout after 240 seconds');
           }
           throw new Error(`Network error: ${error.message}`);
-        });
+        }
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => 'Unknown error');
@@ -173,6 +182,12 @@ export class VultrLLMService {
    * Stream a response from the LLM (for chat interfaces)
    */
   async *stream(request: LLMRequest): AsyncGenerator<string, void, unknown> {
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.error('[VultrLLM] Streaming timeout after 240 seconds');
+      abortController.abort();
+    }, 240000); // 240 second timeout (4 minutes)
+
     try {
       const messages = [
         {
@@ -193,6 +208,7 @@ export class VultrLLMService {
         stream: true
       };
 
+      console.log('[VultrLLM] Starting streaming request to:', this.baseURL);
       const response = await fetch(`${this.baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -200,24 +216,32 @@ export class VultrLLMService {
           'Authorization': `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify(requestBody),
+        signal: abortController.signal,
       });
 
       if (!response.ok) {
+        clearTimeout(timeoutId);
         const errorText = await response.text();
         throw new Error(`Vultr API error: ${response.status} - ${errorText}`);
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
+        clearTimeout(timeoutId);
         throw new Error('No response body');
       }
 
+      console.log('[VultrLLM] Stream started successfully');
       const decoder = new TextDecoder();
       let buffer = '';
+      let chunkCount = 0;
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          console.log('[VultrLLM] Stream completed. Total chunks:', chunkCount);
+          break;
+        }
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split('\n');
@@ -226,8 +250,10 @@ export class VultrLLMService {
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6).trim();
-            
+
             if (data === '[DONE]') {
+              clearTimeout(timeoutId);
+              console.log('[VultrLLM] Received [DONE] signal');
               return;
             }
 
@@ -235,6 +261,7 @@ export class VultrLLMService {
               const chunk = JSON.parse(data);
               const content = chunk.choices?.[0]?.delta?.content;
               if (content) {
+                chunkCount++;
                 yield content;
               }
             } catch {
@@ -243,8 +270,15 @@ export class VultrLLMService {
           }
         }
       }
-    } catch (error) {
-      console.error('VultrLLMService streaming error:', error);
+
+      clearTimeout(timeoutId);
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      console.error('[VultrLLM] Streaming error:', error.message);
+
+      if (error.name === 'AbortError') {
+        throw new Error('Streaming timeout after 240 seconds');
+      }
       throw error;
     }
   }

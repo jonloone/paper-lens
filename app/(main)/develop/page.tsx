@@ -36,6 +36,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { MCPStatusSidebar } from '@/components/develop/MCPStatusSidebar';
+import { useDensitySpacing } from '@/contexts/DensityContext';
 
 interface Pipeline {
   id: string;
@@ -76,11 +77,14 @@ interface RecentWorkItem {
 type ViewMode = 'visual' | 'split' | 'code';
 
 export default function UnifiedDevelopPage() {
+  // Density-aware spacing
+  const spacing = useDensitySpacing();
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const pipelineId = searchParams.get('pipeline');
   const action = searchParams.get('action');
-  
+
   const [intent, setIntent] = useState('');
   const [selectedPath, setSelectedPath] = useState<'fix' | 'template' | 'scratch' | null>(null);
   const [selectedPipeline, setSelectedPipeline] = useState<Pipeline | null>(null);
@@ -295,32 +299,41 @@ export default function UnifiedDevelopPage() {
   };
   
   const ViewModeSelector = () => (
-    <div className="flex items-center gap-2 p-1 bg-muted rounded-lg">
+    <div className="flex items-center gap-2 p-1 bg-muted rounded-lg" role="radiogroup" aria-label="Editor view mode">
       <Button
         variant={preferredView === 'visual' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => setPreferredView('visual')}
-        className="h-8"
+        className="h-8 [transition:var(--transition-button)]"
+        role="radio"
+        aria-checked={preferredView === 'visual'}
+        aria-label="Visual editor mode"
       >
-        <Eye className="h-4 w-4 mr-1" />
+        <Eye className="h-4 w-4 mr-1" aria-hidden="true" />
         Visual
       </Button>
       <Button
         variant={preferredView === 'split' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => setPreferredView('split')}
-        className="h-8"
+        className="h-8 [transition:var(--transition-button)]"
+        role="radio"
+        aria-checked={preferredView === 'split'}
+        aria-label="Split view mode"
       >
-        <Split className="h-4 w-4 mr-1" />
+        <Split className="h-4 w-4 mr-1" aria-hidden="true" />
         Split
       </Button>
       <Button
         variant={preferredView === 'code' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => setPreferredView('code')}
-        className="h-8"
+        className="h-8 [transition:var(--transition-button)]"
+        role="radio"
+        aria-checked={preferredView === 'code'}
+        aria-label="Code editor mode"
       >
-        <Code className="h-4 w-4 mr-1" />
+        <Code className="h-4 w-4 mr-1" aria-hidden="true" />
         Code
       </Button>
     </div>
@@ -329,65 +342,70 @@ export default function UnifiedDevelopPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <div className="border-b bg-muted/30">
-        <div className="max-w-7xl mx-auto px-8 py-6">
+      <header className="border-b bg-muted/30" role="banner">
+        <div className={cn("max-w-7xl mx-auto", spacing.section)}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-light">Develop</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-2xl font-bold">Develop</h1>
+              <p className="text-muted-foreground/85 mt-2">
                 Build pipelines, queries, and data products
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">Default view:</span>
+              <span className="text-sm text-muted-foreground/85">Default view:</span>
               <ViewModeSelector />
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
       <div className="flex-1 flex">
         {/* Main Content */}
-        <div className="flex-1">
-          <div className="max-w-7xl mx-auto p-8 space-y-8">
+        <main className="flex-1" role="main">
+          <div className={cn("max-w-7xl mx-auto", spacing.section, spacing.stackRelaxed)}>
           
           {/* Quick Actions - Featured actions at top */}
           {!selectedPath && (
             <>
               {/* Quick Actions */}
-              <Card>
+              <Card elevation="base" role="region" aria-labelledby="quick-actions-heading">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2" id="quick-actions-heading">
+                    <Sparkles className="h-5 w-5" aria-hidden="true" />
                     Quick Actions
                   </CardTitle>
                   <CardDescription>
                     What engineers do most - keyboard shortcuts available
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
+                <CardContent className={spacing.card}>
+                  <div className={cn("grid grid-cols-3", spacing.grid)} role="list" aria-label="Quick action shortcuts">
                     {quickActions.map((action) => {
                       const Icon = action.icon;
                       return (
                         <Card
                           key={action.id}
+                          elevation="base"
+                          interactive
                           className={cn(
-                            "cursor-pointer transition-colors border-2",
+                            "cursor-pointer border-2",
                             getActionColorClass(action.color)
                           )}
                           onClick={() => router.push(action.action)}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`${action.title} - ${action.description}. Keyboard shortcut: ${action.hotkey}`}
                         >
-                          <CardContent className="pt-6">
+                          <CardContent className={spacing.card}>
                             <div className="text-center space-y-3">
-                              <div className="h-12 w-12 rounded-xl flex items-center justify-center mx-auto bg-white shadow-sm">
-                                <Icon className="h-6 w-6" />
+                              <div className="h-12 w-12 rounded-xl flex items-center justify-center mx-auto bg-white [box-shadow:var(--elevation-1)]">
+                                <Icon className="h-6 w-6" aria-hidden="true" />
                               </div>
                               <div>
                                 <p className="font-semibold">{action.title}</p>
-                                <p className="text-sm opacity-80 mt-1">{action.description}</p>
+                                <p className="text-sm opacity-85 mt-1">{action.description}</p>
                               </div>
-                              <div className="text-xs font-mono bg-white/50 px-2 py-1 rounded">
+                              <div className="text-xs font-mono bg-white/50 px-2 py-1 rounded" aria-label={`Keyboard shortcut: ${action.hotkey}`}>
                                 {action.hotkey}
                               </div>
                             </div>
@@ -400,25 +418,30 @@ export default function UnifiedDevelopPage() {
               </Card>
 
               {/* Recent Work */}
-              <Card>
+              <Card elevation="base" role="region" aria-labelledby="recent-work-heading">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <History className="h-5 w-5" />
+                      <CardTitle className="flex items-center gap-2" id="recent-work-heading">
+                        <History className="h-5 w-5" aria-hidden="true" />
                         Continue Working On
                       </CardTitle>
                       <CardDescription>Pick up where you left off</CardDescription>
                     </div>
-                    <Button variant="ghost" size="sm">View All</Button>
+                    <Button variant="ghost" size="sm" className="[transition:var(--transition-button)]" aria-label="View all recent work">
+                      View All
+                    </Button>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className={spacing.card}>
+                  <div className={spacing.stackCompact} role="list" aria-label="Recent work items">
                     {recentWork.map((item) => (
                       <div
                         key={item.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                        className={cn(
+                          "flex items-center justify-between border rounded-lg hover:bg-muted/50 cursor-pointer [transition:var(--transition-colors)]",
+                          spacing.cardCompact
+                        )}
                         onClick={() => {
                           if (item.type === 'pipeline') {
                             const mode = item.status === 'failed' ? 'operations' : 'monitor';
@@ -431,14 +454,17 @@ export default function UnifiedDevelopPage() {
                             router.push(`${routes[item.type]}?item=${item.name}`);
                           }
                         }}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`Continue working on ${item.name} ${item.type}, last modified ${formatTimeAgo(item.lastModified)}`}
                       >
                         <div className="flex items-center gap-4">
-                          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
+                          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center" aria-hidden="true">
                             {getWorkTypeIcon(item.type)}
                           </div>
                           <div>
                             <p className="font-medium">{item.name}</p>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground/85">
                               <Badge variant="outline" className="text-xs">{item.type}</Badge>
                               <span>•</span>
                               <span>{formatTimeAgo(item.lastModified)}</span>
@@ -447,7 +473,7 @@ export default function UnifiedDevelopPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           {getStatusIcon(item.status)}
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          <ChevronRight className="h-4 w-4 text-muted-foreground/85" aria-hidden="true" />
                         </div>
                       </div>
                     ))}
@@ -456,37 +482,42 @@ export default function UnifiedDevelopPage() {
               </Card>
 
               {/* Pattern Gallery */}
-              <Card>
+              <Card elevation="base" role="region" aria-labelledby="pattern-gallery-heading">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Layers className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2" id="pattern-gallery-heading">
+                    <Layers className="h-5 w-5" aria-hidden="true" />
                     Start from Pattern
                   </CardTitle>
                   <CardDescription>
                     Proven patterns for common data workflows
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <CardContent className={spacing.card}>
+                  <div className={cn("grid grid-cols-2 md:grid-cols-4", spacing.grid)} role="list" aria-label="Pipeline templates">
                     {templates.map(template => {
                       const Icon = template.icon;
                       return (
                         <Card
                           key={template.id}
-                          className="cursor-pointer hover:bg-muted/50 transition-colors"
+                          elevation="base"
+                          interactive
+                          className="cursor-pointer"
                           onClick={() => handleTemplateSelect(template)}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`${template.name} template - ${template.description}. ${template.popularity}% popularity`}
                         >
-                          <CardContent className="pt-4">
+                          <CardContent className={spacing.cardCompact}>
                             <div className="space-y-3">
                               <div className="flex items-center justify-between">
-                                <Icon className="h-6 w-6 text-primary" />
-                                <Badge variant="secondary" className="text-xs">
+                                <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
+                                <Badge variant="secondary" className="text-xs" aria-label={`${template.popularity}% of users use this template`}>
                                   {template.popularity}%
                                 </Badge>
                               </div>
                               <div>
                                 <p className="font-medium text-sm">{template.name}</p>
-                                <p className="text-xs text-muted-foreground mt-1">
+                                <p className="text-xs text-muted-foreground/85 mt-1">
                                   {template.description}
                                 </p>
                               </div>
@@ -494,7 +525,7 @@ export default function UnifiedDevelopPage() {
                                 <Badge variant="outline" className="text-xs">
                                   {template.category}
                                 </Badge>
-                                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                                <ChevronRight className="h-3 w-3 text-muted-foreground/85" aria-hidden="true" />
                               </div>
                             </div>
                           </CardContent>
@@ -506,25 +537,31 @@ export default function UnifiedDevelopPage() {
               </Card>
 
               {/* AI-Powered Intent Input */}
-              <Card className="border-dashed">
+              <Card elevation="subtle" surface="bordered" className="border-dashed" role="region" aria-labelledby="intent-input-heading">
                 <CardHeader>
-                  <CardTitle className="text-base">Or describe what you want to build</CardTitle>
+                  <CardTitle className="text-base" id="intent-input-heading">Or describe what you want to build</CardTitle>
                   <CardDescription>
                     AI will help route you to the right workspace
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2">
+                <CardContent className={spacing.card}>
+                  <div className={cn("flex", spacing.stack)}>
                     <Input
                       placeholder="e.g., Fix my failed customer ETL pipeline, Build a daily revenue report, Create streaming pipeline..."
                       value={intent}
                       onChange={(e) => setIntent(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleIntentSubmit()}
                       className="flex-1"
+                      aria-label="Describe what you want to build"
                     />
-                    <Button onClick={handleIntentSubmit} disabled={!intent.trim()}>
+                    <Button
+                      onClick={handleIntentSubmit}
+                      disabled={!intent.trim()}
+                      className="[transition:var(--transition-button)]"
+                      aria-label="Get started with AI assistance"
+                    >
                       Get Started
-                      <ArrowRight className="ml-2 h-4 w-4" />
+                      <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                     </Button>
                   </div>
                 </CardContent>
@@ -534,47 +571,53 @@ export default function UnifiedDevelopPage() {
           
           {/* Fix Failed Pipeline Path */}
           {selectedPath === 'fix' && !selectedPipeline && (
-            <Card>
+            <Card elevation="base" role="region" aria-labelledby="fix-pipeline-heading">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Select Pipeline to Fix</CardTitle>
+                    <CardTitle id="fix-pipeline-heading">Select Pipeline to Fix</CardTitle>
                     <CardDescription>
                       Choose from your existing pipelines
                     </CardDescription>
                   </div>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => setSelectedPath(null)}
+                    className="[transition:var(--transition-button)]"
+                    aria-label="Go back to main menu"
                   >
                     ← Back
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className={spacing.card}>
+                <div className={spacing.stackCompact} role="list" aria-label="Your pipelines">
                   {yourPipelines.map(pipeline => (
                     <div
                       key={pipeline.id}
                       className={cn(
-                        "flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors",
+                        "flex items-center justify-between border rounded-lg hover:bg-muted/50 cursor-pointer [transition:var(--transition-colors)]",
+                        spacing.cardCompact,
                         pipeline.status === 'failed' && "border-red-200 bg-red-50/50"
                       )}
                       onClick={() => handlePipelineSelect(pipeline)}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`${pipeline.name} - ${pipeline.description}. Status: ${pipeline.status}`}
                     >
                       <div className="flex items-center gap-4">
                         {getStatusIcon(pipeline.status)}
                         <div>
                           <p className="font-medium">{pipeline.name}</p>
-                          <p className="text-sm text-muted-foreground">{pipeline.description}</p>
+                          <p className="text-sm text-muted-foreground/85">{pipeline.description}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-muted-foreground/85">
                           Modified {new Date(pipeline.lastModified).toLocaleDateString()}
                         </span>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/85" aria-hidden="true" />
                       </div>
                     </div>
                   ))}
@@ -585,45 +628,52 @@ export default function UnifiedDevelopPage() {
           
           {/* Template Selection Path */}
           {selectedPath === 'template' && !selectedTemplate && (
-            <Card>
+            <Card elevation="base" role="region" aria-labelledby="template-selection-heading">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>Choose a Template</CardTitle>
+                    <CardTitle id="template-selection-heading">Choose a Template</CardTitle>
                     <CardDescription>
                       Start with a proven pipeline pattern
                     </CardDescription>
                   </div>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
                     onClick={() => setSelectedPath(null)}
+                    className="[transition:var(--transition-button)]"
+                    aria-label="Go back to main menu"
                   >
                     ← Back
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CardContent className={spacing.card}>
+                <div className={cn("grid grid-cols-1 md:grid-cols-3", spacing.grid)} role="list" aria-label="Pipeline templates">
                   {templates.map(template => {
                     const Icon = template.icon;
                     return (
                       <Card
                         key={template.id}
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        elevation="base"
+                        interactive
+                        className="cursor-pointer"
                         onClick={() => handleTemplateSelect(template)}
+                        tabIndex={0}
+                        role="button"
+                        aria-label={`${template.name} template - ${template.description}. ${template.popularity}% of users use this`}
                       >
-                        <CardContent className="pt-6">
+                        <CardContent className={spacing.card}>
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <Icon className="h-8 w-8 text-primary" />
-                              <Badge variant="secondary" className="text-xs">
+                              <Icon className="h-8 w-8 text-primary" aria-hidden="true" />
+                              <Badge variant="secondary" className="text-xs" aria-label={`${template.popularity}% of users use this template`}>
                                 {template.popularity}% use this
                               </Badge>
                             </div>
                             <div>
                               <p className="font-medium">{template.name}</p>
-                              <p className="text-sm text-muted-foreground mt-1">
+                              <p className="text-sm text-muted-foreground/85 mt-1">
                                 {template.description}
                               </p>
                             </div>
@@ -633,7 +683,7 @@ export default function UnifiedDevelopPage() {
                               </Badge>
                               <span className="text-xs text-primary flex items-center">
                                 Use Template
-                                <ChevronRight className="h-3 w-3 ml-1" />
+                                <ChevronRight className="h-3 w-3 ml-1" aria-hidden="true" />
                               </span>
                             </div>
                           </div>
@@ -646,8 +696,8 @@ export default function UnifiedDevelopPage() {
             </Card>
           )}
           </div>
-        </div>
-        
+        </main>
+
         {/* MCP Status Sidebar */}
         <div className="border-l bg-muted/20 p-6">
           <MCPStatusSidebar />

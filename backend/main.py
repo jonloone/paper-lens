@@ -3,6 +3,14 @@ NexusOne Data Product Creation MVP Backend
 FastAPI application integrating real intelligence with smart infrastructure mocking
 """
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+import os
+
+# Load .env file from backend directory
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(env_path)
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -34,6 +42,9 @@ from .api.datahub_sync_routes import router as datahub_sync_router
 from .api.profile_routes import router as profile_router
 from .api.feedback_routes import router as feedback_router
 from .api.table_analysis_routes import router as table_analysis_router
+from .api.progressive_workspace_routes import router as progressive_workspace_router
+from .api.user_progression_routes import router as user_progression_router
+from .api.dashboard_intelligence_routes import router as dashboard_intelligence_router
 # TODO: Fix data_profiling_routes import - missing dependency
 # from .api.data_profiling_routes import router as data_profiling_router
 from .models import schemas  # Import to register models
@@ -155,6 +166,9 @@ app.include_router(datahub_sync_router)
 app.include_router(profile_router)
 app.include_router(feedback_router)
 app.include_router(table_analysis_router, prefix="/api/table-analysis")
+app.include_router(progressive_workspace_router)
+app.include_router(user_progression_router)
+app.include_router(dashboard_intelligence_router)
 # TODO: Fix data_profiling_router - missing dependency
 # app.include_router(data_profiling_router, prefix="/api")
 

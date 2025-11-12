@@ -5,25 +5,68 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-[0.98]",
+  cn(
+    "inline-flex items-center justify-center gap-2",
+    "whitespace-nowrap rounded-lg text-sm font-medium",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+    "focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    "disabled:pointer-events-none disabled:opacity-50",
+    "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+    // Motion tokens - choreographed multi-property transition
+    "[transition:var(--transition-button)]",
+    // Active state - tactile press feel
+    "active:scale-[0.98]",
+    "active:translate-y-0"
+  ),
   {
     variants: {
       variant: {
-        default:
-          "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:from-primary/90 hover:to-primary transform hover:-translate-y-0.5",
-        destructive:
-          "bg-gradient-to-r from-destructive to-destructive/90 text-destructive-foreground shadow-sm hover:shadow-md hover:from-destructive/90 hover:to-destructive",
-        outline:
-          "border border-input bg-background/50 shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-accent/50",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md",
-        ghost: "hover:bg-accent/10 hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline hover:text-primary/80",
+        default: cn(
+          "bg-primary text-primary-foreground",
+          "[box-shadow:var(--elevation-1)]",
+          // Subtle gradient for depth
+          "[background-image:linear-gradient(to_bottom,rgba(255,255,255,0.1),transparent)]",
+          // Hover choreography
+          "hover:bg-primary/90",
+          "hover:[box-shadow:var(--elevation-2)]",
+          "hover:-translate-y-0.5"
+        ),
+        destructive: cn(
+          "bg-destructive text-destructive-foreground",
+          "[box-shadow:var(--elevation-1)]",
+          "[background-image:linear-gradient(to_bottom,rgba(255,255,255,0.1),transparent)]",
+          "hover:bg-destructive/90",
+          "hover:[box-shadow:var(--elevation-2)]",
+          "hover:-translate-y-0.5"
+        ),
+        outline: cn(
+          "border-2 border-input bg-background/50",
+          "[box-shadow:var(--elevation-0)]",
+          "hover:bg-accent hover:text-accent-foreground",
+          "hover:border-accent",
+          "hover:[box-shadow:var(--elevation-1)]",
+          "hover:scale-[1.02]"
+        ),
+        secondary: cn(
+          "bg-secondary text-secondary-foreground",
+          "[box-shadow:var(--elevation-1)]",
+          "hover:bg-secondary/80",
+          "hover:[box-shadow:var(--elevation-2)]",
+          "hover:-translate-y-0.5"
+        ),
+        ghost: cn(
+          "hover:bg-accent/10 hover:text-accent-foreground",
+          "hover:scale-105"
+        ),
+        link: cn(
+          "text-primary underline-offset-4",
+          "hover:underline hover:text-primary/80"
+        ),
       },
       size: {
         default: "h-9 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
-        lg: "h-10 rounded-md px-8",
+        lg: "h-10 rounded-lg px-8",
         icon: "h-9 w-9",
       },
     },

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { ProductCardFactory } from '@/components/discover/ProductCardFactory';
@@ -29,6 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useDensitySpacing } from '@/contexts/DensityContext';
+import { cn } from '@/lib/utils';
 
 // Enhanced DataProduct interface with Foundation/Domain/Solution taxonomy
 interface DataProduct {
@@ -619,6 +621,9 @@ const mockProducts: DataProduct[] = [
 // (FoundationProductCard, DomainProductCard, SolutionProductCard)
 
 export default function DiscoverMarketplace() {
+  // Density-aware spacing
+  const spacing = useDensitySpacing();
+
   // Sidebar Filters (3 primary facets for table)
   const [selectedProductTypes, setSelectedProductTypes] = useState<string[]>([]);
   const [selectedProductFormats, setSelectedProductFormats] = useState<string[]>([]);
@@ -749,37 +754,42 @@ export default function DiscoverMarketplace() {
   return (
     <div className="flex-1">
       {/* Marketplace Header */}
-      <div className="border-b">
-        <div className="px-8 py-6 max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-4">
+      <header className="border-b" role="banner">
+        <div className={cn("max-w-7xl mx-auto", spacing.section)}>
+          <div className={cn("flex items-center justify-between", spacing.stack)}>
             <div>
               <h1 className="text-3xl font-bold tracking-tight">
                 Data Product Marketplace
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-muted-foreground/85 mt-2">
                 Discover, share, and deploy production-ready data products
               </p>
             </div>
-            <Button size="lg">
-              <Plus className="mr-2 h-4 w-4" />
+            <Button
+              size="lg"
+              className="[transition:var(--transition-button)] [box-shadow:var(--elevation-1)] hover:[box-shadow:var(--elevation-2)]"
+              aria-label="Publish a new data product to the marketplace"
+            >
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
               Publish Product
             </Button>
           </div>
 
           {/* Search Bar */}
-          <div className="flex gap-3">
+          <div className={cn("flex", spacing.stack)} role="search" aria-label="Product search and filtering">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/85" aria-hidden="true" />
               <Input
                 placeholder="Search data products by name, description, domain, or tags..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 h-11"
+                aria-label="Search data products"
               />
             </div>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[200px] h-11">
-                <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectTrigger className="w-[200px] h-11" aria-label="Sort products by">
+                <ArrowUpDown className="mr-2 h-4 w-4" aria-hidden="true" />
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
@@ -793,13 +803,19 @@ export default function DiscoverMarketplace() {
           </div>
 
           {/* Quick Access - Recently Viewed (Subtle) */}
-          <div className="flex items-center gap-2 mt-3">
-            <History className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Recent:</span>
+          <div className={cn("flex items-center flex-wrap", spacing.stackCompact)} role="navigation" aria-label="Recently viewed products">
+            <History className="h-3.5 w-3.5 text-muted-foreground/85" aria-hidden="true" />
+            <span className="text-xs text-muted-foreground/85">Recent:</span>
             <div className="flex gap-2 flex-wrap">
               {mockProducts.slice(0, 3).map(product => (
                 <Link key={product.id} href={`/discover/${product.id}`}>
-                  <Badge variant="outline" className="cursor-pointer hover:bg-muted text-xs h-6">
+                  <Badge
+                    variant="outline"
+                    className="cursor-pointer hover:bg-muted text-xs h-6 [transition:var(--transition-colors)]"
+                    tabIndex={0}
+                    role="link"
+                    aria-label={`Recently viewed: ${product.displayName || product.name}`}
+                  >
                     {product.displayName || product.name}
                   </Badge>
                 </Link>
@@ -807,39 +823,47 @@ export default function DiscoverMarketplace() {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
 
       {/* Main Layout: Sidebar + Content */}
-      <div className="flex gap-6 px-8 py-6 max-w-7xl mx-auto">
+      <div className={cn("flex max-w-7xl mx-auto", spacing.section, spacing.grid)} role="main">
         {/* Left Sidebar - Filters */}
-        <aside className="hidden lg:block w-64 shrink-0">
-          <div className="sticky top-6 space-y-4 max-h-[calc(100vh-8rem)] overflow-y-auto">
+        <aside className="hidden lg:block w-64 shrink-0" role="complementary" aria-label="Product filters">
+          <div className={cn("sticky top-6 max-h-[calc(100vh-8rem)] overflow-y-auto", spacing.stackRelaxed)}>
             {/* Filter Header */}
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold">Filters</h2>
+              <h2 className="text-sm font-semibold" id="filters-heading">Filters</h2>
               {activeFilterCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-auto p-0 text-xs">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="h-auto p-0 text-xs [transition:var(--transition-colors)]"
+                  aria-label="Clear all active filters"
+                >
                   Clear all
                 </Button>
               )}
             </div>
 
             {/* Product Type Filter */}
-            <div className="space-y-2">
+            <section className={spacing.stackCompact} aria-labelledby="product-type-heading">
               <button
                 onClick={() => toggleSection('productType')}
-                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/80 transition-colors"
+                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/85 [transition:var(--transition-colors)]"
+                aria-expanded={expandedSections.productType}
+                aria-controls="product-type-filters"
               >
-                <span>Product Type</span>
+                <span id="product-type-heading">Product Type</span>
                 {expandedSections.productType ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
                 )}
               </button>
               {expandedSections.productType && (
-                <div className="space-y-2 pl-2">
+                <div id="product-type-filters" className={cn("pl-2", spacing.stackCompact)} role="group">
                   {['Foundation', 'Domain', 'Solution'].map(type => {
                     const count = mockProducts.filter(p => p.productType === type).length;
                     return (
@@ -849,12 +873,13 @@ export default function DiscoverMarketplace() {
                             id={`type-${type}`}
                             checked={selectedProductTypes.includes(type)}
                             onCheckedChange={() => toggleFilter(type, selectedProductTypes, setSelectedProductTypes)}
+                            aria-label={`Filter by ${type} products`}
                           />
                           <label htmlFor={`type-${type}`} className="text-sm cursor-pointer">
                             {type}
                           </label>
                         </div>
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        <Badge variant="secondary" className="h-5 px-1.5 text-xs" aria-label={`${count} ${type} products`}>
                           {count}
                         </Badge>
                       </div>
@@ -862,25 +887,27 @@ export default function DiscoverMarketplace() {
                   })}
                 </div>
               )}
-            </div>
+            </section>
 
             <Separator />
 
             {/* Product Format Filter */}
-            <div className="space-y-2">
+            <section className={spacing.stackCompact} aria-labelledby="product-format-heading">
               <button
                 onClick={() => toggleSection('productFormat')}
-                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/80 transition-colors"
+                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/85 [transition:var(--transition-colors)]"
+                aria-expanded={expandedSections.productFormat}
+                aria-controls="product-format-filters"
               >
-                <span>Format</span>
+                <span id="product-format-heading">Format</span>
                 {expandedSections.productFormat ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
                 )}
               </button>
               {expandedSections.productFormat && (
-                <div className="space-y-2 pl-2">
+                <div id="product-format-filters" className={cn("pl-2", spacing.stackCompact)} role="group">
                   {['Stream', 'Dataset', 'API', 'Model', 'Dashboard', 'Pipeline'].map(format => {
                     const count = mockProducts.filter(p => p.productFormat === format).length;
                     if (count === 0) return null;
@@ -891,12 +918,13 @@ export default function DiscoverMarketplace() {
                             id={`format-${format}`}
                             checked={selectedProductFormats.includes(format)}
                             onCheckedChange={() => toggleFilter(format, selectedProductFormats, setSelectedProductFormats)}
+                            aria-label={`Filter by ${format} format`}
                           />
                           <label htmlFor={`format-${format}`} className="text-sm cursor-pointer">
                             {format}
                           </label>
                         </div>
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        <Badge variant="secondary" className="h-5 px-1.5 text-xs" aria-label={`${count} ${format} products`}>
                           {count}
                         </Badge>
                       </div>
@@ -904,25 +932,27 @@ export default function DiscoverMarketplace() {
                   })}
                 </div>
               )}
-            </div>
+            </section>
 
             <Separator />
 
             {/* Domain Filter */}
-            <div className="space-y-2">
+            <section className={spacing.stackCompact} aria-labelledby="domain-heading">
               <button
                 onClick={() => toggleSection('domain')}
-                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/80 transition-colors"
+                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/85 [transition:var(--transition-colors)]"
+                aria-expanded={expandedSections.domain}
+                aria-controls="domain-filters"
               >
-                <span>Domain</span>
+                <span id="domain-heading">Domain</span>
                 {expandedSections.domain ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
                 )}
               </button>
               {expandedSections.domain && (
-                <div className="space-y-2 pl-2">
+                <div id="domain-filters" className={cn("pl-2", spacing.stackCompact)} role="group">
                   {['Customer', 'Financial', 'Operations', 'Marketing', 'Product'].map(domain => {
                     const count = mockProducts.filter(p => p.domain === domain).length;
                     return (
@@ -932,12 +962,13 @@ export default function DiscoverMarketplace() {
                             id={`domain-${domain}`}
                             checked={selectedDomains.includes(domain)}
                             onCheckedChange={() => toggleFilter(domain, selectedDomains, setSelectedDomains)}
+                            aria-label={`Filter by ${domain} domain`}
                           />
                           <label htmlFor={`domain-${domain}`} className="text-sm cursor-pointer">
                             {domain}
                           </label>
                         </div>
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        <Badge variant="secondary" className="h-5 px-1.5 text-xs" aria-label={`${count} ${domain} products`}>
                           {count}
                         </Badge>
                       </div>
@@ -945,25 +976,27 @@ export default function DiscoverMarketplace() {
                   })}
                 </div>
               )}
-            </div>
+            </section>
 
             <Separator />
 
             {/* Quality Filter */}
-            <div className="space-y-2">
+            <section className={spacing.stackCompact} aria-labelledby="quality-heading">
               <button
                 onClick={() => toggleSection('quality')}
-                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/80 transition-colors"
+                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/85 [transition:var(--transition-colors)]"
+                aria-expanded={expandedSections.quality}
+                aria-controls="quality-filters"
               >
-                <span>Quality</span>
+                <span id="quality-heading">Quality</span>
                 {expandedSections.quality ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
                 )}
               </button>
               {expandedSections.quality && (
-                <div className="space-y-2 pl-2">
+                <div id="quality-filters" className={cn("pl-2", spacing.stackCompact)} role="group">
                   {[
                     { value: 'high', label: 'High (90+)', filter: (p: DataProduct) => p.quality.dataQuality >= 90 },
                     { value: 'medium', label: 'Medium (70-89)', filter: (p: DataProduct) => p.quality.dataQuality >= 70 && p.quality.dataQuality < 90 }
@@ -976,12 +1009,13 @@ export default function DiscoverMarketplace() {
                             id={`quality-${value}`}
                             checked={selectedQualityLevel.includes(value)}
                             onCheckedChange={() => toggleFilter(value, selectedQualityLevel, setSelectedQualityLevel)}
+                            aria-label={`Filter by ${label.toLowerCase()} quality products`}
                           />
                           <label htmlFor={`quality-${value}`} className="text-sm cursor-pointer">
                             {label}
                           </label>
                         </div>
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        <Badge variant="secondary" className="h-5 px-1.5 text-xs" aria-label={`${count} ${label.toLowerCase()} quality products`}>
                           {count}
                         </Badge>
                       </div>
@@ -989,30 +1023,32 @@ export default function DiscoverMarketplace() {
                   })}
                 </div>
               )}
-            </div>
+            </section>
 
             <Separator />
 
             {/* Freshness Filter */}
-            <div className="space-y-2">
+            <section className={spacing.stackCompact} aria-labelledby="freshness-heading">
               <button
                 onClick={() => toggleSection('freshness')}
-                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/80 transition-colors"
+                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/85 [transition:var(--transition-colors)]"
+                aria-expanded={expandedSections.freshness}
+                aria-controls="freshness-filters"
               >
-                <span>Freshness</span>
+                <span id="freshness-heading">Freshness</span>
                 {expandedSections.freshness ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
                 )}
               </button>
               {expandedSections.freshness && (
-                <div className="space-y-2 pl-2">
+                <div id="freshness-filters" className={cn("pl-2", spacing.stackCompact)} role="group">
                   {['real-time', '5 minutes', 'hourly', 'daily'].map(freshness => {
                     const count = mockProducts.filter(p => p.sla.freshness === freshness).length;
                     return (
                       <div key={freshness} className="flex items-center justify-between">
-                        <label className="text-sm cursor-pointer capitalize">
+                        <label className="text-sm cursor-pointer capitalize" aria-label={`${count} products with ${freshness} freshness`}>
                           {freshness}
                         </label>
                         <Badge variant="secondary" className="h-5 px-1.5 text-xs">
@@ -1023,25 +1059,27 @@ export default function DiscoverMarketplace() {
                   })}
                 </div>
               )}
-            </div>
+            </section>
 
             <Separator />
 
             {/* Use Cases Filter */}
-            <div className="space-y-2">
+            <section className={spacing.stackCompact} aria-labelledby="use-cases-heading">
               <button
                 onClick={() => toggleSection('useCases')}
-                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/80 transition-colors"
+                className="flex items-center justify-between w-full text-sm font-medium hover:text-foreground/85 [transition:var(--transition-colors)]"
+                aria-expanded={expandedSections.useCases}
+                aria-controls="use-cases-filters"
               >
-                <span>Use Cases</span>
+                <span id="use-cases-heading">Use Cases</span>
                 {expandedSections.useCases ? (
-                  <ChevronUp className="h-4 w-4" />
+                  <ChevronUp className="h-4 w-4" aria-hidden="true" />
                 ) : (
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className="h-4 w-4" aria-hidden="true" />
                 )}
               </button>
               {expandedSections.useCases && (
-                <div className="space-y-2 pl-2 max-h-64 overflow-y-auto">
+                <div id="use-cases-filters" className={cn("pl-2 max-h-64 overflow-y-auto", spacing.stackCompact)} role="group">
                   {allUseCases.slice(0, 15).map(useCase => {
                     const count = mockProducts.filter(p => p.useCases?.includes(useCase)).length;
                     return (
@@ -1051,87 +1089,93 @@ export default function DiscoverMarketplace() {
                             id={`usecase-${useCase}`}
                             checked={selectedUseCases.includes(useCase)}
                             onCheckedChange={() => toggleFilter(useCase, selectedUseCases, setSelectedUseCases)}
+                            aria-label={`Filter by ${useCase} use case`}
                           />
                           <label htmlFor={`usecase-${useCase}`} className="text-sm cursor-pointer">
                             {useCase}
                           </label>
                         </div>
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                        <Badge variant="secondary" className="h-5 px-1.5 text-xs" aria-label={`${count} products for ${useCase}`}>
                           {count}
                         </Badge>
                       </div>
                     );
                   })}
                   {allUseCases.length > 15 && (
-                    <p className="text-xs text-muted-foreground mt-2">
+                    <p className="text-xs text-muted-foreground/85 mt-2" role="status">
                       +{allUseCases.length - 15} more use cases
                     </p>
                   )}
                 </div>
               )}
-            </div>
+            </section>
 
             {/* Active Filter Chips */}
             {activeFilterCount > 0 && (
               <>
                 <Separator />
-                <div className="space-y-2">
-                  <div className="text-xs font-medium text-muted-foreground">Active Filters</div>
-                  <div className="flex flex-wrap gap-2">
+                <section className={spacing.stackCompact} aria-labelledby="active-filters-heading">
+                  <div className="text-xs font-medium text-muted-foreground/85" id="active-filters-heading">Active Filters</div>
+                  <div className="flex flex-wrap gap-2" role="list" aria-label="Active filter chips">
                     {selectedProductTypes.map(type => (
-                      <Badge key={type} variant="secondary" className="gap-1">
+                      <Badge key={type} variant="secondary" className="gap-1 [transition:var(--transition-colors)]" role="listitem">
                         {type}
                         <X
-                          className="h-3 w-3 cursor-pointer"
+                          className="h-3 w-3 cursor-pointer hover:text-destructive [transition:var(--transition-colors)]"
                           onClick={() => toggleFilter(type, selectedProductTypes, setSelectedProductTypes)}
+                          aria-label={`Remove ${type} filter`}
                         />
                       </Badge>
                     ))}
                     {selectedProductFormats.map(format => (
-                      <Badge key={format} variant="secondary" className="gap-1">
+                      <Badge key={format} variant="secondary" className="gap-1 [transition:var(--transition-colors)]" role="listitem">
                         {format}
                         <X
-                          className="h-3 w-3 cursor-pointer"
+                          className="h-3 w-3 cursor-pointer hover:text-destructive [transition:var(--transition-colors)]"
                           onClick={() => toggleFilter(format, selectedProductFormats, setSelectedProductFormats)}
+                          aria-label={`Remove ${format} filter`}
                         />
                       </Badge>
                     ))}
                     {selectedDomains.map(domain => (
-                      <Badge key={domain} variant="secondary" className="gap-1">
+                      <Badge key={domain} variant="secondary" className="gap-1 [transition:var(--transition-colors)]" role="listitem">
                         {domain}
                         <X
-                          className="h-3 w-3 cursor-pointer"
+                          className="h-3 w-3 cursor-pointer hover:text-destructive [transition:var(--transition-colors)]"
                           onClick={() => toggleFilter(domain, selectedDomains, setSelectedDomains)}
+                          aria-label={`Remove ${domain} filter`}
                         />
                       </Badge>
                     ))}
                     {selectedQualityLevel.map(level => (
-                      <Badge key={level} variant="secondary" className="gap-1">
+                      <Badge key={level} variant="secondary" className="gap-1 [transition:var(--transition-colors)]" role="listitem">
                         {level === 'high' ? 'High' : 'Medium'}
                         <X
-                          className="h-3 w-3 cursor-pointer"
+                          className="h-3 w-3 cursor-pointer hover:text-destructive [transition:var(--transition-colors)]"
                           onClick={() => toggleFilter(level, selectedQualityLevel, setSelectedQualityLevel)}
+                          aria-label={`Remove ${level === 'high' ? 'High' : 'Medium'} quality filter`}
                         />
                       </Badge>
                     ))}
                     {selectedUseCases.map(useCase => (
-                      <Badge key={useCase} variant="secondary" className="gap-1 text-xs">
+                      <Badge key={useCase} variant="secondary" className="gap-1 text-xs [transition:var(--transition-colors)]" role="listitem">
                         {useCase.length > 12 ? useCase.substring(0, 12) + '...' : useCase}
                         <X
-                          className="h-3 w-3 cursor-pointer"
+                          className="h-3 w-3 cursor-pointer hover:text-destructive [transition:var(--transition-colors)]"
                           onClick={() => toggleFilter(useCase, selectedUseCases, setSelectedUseCases)}
+                          aria-label={`Remove ${useCase} use case filter`}
                         />
                       </Badge>
                     ))}
                   </div>
-                </div>
+                </section>
               </>
             )}
           </div>
         </aside>
 
         {/* Main Content Area */}
-        <div className="flex-1 space-y-6">
+        <div className={cn("flex-1", spacing.stackRelaxed)} role="region" aria-label="Product catalog">
           {/* Recommendations Section - Only show when no active filters */}
           {!searchQuery && activeFilterCount === 0 && (
             <RecommendationsSection
@@ -1143,45 +1187,48 @@ export default function DiscoverMarketplace() {
           )}
 
           {/* Results Count with Access Info */}
-          <div className="flex items-center justify-between">
+          <section className="flex items-center justify-between" aria-labelledby="results-count">
             <div>
-              <h2 className="text-sm font-medium text-foreground mb-1">
+              <h2 className="text-sm font-medium text-foreground mb-1" id="results-count">
                 {filteredProducts.length} {filteredProducts.length === 1 ? 'Product' : 'Products'}
                 {(searchQuery || activeFilterCount > 0) && (
-                  <span className="text-muted-foreground font-normal"> matching your criteria</span>
+                  <span className="text-muted-foreground/85 font-normal"> matching your criteria</span>
                 )}
               </h2>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground/85" role="status">
                 {filteredProducts.filter(p => p.verified).length} you can access • {filteredProducts.filter(p => !p.verified).length} require approval
               </p>
             </div>
-          </div>
+          </section>
 
           {/* Data Product Cards Grid - Optimized 3-column layout */}
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <section aria-labelledby="results-count">
+            <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3", spacing.grid)} role="list" aria-label="Data product catalog">
               {filteredProducts.map((product) => (
                 <ProductCardFactory key={product.id} product={product} />
               ))}
             </div>
             {filteredProducts.length === 0 && (
-              <Card className="p-12 text-center">
-                <p className="text-muted-foreground">
-                  No products match your search and filters. Try adjusting your criteria.
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => {
-                    clearAllFilters();
-                    setSearchQuery('');
-                  }}
-                >
-                  Clear All Filters
-                </Button>
+              <Card elevation="subtle" className="text-center" role="status">
+                <CardContent className={spacing.cardGenerous}>
+                  <p className="text-muted-foreground/85">
+                    No products match your search and filters. Try adjusting your criteria.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="mt-4 [transition:var(--transition-button)]"
+                    onClick={() => {
+                      clearAllFilters();
+                      setSearchQuery('');
+                    }}
+                    aria-label="Clear all filters and search"
+                  >
+                    Clear All Filters
+                  </Button>
+                </CardContent>
               </Card>
             )}
-          </div>
+          </section>
         </div>
       </div>
     </div>

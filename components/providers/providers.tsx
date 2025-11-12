@@ -3,6 +3,7 @@
 import { ThemeProvider } from 'next-themes';
 import ServiceWorkerProvider from '@/components/ServiceWorkerProvider';
 import { ViewModeProvider } from '@/contexts/ViewModeContext';
+import { DensityProvider } from '@/contexts/DensityContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -27,9 +28,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
         disableTransitionOnChange
       >
         <ServiceWorkerProvider>
-          <ViewModeProvider>
-            {children}
-          </ViewModeProvider>
+          <DensityProvider>
+            <ViewModeProvider>
+              {children}
+            </ViewModeProvider>
+          </DensityProvider>
         </ServiceWorkerProvider>
       </ThemeProvider>
     </QueryClientProvider>

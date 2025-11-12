@@ -1,91 +1,294 @@
-/* Elevation System - Card elevations with consistent shadows */
+/**
+ * NexusOne Elevation System
+ *
+ * Systematic shadow and depth tokens for creating visual hierarchy.
+ * Inspired by Atomize PRO and Material Design 3.0 elevation principles.
+ *
+ * Usage:
+ * - Level 0: Flat surfaces (embedded cards, disabled states)
+ * - Level 1: Base cards, list items, subtle elevation
+ * - Level 2: Raised cards, panels, standard elevation
+ * - Level 3: Modals, popovers, floating elements
+ * - Level 4: Dropdowns, tooltips, command palettes
+ * - Level 5: Critical dialogs, alerts demanding attention
+ */
+
+:root {
+  /* ============================================================================
+   * ELEVATION SYSTEM - Light Mode
+   * ============================================================================
+   * Progressive shadow system with layered approach for realistic depth.
+   * Each level combines ambient shadow (soft, diffuse) with direct shadow (sharp, focused)
+   */
+
+  /* Level 0: Flat - No elevation */
+  --elevation-0: 0px 0px 0px 0px rgba(0, 0, 0, 0);
+
+  /* Level 1: Subtle - Just above the surface */
+  --elevation-1:
+    0px 1px 2px 0px rgba(0, 0, 0, 0.05),
+    0px 1px 3px 0px rgba(0, 0, 0, 0.04);
+
+  /* Level 2: Base - Standard card elevation */
+  --elevation-2:
+    0px 2px 4px -1px rgba(0, 0, 0, 0.06),
+    0px 4px 6px -1px rgba(0, 0, 0, 0.05);
+
+  /* Level 3: Raised - Prominent elements */
+  --elevation-3:
+    0px 4px 6px -2px rgba(0, 0, 0, 0.08),
+    0px 10px 15px -3px rgba(0, 0, 0, 0.07);
+
+  /* Level 4: Floating - Dropdowns, tooltips */
+  --elevation-4:
+    0px 10px 15px -3px rgba(0, 0, 0, 0.10),
+    0px 20px 25px -5px rgba(0, 0, 0, 0.08);
+
+  /* Level 5: Modal - Maximum elevation */
+  --elevation-5:
+    0px 20px 25px -5px rgba(0, 0, 0, 0.12),
+    0px 25px 50px -12px rgba(0, 0, 0, 0.10);
+}
+
+.dark {
+  /* ============================================================================
+   * ELEVATION SYSTEM - Dark Mode
+   * ============================================================================
+   * Dark mode requires stronger shadows with subtle inner highlights for depth.
+   * Adds subtle glow effect to create separation from dark backgrounds.
+   */
+
+  /* Level 0: Flat */
+  --elevation-0: 0px 0px 0px 0px rgba(0, 0, 0, 0);
+
+  /* Level 1: Subtle - Inner highlight for depth */
+  --elevation-1:
+    0px 1px 2px 0px rgba(0, 0, 0, 0.4),
+    0px 2px 4px 0px rgba(0, 0, 0, 0.3),
+    inset 0px 1px 0px 0px rgba(255, 255, 255, 0.03);
+
+  /* Level 2: Base - Standard card with subtle glow */
+  --elevation-2:
+    0px 2px 4px -1px rgba(0, 0, 0, 0.5),
+    0px 4px 6px -1px rgba(0, 0, 0, 0.4),
+    inset 0px 1px 0px 0px rgba(255, 255, 255, 0.05);
+
+  /* Level 3: Raised - Prominent with border highlight */
+  --elevation-3:
+    0px 4px 6px -2px rgba(0, 0, 0, 0.6),
+    0px 10px 15px -3px rgba(0, 0, 0, 0.5),
+    inset 0px 1px 0px 0px rgba(255, 255, 255, 0.06);
+
+  /* Level 4: Floating - Strong separation */
+  --elevation-4:
+    0px 10px 15px -3px rgba(0, 0, 0, 0.7),
+    0px 20px 25px -5px rgba(0, 0, 0, 0.6),
+    inset 0px 1px 0px 0px rgba(255, 255, 255, 0.08);
+
+  /* Level 5: Modal - Maximum with glow */
+  --elevation-5:
+    0px 20px 25px -5px rgba(0, 0, 0, 0.8),
+    0px 25px 50px -12px rgba(0, 0, 0, 0.7),
+    inset 0px 1px 0px 0px rgba(255, 255, 255, 0.10);
+}
+
+/* ============================================================================
+ * UTILITY CLASSES
+ * ============================================================================
+ * Direct application classes for rapid prototyping and overrides
+ */
+
 .elevation-0 {
-  box-shadow: none;
-  background: hsl(var(--background));
+  box-shadow: var(--elevation-0);
 }
 
 .elevation-1 {
-  background: hsl(var(--card));
-  box-shadow: 
-    0 1px 3px 0 rgb(0 0 0 / 0.1),
-    0 1px 2px -1px rgb(0 0 0 / 0.1),
-    0 0 0 1px hsl(var(--border) / 0.5);
+  box-shadow: var(--elevation-1);
 }
 
 .elevation-2 {
-  background: hsl(var(--card));
-  box-shadow: 
-    0 4px 6px -1px rgb(0 0 0 / 0.1),
-    0 2px 4px -2px rgb(0 0 0 / 0.1),
-    0 0 0 1px hsl(var(--border) / 0.4);
+  box-shadow: var(--elevation-2);
 }
 
 .elevation-3 {
-  background: hsl(var(--card));
-  box-shadow: 
-    0 10px 15px -3px rgb(0 0 0 / 0.1),
-    0 4px 6px -4px rgb(0 0 0 / 0.1),
-    0 0 0 1px hsl(var(--border) / 0.3);
+  box-shadow: var(--elevation-3);
 }
 
 .elevation-4 {
-  background: hsl(var(--card));
-  box-shadow: 
-    0 20px 25px -5px rgb(0 0 0 / 0.1),
-    0 8px 10px -6px rgb(0 0 0 / 0.1),
-    0 0 0 1px hsl(var(--border) / 0.2);
+  box-shadow: var(--elevation-4);
 }
 
-/* Dark mode elevation enhancements */
-.dark .elevation-1 {
-  box-shadow: 
-    0 1px 3px 0 rgb(0 0 0 / 0.4),
-    0 1px 2px -1px rgb(0 0 0 / 0.3),
-    0 0 0 1px hsl(var(--border) / 0.6),
-    0 0 12px -4px hsl(var(--primary) / 0.05);
+.elevation-5 {
+  box-shadow: var(--elevation-5);
 }
 
-.dark .elevation-2 {
-  box-shadow: 
-    0 4px 6px -1px rgb(0 0 0 / 0.5),
-    0 2px 4px -2px rgb(0 0 0 / 0.4),
-    0 0 0 1px hsl(var(--border) / 0.5),
-    0 0 16px -8px hsl(var(--primary) / 0.08);
+/* ============================================================================
+ * HOVER STATE ELEVATION TRANSITIONS
+ * ============================================================================
+ * Common patterns for elevation changes on interaction
+ */
+
+/* Subtle elevation increase (0 → 1 or 1 → 2) */
+.elevation-hover-subtle {
+  transition: box-shadow 200ms cubic-bezier(0.0, 0.0, 0.2, 1.0);
 }
 
-.dark .elevation-3 {
-  box-shadow: 
-    0 10px 15px -3px rgb(0 0 0 / 0.6),
-    0 4px 6px -4px rgb(0 0 0 / 0.5),
-    0 0 0 1px hsl(var(--border) / 0.4),
-    0 0 24px -12px hsl(var(--primary) / 0.1);
+.elevation-hover-subtle:hover {
+  box-shadow: var(--elevation-2);
 }
 
-.dark .elevation-4 {
-  box-shadow: 
-    0 20px 25px -5px rgb(0 0 0 / 0.7),
-    0 8px 10px -6px rgb(0 0 0 / 0.6),
-    0 0 0 1px hsl(var(--border) / 0.3),
-    0 0 32px -16px hsl(var(--primary) / 0.15);
+/* Standard elevation increase (1 → 2 or 2 → 3) */
+.elevation-hover-standard {
+  transition: box-shadow 200ms cubic-bezier(0.0, 0.0, 0.2, 1.0);
 }
 
-/* Subtle interactive states without animations */
-.elevation-interactive {
-  transition: opacity 150ms ease;
+.elevation-hover-standard:hover {
+  box-shadow: var(--elevation-3);
 }
 
-.elevation-interactive:hover {
-  opacity: 0.95;
+/* Prominent elevation increase (2 → 3 or 3 → 4) */
+.elevation-hover-prominent {
+  transition: box-shadow 200ms cubic-bezier(0.0, 0.0, 0.2, 1.0);
 }
 
-.elevation-interactive:active {
-  opacity: 0.9;
+.elevation-hover-prominent:hover {
+  box-shadow: var(--elevation-4);
 }
 
-/* Focus ring for elevated elements */
-.elevation-focus:focus-visible {
-  outline: none;
-  ring: 2px solid hsl(var(--primary));
-  ring-offset: 2px;
-  ring-offset-color: hsl(var(--background));
+/* ============================================================================
+ * COMPONENT-SPECIFIC ELEVATION PATTERNS
+ * ============================================================================
+ * Pre-configured elevation patterns for common component types
+ */
+
+/* Card Pattern: Base elevation with hover increase */
+.elevation-card {
+  box-shadow: var(--elevation-1);
+  transition: box-shadow 200ms cubic-bezier(0.0, 0.0, 0.2, 1.0);
+}
+
+.elevation-card:hover {
+  box-shadow: var(--elevation-2);
+}
+
+.elevation-card.interactive {
+  cursor: pointer;
+}
+
+.elevation-card.interactive:hover {
+  box-shadow: var(--elevation-3);
+}
+
+.elevation-card.interactive:active {
+  box-shadow: var(--elevation-1);
+}
+
+/* Modal Pattern: High elevation with backdrop */
+.elevation-modal {
+  box-shadow: var(--elevation-5);
+}
+
+/* Popover Pattern: Floating elevation */
+.elevation-popover {
+  box-shadow: var(--elevation-4);
+}
+
+/* Dropdown Pattern: Floating with hover */
+.elevation-dropdown {
+  box-shadow: var(--elevation-4);
+  transition: box-shadow 150ms cubic-bezier(0.0, 0.0, 0.2, 1.0);
+}
+
+/* Button Pattern: Subtle elevation with press effect */
+.elevation-button {
+  box-shadow: var(--elevation-1);
+  transition: box-shadow 150ms cubic-bezier(0.0, 0.0, 0.2, 1.0);
+}
+
+.elevation-button:hover {
+  box-shadow: var(--elevation-2);
+}
+
+.elevation-button:active {
+  box-shadow: var(--elevation-0);
+}
+
+/* ============================================================================
+ * SURFACE TREATMENTS
+ * ============================================================================
+ * Additional depth techniques to combine with elevation
+ */
+
+/* Glass morphism effect - use with elevation for premium feel */
+.surface-glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+.dark .surface-glass {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Gradient surface - subtle depth */
+.surface-gradient {
+  background: linear-gradient(to bottom right,
+    hsl(var(--card)) 0%,
+    hsl(var(--card) / 0.95) 100%
+  );
+}
+
+/* Bordered surface - clear separation */
+.surface-bordered {
+  border: 1px solid hsl(var(--border) / 0.3);
+}
+
+.surface-bordered.dark {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Inner highlight - adds dimension to dark surfaces */
+.surface-highlight {
+  position: relative;
+}
+
+.surface-highlight::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+.dark .surface-highlight::before {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================================================
+ * ACCESSIBILITY
+ * ============================================================================
+ */
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .elevation-hover-subtle,
+  .elevation-hover-standard,
+  .elevation-hover-prominent,
+  .elevation-card,
+  .elevation-dropdown,
+  .elevation-button {
+    transition: none;
+  }
+}
+
+/* High contrast mode - ensure elevation is visible via borders */
+@media (prefers-contrast: high) {
+  .elevation-1,
+  .elevation-2,
+  .elevation-3,
+  .elevation-4,
+  .elevation-5 {
+    border: 1px solid currentColor;
+  }
 }

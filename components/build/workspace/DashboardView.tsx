@@ -1,3 +1,4 @@
+// Updated: 2025-11-11 17:26 - Fixed Takeaways and Key Insights styling
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -116,28 +117,22 @@ export function DashboardView({
   };
 
   return (
-    <div className={cn('p-6 space-y-6 bg-background overflow-auto', className)}>
-      {/* Dashboard Header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold text-foreground">
-            {dashboard.title}
-          </h2>
-          <Badge variant="secondary" className="ml-auto">
-            {(dashboard.confidence * 100).toFixed(0)}% confidence
-          </Badge>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {dashboard.description}
+    <div className={cn('p-6 space-y-4 bg-background overflow-auto', className)}>
+      {/* Dashboard Header - Prose Insight */}
+      {'proseInsight' in dashboard && dashboard.proseInsight && (
+        <p
+          className="text-3xl leading-tight mt-2 mb-4 text-foreground"
+          style={{ fontFamily: 'Reckless, -apple-system, BlinkMacSystemFont, sans-serif', fontWeight: 500 }}
+        >
+          {dashboard.proseInsight}
         </p>
-      </div>
+      )}
 
-      {/* Summary Statistics */}
+      {/* Key Insights Section */}
       {dashboard.summaryStats.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           <h2 className="text-xl font-semibold text-foreground" style={{ fontFamily: 'Roobert, -apple-system, BlinkMacSystemFont, sans-serif' }}>
-            Takeaways
+            Key Insights
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {dashboard.summaryStats.map((stat, idx) => (
@@ -146,21 +141,6 @@ export function DashboardView({
           </div>
         </div>
       )}
-
-      {/* Key Insights */}
-      <div className="space-y-3">
-        <h2 className="text-xl font-semibold text-foreground" style={{ fontFamily: 'Roobert, -apple-system, BlinkMacSystemFont, sans-serif' }}>
-          Key Insights
-        </h2>
-        <ul className="space-y-2">
-          {dashboard.views.map((view, idx) => (
-            <li key={idx} className="flex items-start gap-3 text-sm text-muted-foreground">
-              <span className="text-primary mt-1 font-bold">•</span>
-              <span className="flex-1 leading-relaxed">{view.description}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
 
       {/* Dashboard Views - 2-Column Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

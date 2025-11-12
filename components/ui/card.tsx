@@ -5,25 +5,50 @@ import { cn } from "@/lib/utils"
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & {
-    elevation?: 'flat' | 'elevated-1' | 'elevated-2' | 'elevated-3'
+    elevation?: 'flat' | 'subtle' | 'base' | 'raised' | 'floating'
+    surface?: 'default' | 'glass' | 'gradient' | 'bordered'
+    interactive?: boolean
   }
->(({ className, elevation = 'elevated-2', ...props }, ref) => {
+>(({ className, elevation = 'base', surface = 'default', interactive = false, ...props }, ref) => {
+  // Elevation system using CSS custom properties
   const elevationStyles = {
-    'flat': 'shadow-none',
-    'elevated-1': 'shadow-md hover:shadow-lg',
-    'elevated-2': 'shadow-sm hover:shadow-md',
-    'elevated-3': 'shadow-xs hover:shadow-sm'
+    'flat': '[box-shadow:var(--elevation-0)]',
+    'subtle': '[box-shadow:var(--elevation-1)]',
+    'base': '[box-shadow:var(--elevation-2)]',
+    'raised': '[box-shadow:var(--elevation-3)]',
+    'floating': '[box-shadow:var(--elevation-4)]'
   };
+
+  // Surface treatment options
+  const surfaceStyles = {
+    'default': 'bg-card border border-border/40',
+    'glass': 'bg-card/80 backdrop-blur-md border border-border/20',
+    'gradient': 'bg-gradient-to-br from-card to-card/95 border border-border/30',
+    'bordered': 'bg-card border-2 border-border/50'
+  };
+
+  // Rich interaction states (Atomize-inspired)
+  const interactiveStyles = interactive
+    ? cn(
+        'cursor-pointer group',
+        '[transition:var(--transition-card)]',
+        'hover:[box-shadow:var(--elevation-3)]',
+        'hover:border-border/60',
+        'hover:-translate-y-0.5',
+        'active:translate-y-0',
+        'active:[box-shadow:var(--elevation-1)]'
+      )
+    : '[transition:var(--transition-shadow)]';
 
   return (
     <div
       ref={ref}
       className={cn(
-        "rounded-xl border bg-card text-card-foreground transition-all duration-200",
-        "border-border/50 hover:border-border/70",
+        "rounded-xl text-card-foreground",
         "relative overflow-hidden",
-        "dark:border-white/[0.1] dark:hover:border-white/[0.15]",
         elevationStyles[elevation],
+        surfaceStyles[surface],
+        interactiveStyles,
         className
       )}
       {...props}

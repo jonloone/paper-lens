@@ -121,33 +121,60 @@ class SourceRecommendationService:
 
         try:
             # Query Kuzu for tables with matching business terms
-            # Pattern: DataColumn -> BusinessTerm, DataColumn -> DataTable
+            # Simplified: just get columns that map to terms, then join to tables
             result = self.kg.conn.execute("""
                 MATCH (col:DataColumn)-[:MAPS_TO_TERM]->(term:BusinessTerm)
-                MATCH (col)-[:BELONGS_TO]->(table:DataTable)
                 WHERE toLower(term.term) CONTAINS $entity
-                RETURN
-                    table.id as table_id,
-                    table.full_name as table_name,
-                    table.quality_score as quality,
-                    table.row_count as rows,
-                    term.term as matched_term,
-                    col.name as column_name
-                LIMIT 10
+                RETURN col.id as col_id, col.name as column_name, col.table_id as table_id, term.term as matched_term
+                LIMIT 50
             """, {"entity": entity.lower()})
 
-            matches = []
+            # Get columns first
+            col_matches = []
             while result.has_next():
                 row = result.get_next()
-                matches.append({
-                    "table_id": row[0],
-                    "table_name": row[1],
-                    "quality_score": row[2] or 0.0,
-                    "row_count": row[3] or 0,
-                    "matched_term": row[4],
-                    "column_name": row[5],
-                    "match_type": "semantic"
+                col_matches.append({
+                    "col_id": row[0],
+                    "column_name": row[1],
+                    "table_id": row[2],
+                    "matched_term": row[3]
                 })
+
+            # Now get table details for each unique table_id
+            table_map = {}
+            for col in col_matches:
+                table_id = col["table_id"]
+                if table_id not in table_map:
+                    # Fetch table details
+                    table_result = self.kg.conn.execute("""
+                        MATCH (t:DataTable)
+                        WHERE t.id = $table_id
+                        RETURN t.id, t.full_name, t.quality_score, t.row_count
+                        LIMIT 1
+                    """, {"table_id": table_id})
+
+                    if table_result.has_next():
+                        t_row = table_result.get_next()
+                        table_map[table_id] = {
+                            "table_id": t_row[0],
+                            "table_name": t_row[1],
+                            "quality": t_row[2] or 0.0,
+                            "rows": t_row[3] or 0
+                        }
+
+            # Combine results
+            matches = []
+            for col in col_matches:
+                if col["table_id"] in table_map:
+                    table = table_map[col["table_id"]]
+                    matches.append({
+                        **table,
+                        "matched_term": col["matched_term"],
+                        "column_name": col["column_name"],
+                        "match_type": "semantic"
+                    })
+                    if len(matches) >= 10:
+                        break
 
             return matches
 

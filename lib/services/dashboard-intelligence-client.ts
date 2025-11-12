@@ -51,6 +51,7 @@ export interface DashboardView {
 export interface IntelligentDashboardLayout {
   title: string;
   description: string;
+  proseInsight: string; // AI-generated 1-2 sentence headline in prose
   summaryStats: SummaryStatistic[];
   views: DashboardView[];
 }

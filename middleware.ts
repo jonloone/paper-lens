@@ -13,8 +13,8 @@ const redirectMap: Record<string, string> = {
   '/sources': '/', // Tool Health covers sources
   '/active-operations': '/',
 
-  // Legacy Explore routes → Catalog
-  '/explore': '/catalog',
+  // Legacy Explore routes → Catalog (REMOVED /explore - now used for SQL workstation)
+  // '/explore': '/catalog', // REMOVED - /explore is now the SQL workstation
   '/explore/query': '/catalog/query',
   '/explore/contracts': '/catalog/api-docs',
   '/explore/schemas': '/catalog/schemas',

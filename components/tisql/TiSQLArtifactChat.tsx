@@ -284,12 +284,12 @@ export function TiSQLArtifactChat({
           });
         }
 
-        // Generate intelligent summary of results
-        const summary = await generateResultsSummary(sql, data);
+        // Generate data audit showing what was loaded
+        const audit = generateDataAudit(sql, data, selectedDomain?.name);
         setMessages(prev => [...prev, {
           id: `success-${Date.now()}`,
           role: 'assistant',
-          content: summary
+          content: audit
         }]);
       } else {
         // API returned success: false
@@ -330,128 +330,43 @@ export function TiSQLArtifactChat({
     }
   };
 
-  // Generate intelligent summary of query results
-  const generateResultsSummary = async (sql: string, data: any): Promise<string> => {
-    try {
-      const { columns = [], rows = [], rowCount = 0 } = data;
+  // Generate data audit message showing what data was loaded
+  const generateDataAudit = (sql: string, data: any, domainName?: string): string => {
+    const { columns = [], rows = [], rowCount = 0 } = data;
+    const { extractSQLMetadata, calculateDataConfidence } = require('@/lib/utils/sql-metadata-extractor');
 
-      // Analyze the data to provide context
-      const sampleRows = rows.slice(0, 5); // Take first 5 rows as sample
-      const hasAggregation = /\b(COUNT|SUM|AVG|MAX|MIN|GROUP\s+BY)\b/i.test(sql);
-      const hasDateColumn = columns.some((col: string) =>
-        col.toLowerCase().includes('date') ||
-        col.toLowerCase().includes('month') ||
-        col.toLowerCase().includes('time')
-      );
+    // Extract table and column information from SQL
+    const metadata = extractSQLMetadata(sql);
+    const confidence = calculateDataConfidence(rowCount);
 
-      // Build summary prompt
-      const summaryPrompt = `Analyze this SQL query result and provide a well-formatted markdown summary with key takeaways.
+    // Build audit message in markdown
+    const confidenceIcon = confidence.level === 'high' ? '✓' : confidence.level === 'medium' ? '⚠' : '✗';
+    const confidenceColor = confidence.level === 'high' ? 'text-green-600' : confidence.level === 'medium' ? 'text-yellow-600' : 'text-red-600';
 
-SQL Query:
-\`\`\`sql
-${sql}
-\`\`\`
+    let auditMessage = `**Data Sources Loaded**\n\n`;
 
-Results:
-- Total rows: ${rowCount.toLocaleString()}
-- Columns: ${columns.join(', ')}
-- Sample data (first few rows):
-${sampleRows.map((row: any[]) => columns.map((col: string, i: number) => `${col}: ${row[i]}`).join(', ')).join('\n')}
-
-Your summary must use this EXACT markdown format:
-
-**Key Insights**
-[1-2 sentences describing the main findings or trends in the data]
-
-**Takeaways**
-- [Bullet point 1: specific notable finding with numbers]
-- [Bullet point 2: another specific insight or pattern]
-- [Bullet point 3: recommendation or implication (if applicable)]
-
-REQUIREMENTS:
-- Use the exact markdown structure above with bold headers
-- Include specific numbers and metrics from the data
-- Focus on actionable insights, not just descriptions
-- Keep it concise but meaningful (total 3-5 sentences)
-- DO NOT say "query executed successfully" or similar generic statements
-
-Example:
-**Key Insights**
-Customer acquisition showed strong growth from 543 in Aug to 1,006 in Dec, representing 85% increase over 4 months. The trend indicates accelerating market penetration.
-
-**Takeaways**
-- Peak growth occurred in Nov-Dec (+20% month-over-month)
-- Q4 customer volume exceeded Q3 by 47%
-- Momentum suggests meeting annual target 2 months early`;
-
-      // Call the LLM for summarization
-      const response = await fetch('/api/tisql/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: [
-            { role: 'system', content: 'You are a data analyst expert who provides structured, scannable markdown summaries with specific insights and numbers.' },
-            { role: 'user', content: summaryPrompt }
-          ]
-        })
+    // List tables
+    if (metadata.tables.length > 0) {
+      metadata.tables.forEach(table => {
+        auditMessage += `• **Table**: \`${table}\` (${columns.length} columns, ${rowCount.toLocaleString()} rows)\n`;
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate summary');
-      }
-
-      // Parse streaming response (format: 0:"text"\n)
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let summary = '';
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-
-          for (const line of lines) {
-            if (line.startsWith('0:')) {
-              try {
-                // Parse the JSON-encoded chunk (format: 0:"text")
-                const jsonPart = line.slice(2); // Remove "0:" prefix
-                const text = JSON.parse(jsonPart);
-                summary += text;
-              } catch (e) {
-                // Skip malformed lines
-                console.warn('Failed to parse chunk:', line);
-              }
-            }
-          }
-        }
-      }
-
-      // Fallback if summary generation fails or is empty
-      if (!summary.trim()) {
-        return generateFallbackSummary(sql, data);
-      }
-
-      return summary.trim();
-    } catch (error) {
-      console.error('Error generating summary:', error);
-      return generateFallbackSummary(sql, data);
-    }
-  };
-
-  // Generate fallback summary if LLM fails
-  const generateFallbackSummary = (sql: string, data: any): string => {
-    const { columns = [], rowCount = 0 } = data;
-    const hasAggregation = /\b(COUNT|SUM|AVG|MAX|MIN)\b/i.test(sql);
-    const hasGroupBy = /GROUP\s+BY/i.test(sql);
-
-    if (hasAggregation || hasGroupBy) {
-      return `Query returned ${rowCount} aggregated ${rowCount === 1 ? 'row' : 'rows'} grouped by ${columns[0] || 'category'}. ${columns.length > 1 ? `Showing metrics: ${columns.slice(1).join(', ')}.` : ''} View the chart or table for detailed insights.`;
+    } else {
+      auditMessage += `• **Columns**: ${columns.length} (${rowCount.toLocaleString()} rows)\n`;
     }
 
-    return `Query returned ${rowCount.toLocaleString()} ${rowCount === 1 ? 'row' : 'rows'} with ${columns.length} columns. ${columns.length > 0 ? `Columns: ${columns.join(', ')}.` : ''} Results are displayed in the panel on the right.`;
+    auditMessage += `\n**Quality Assessment**\n\n`;
+    auditMessage += `• **Confidence**: ${confidenceIcon} ${confidence.level.charAt(0).toUpperCase() + confidence.level.slice(1)} (${confidence.message})\n`;
+    auditMessage += `• **Coverage**: ${rowCount > 0 ? '100%' : '0%'} of requested data returned\n`;
+
+    if (domainName) {
+      auditMessage += `• **Domain**: ${domainName}\n`;
+    }
+
+    if (metadata.estimatedComplexity !== 'simple') {
+      auditMessage += `• **Query Complexity**: ${metadata.estimatedComplexity.charAt(0).toUpperCase() + metadata.estimatedComplexity.slice(1)}\n`;
+    }
+
+    return auditMessage;
   };
 
   // Generate quality summary from preview results

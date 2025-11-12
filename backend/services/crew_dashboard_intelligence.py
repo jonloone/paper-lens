@@ -208,6 +208,7 @@ class DashboardIntelligenceCrew:
             dashboard = parsed_result.get("dashboard")
             if dashboard and "views" in dashboard:
                 dashboard = self._sanitize_chart_types(dashboard)
+                dashboard = self._sanitize_data_mappings(dashboard, columns)
 
             # Wrap planner output in validation format for API compatibility
             wrapped_result = {
@@ -633,6 +634,56 @@ If validation fails, provide fixes or remove problematic views.
 
         if sanitized_count > 0:
             logger.info(f"Sanitized {sanitized_count} invalid chart types in dashboard")
+
+        return dashboard
+
+    def _sanitize_data_mappings(self, dashboard: Dict[str, Any], columns: List[str]) -> Dict[str, Any]:
+        """
+        Ensure all dataMapping objects have required yColumns field.
+
+        The AI sometimes generates dataMapping with only xColumn, missing the required yColumns.
+        This method fixes that by inferring appropriate yColumns from available columns.
+
+        Args:
+            dashboard: Dashboard configuration with views
+            columns: List of available column names from the query
+
+        Returns:
+            Dashboard with sanitized dataMapping objects
+        """
+        views = dashboard.get("views", [])
+        fixed_count = 0
+
+        for view in views:
+            if "dataMapping" in view:
+                mapping = view["dataMapping"]
+
+                # Check if yColumns is missing or empty
+                if "yColumns" not in mapping or not mapping["yColumns"]:
+                    # Infer yColumns based on xColumn and available columns
+                    x_column = mapping.get("xColumn", columns[0] if columns else "")
+
+                    # Find numeric columns that aren't the x column
+                    y_candidates = [col for col in columns if col != x_column]
+
+                    # If we have candidates, use the first one; otherwise use first column
+                    if y_candidates:
+                        mapping["yColumns"] = [y_candidates[0]]
+                    elif columns:
+                        # Fallback: use first column if no other options
+                        mapping["yColumns"] = [columns[0]]
+                    else:
+                        # Last resort: use xColumn itself
+                        mapping["yColumns"] = [x_column]
+
+                    fixed_count += 1
+                    logger.warning(
+                        f"Fixed missing yColumns in dataMapping for view '{view.get('id', 'unknown')}'. "
+                        f"Added yColumns: {mapping['yColumns']}"
+                    )
+
+        if fixed_count > 0:
+            logger.info(f"Fixed {fixed_count} incomplete dataMapping objects in dashboard")
 
         return dashboard
 

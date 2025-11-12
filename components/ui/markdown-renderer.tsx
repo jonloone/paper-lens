@@ -13,8 +13,22 @@ interface MarkdownRendererProps {
 }
 
 export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+  // Check if content is HTML (starts with < and contains tags)
+  const isHTML = content.trim().startsWith('<') && /<[a-z][\s\S]*>/i.test(content);
+
+  // If HTML, render directly with dangerouslySetInnerHTML
+  if (isHTML) {
+    return (
+      <div
+        className={cn('prose prose-sm max-w-none', className)}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+
   // Track if we just saw "Key Insights" header to style the next paragraph
   const insightFlagRef = React.useRef(false);
+  const skipNextParagraph = React.useRef(false);
 
   return (
     <div className={cn('prose prose-sm max-w-none', className)}>
@@ -34,15 +48,35 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
 
         // Paragraphs
         p: ({ children }) => {
-          const isInsight = insightFlagRef.current;
-          if (insightFlagRef.current) {
-            insightFlagRef.current = false; // Reset for next paragraph
+          // Check if this paragraph contains "Key Insights"
+          const childText = React.Children.toArray(children).map(child => {
+            if (typeof child === 'string') return child;
+            if (React.isValidElement(child) && child.props.children) {
+              return React.Children.toArray(child.props.children).join('');
+            }
+            return '';
+          }).join('');
+
+          const containsKeyInsights = childText.includes('Key Insights');
+
+          // If this paragraph contains "Key Insights", hide it and flag next paragraph
+          if (containsKeyInsights) {
+            insightFlagRef.current = true;
+            skipNextParagraph.current = true;
+            return null;
+          }
+
+          // If this is the paragraph right after "Key Insights"
+          const isInsight = insightFlagRef.current && skipNextParagraph.current;
+          if (insightFlagRef.current && skipNextParagraph.current) {
+            insightFlagRef.current = false;
+            skipNextParagraph.current = false;
           }
 
           return (
             <p className={cn(
               'mb-2 text-foreground',
-              isInsight && 'text-2xl font-display leading-relaxed'
+              isInsight && 'text-4xl font-display leading-snug my-6'
             )}>
               {children}
             </p>

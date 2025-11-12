@@ -1,9 +1,10 @@
 # NexusOne Technology Stack Documentation
 ## Comprehensive Technical Architecture Reference
 
-**Version**: 1.0
-**Last Updated**: October 8, 2025
+**Version**: 1.1
+**Last Updated**: November 5, 2025
 **Purpose**: Single source of truth for all technologies, their implementations, and the systems they power
+**Latest Update**: Added Apache Gravitino for unified catalog federation
 
 ---
 
@@ -984,6 +985,90 @@ ODCS Contract → SQLMesh Service → Generated Model:
 
 ### Metadata & Governance
 
+#### **Apache Gravitino**
+- **Version**: Latest
+- **Role**: Unified metadata lake and catalog federation platform
+- **Implementation**: `backend/services/gravitino_client.py`, `backend/services/gravitino_kuzu_sync.py`
+- **Features**:
+  - **Federated Catalog Management**:
+    - Unified API across diverse data sources (Hive, Iceberg, MySQL, PostgreSQL, Kafka)
+    - Multi-region metadata synchronization
+    - Cross-cloud metadata federation
+    - Geo-distributed catalog access
+  - **Direct Engine Integration**:
+    - Native Trino connector support
+    - Apache Spark integration
+    - Query engine agnostic metadata access
+    - No SQL dialect modifications required
+  - **REST Catalog Services**:
+    - Native Apache Iceberg REST catalog
+    - CRUD operations on tables, schemas, catalogs
+    - Schema evolution tracking
+    - Snapshot management
+  - **Access Control Integration**:
+    - Role-based access control (RBAC)
+    - Integration with Apache Ranger
+    - Fine-grained permissions
+    - Audit logging
+- **Powers**:
+  - **Catalog Federation for Living Context Graph**:
+    - Sync catalogs from Gravitino → Kuzu Knowledge Graph
+    - Enhanced DataTable nodes with multi-catalog metadata
+    - Real-time schema evolution events
+    - Cross-catalog semantic routing
+  - **Simplified Trino Catalog Management**:
+    - Dynamic catalog registration via Gravitino API
+    - Automatic Trino configuration generation
+    - Reduced operational overhead
+    - Centralized catalog lifecycle management
+  - **Multi-Source Discovery**:
+    - Query tables across all connected catalogs
+    - Unified search interface
+    - Cross-source lineage tracking
+    - Metadata consistency enforcement
+  - **Enhanced Data Profiling**:
+    - Richer table metadata for profiling context
+    - Partition-level statistics
+    - Native Iceberg snapshot history
+    - Real-time data freshness indicators
+
+**Gravitino Integration Architecture**:
+```
+┌─────────────────────────────────────────────────┐
+│       Living Context Graph (Kuzu)              │
+│  IntentNode → SemanticBridge → UsagePattern    │
+└──────────┬─────────────────┬────────────────────┘
+           │                 │
+     ┌─────▼─────┐     ┌────▼─────────┐
+     │ Gravitino │     │   DataHub    │
+     │ (Physical │     │  (Glossary & │
+     │  Catalog) │     │  Governance) │
+     └─────┬─────┘     └──────────────┘
+           │
+           │ Federated Metadata
+           ├────────────────┬──────────────────┐
+           ▼                ▼                  ▼
+     ┌──────────┐    ┌───────────┐     ┌──────────┐
+     │ Iceberg  │    │   Hive    │     │ JDBC     │
+     │ Catalogs │    │ Metastore │     │ Sources  │
+     └──────────┘    └───────────┘     └──────────┘
+           │                │                  │
+           └────────────────┴──────────────────┘
+                            │
+                    ┌───────▼────────┐
+                    │ Trino Engine   │
+                    │ (Queries via   │
+                    │  Gravitino)    │
+                    └────────────────┘
+```
+
+**Key Benefits**:
+- **Reduced Metadata Silos**: Single source of truth for all catalog metadata
+- **Simplified Operations**: Centralized catalog management reduces Trino configuration complexity
+- **Enhanced Discovery**: Living Context Graph now has access to all federated catalogs
+- **Multi-Cloud Support**: Seamless metadata access across cloud providers
+- **Real-Time Sync**: Schema changes immediately reflected in Living Context Graph
+
 #### **DataHub Integration**
 - **Implementation**: `backend/services/datahub_client.py`
 - **Features**:
@@ -1019,6 +1104,10 @@ AI Agent → Glossary Term Suggestion → User Confirmation →
 DataHub Client → Persistent Storage (PostgreSQL + DataHub) →
 Column Association → Business Glossary
 ```
+
+**Gravitino + DataHub Complementary Roles**:
+- **Gravitino**: Physical catalog federation, table metadata, schema evolution
+- **DataHub**: Business glossary, governance policies, social metadata (ownership, tags)
 
 ---
 
