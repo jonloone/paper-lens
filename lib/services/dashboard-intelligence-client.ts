@@ -90,15 +90,26 @@ export async function generateIntelligentDashboard(
   try {
     console.log('[Dashboard Client] 📡 About to call fetch to /api/dashboard-intelligence/generate-dashboard');
 
-    const response = await fetch('/api/dashboard-intelligence/generate-dashboard', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(request),
-    });
+    // Create an AbortController with 9-minute timeout (longer than server-side to let server handle timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.log('[Dashboard Client] ⏱️ Client-side timeout triggered after 9 minutes');
+      controller.abort();
+    }, 540000); // 9 minutes (540 seconds)
 
-    console.log('[Dashboard Client] 📥 Fetch completed with status:', response.status, response.statusText);
+    try {
+      const response = await fetch('/api/dashboard-intelligence/generate-dashboard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      console.log('[Dashboard Client] 📥 Fetch completed with status:', response.status, response.statusText);
 
     if (!response.ok) {
       console.error('[Dashboard Client] ❌ Response not OK:', response.status, response.statusText);
@@ -127,8 +138,12 @@ export async function generateIntelligentDashboard(
       throw new Error('No dashboard layout returned');
     }
 
-    console.log('[Dashboard Client] ✅ Returning validated dashboard:', result.validatedDashboard.title);
-    return result.validatedDashboard;
+      console.log('[Dashboard Client] ✅ Returning validated dashboard:', result.validatedDashboard.title);
+      return result.validatedDashboard;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      throw fetchError;
+    }
   } catch (error) {
     console.error('[Dashboard Client] 💥 Exception in generateIntelligentDashboard:', error);
     console.error('[Dashboard Client] 💥 Error details:', {

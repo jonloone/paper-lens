@@ -15,17 +15,17 @@ export default function AnalyzePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Chat Card */}
-          <Link href="/analyze/chat">
+          {/* Explore Card */}
+          <Link href="/analyze/explore">
             <div className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                   <MessageSquare className="w-6 h-6 text-purple-600" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Chat</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Explore</h2>
                   <p className="text-gray-600 text-sm mb-4">
-                    Ask questions about your data using natural language
+                    Ask questions about your data using natural language and productize queries
                   </p>
                 </div>
               </div>

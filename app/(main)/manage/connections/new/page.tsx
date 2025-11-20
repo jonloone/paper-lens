@@ -31,9 +31,10 @@ import {
   Globe,
   ChevronDown,
 } from 'lucide-react';
+import { MethodSelectionStep } from '@/components/manage/MethodSelectionStep';
+import type { IngestionMethod } from '@/lib/types/source-connections';
 
 type SourceCategory = 'database' | 'file_storage' | 'api_saas' | 'messaging' | 'lakehouse' | 'files';
-type IngestionMethod = 'cdc' | 'batch_nifi' | 'federated_trino' | 'spark' | 'airflow';
 
 interface SourceCategoryOption {
   id: SourceCategory;
@@ -42,17 +43,6 @@ interface SourceCategoryOption {
   icon: typeof Database;
   examples: string[];
   connectorCount: number;
-}
-
-interface IngestionMethodOption {
-  id: IngestionMethod;
-  title: string;
-  description: string;
-  logoTech: string; // TechIcon logo key
-  bestFor: string[];
-  latency: string;
-  complexity: 'simple' | 'moderate' | 'complex';
-  supportedSources: SourceCategory[];
 }
 
 const sourceCategories: SourceCategoryOption[] = [
@@ -103,59 +93,6 @@ const sourceCategories: SourceCategoryOption[] = [
     icon: FileText,
     examples: ['json', 'csv', 'xml', 'parquet', 'avro'],
     connectorCount: 50,
-  },
-];
-
-const ingestionMethods: IngestionMethodOption[] = [
-  {
-    id: 'cdc',
-    title: 'Real-time CDC',
-    description: 'Debezium: Capture database changes in real-time with change data capture',
-    logoTech: 'debezium',
-    bestFor: ['Real-time sync', 'Event streaming', 'Continuous replication', 'Low latency updates'],
-    latency: '< 1 second',
-    complexity: 'moderate',
-    supportedSources: ['database', 'messaging'],
-  },
-  {
-    id: 'batch_nifi',
-    title: 'Batch Ingestion',
-    description: 'Apache NiFi: Flexible data flow with 400+ processors for any source',
-    logoTech: 'nifi',
-    bestFor: ['Scheduled loads', 'Large volumes', 'Complex transformations', 'File processing'],
-    latency: 'Minutes to hours',
-    complexity: 'simple',
-    supportedSources: ['database', 'file_storage', 'api_saas', 'messaging', 'files'],
-  },
-  {
-    id: 'federated_trino',
-    title: 'Federated Query',
-    description: 'Trino: Query data in-place without copying or moving',
-    logoTech: 'trino',
-    bestFor: ['On-demand queries', 'No data movement', 'Cross-source joins', 'Exploratory analytics'],
-    latency: 'Query-time only',
-    complexity: 'simple',
-    supportedSources: ['database', 'file_storage', 'lakehouse'],
-  },
-  {
-    id: 'spark',
-    title: 'Large-scale Processing',
-    description: 'Apache Spark: Distributed processing for massive datasets and complex transformations',
-    logoTech: 'spark',
-    bestFor: ['Big data processing', 'Complex transformations', 'ML pipelines', 'Petabyte-scale'],
-    latency: 'Minutes to hours',
-    complexity: 'complex',
-    supportedSources: ['database', 'file_storage', 'lakehouse', 'files'],
-  },
-  {
-    id: 'airflow',
-    title: 'Orchestrated Workflows',
-    description: 'Apache Airflow: Schedule and monitor data pipelines with DAGs',
-    logoTech: 'airflow',
-    bestFor: ['Scheduled pipelines', 'Multi-step workflows', 'Dependencies', 'Monitoring'],
-    latency: 'Configurable',
-    complexity: 'moderate',
-    supportedSources: ['database', 'file_storage', 'api_saas', 'messaging', 'lakehouse', 'files'],
   },
 ];
 
@@ -211,41 +148,77 @@ export default function NewSourcePage() {
   const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<SourceCategory | null>(null);
   const [selectedConnector, setSelectedConnector] = useState<string | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<IngestionMethod | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [currentStep, setCurrentStep] = useState<'category' | 'connector' | 'method'>('category');
 
   // Pre-select category from URL parameter
   useEffect(() => {
     const categoryParam = searchParams?.get('category') as SourceCategory | null;
     if (categoryParam && sourceCategories.some(cat => cat.id === categoryParam)) {
       setSelectedCategory(categoryParam);
+      setCurrentStep('connector');
     }
   }, [searchParams]);
 
   const handleCategorySelect = (category: SourceCategory) => {
     setSelectedCategory(category);
     setSelectedConnector(null); // Reset connector when category changes
+    setSelectedMethod(null); // Reset method too
+    setCurrentStep('connector');
   };
 
   const handleConnectorSelect = (connectorId: string) => {
     setSelectedConnector(connectorId);
   };
 
-  const handleContinue = () => {
+  const handleContinueToMethod = () => {
     if (!selectedCategory || !selectedConnector) return;
 
-    // Special handling for file uploads - route to quick upload wizard by default
+    // Special handling for file uploads - skip method selection, go straight to quick upload
     if (selectedCategory === 'files') {
       router.push('/manage/connections/new/files/quick');
       return;
     }
 
-    router.push(`/manage/connections/new/connect?category=${selectedCategory}&connector=${selectedConnector}`);
+    setCurrentStep('method');
+  };
+
+  const handleMethodSelected = (method: IngestionMethod) => {
+    setSelectedMethod(method);
+
+    // Route to appropriate wizard based on method
+    const category = selectedCategory!;
+    const connector = selectedConnector!;
+
+    switch (method) {
+      case 'federated':
+        router.push(`/manage/connections/new/federated?category=${category}&connector=${connector}`);
+        break;
+      case 'incremental_query':
+        router.push(`/manage/connections/new/incremental?category=${category}&connector=${connector}`);
+        break;
+      case 'batch_cdc':
+        router.push(`/manage/connections/new/cdc-wizard?category=${category}&connector=${connector}&mode=batch`);
+        break;
+      case 'streaming_cdc':
+        router.push(`/manage/connections/new/cdc-wizard?category=${category}&connector=${connector}&mode=streaming`);
+        break;
+      default:
+        // Fallback to main wizard
+        router.push(`/manage/connections/new/connect?category=${category}&connector=${connector}&method=${method}`);
+    }
   };
 
   const handleBack = () => {
-    if (selectedCategory) {
+    if (currentStep === 'method') {
+      setCurrentStep('connector');
+      setSelectedMethod(null);
+    } else if (currentStep === 'connector') {
+      setCurrentStep('category');
       setSelectedCategory(null);
       setSelectedConnector(null);
+      setSelectedMethod(null);
     } else {
       router.push('/manage/connections');
     }
@@ -263,19 +236,21 @@ export default function NewSourcePage() {
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="space-y-3">
-          <h1 className="text-6xl font-display font-normal tracking-tight">
-            {!selectedCategory ? 'What are you connecting to?' : 'Select your connector'}
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            {!selectedCategory
-              ? 'Select the type of data source you want to connect. We support 238+ connectors across all major platforms.'
-              : `Choose the specific ${sourceCategories.find(c => c.id === selectedCategory)?.title.toLowerCase()} connector you want to use.`}
-          </p>
-        </div>
+        {currentStep !== 'method' && (
+          <div className="space-y-3">
+            <h1 className="text-6xl font-display font-normal tracking-tight">
+              {currentStep === 'category' ? 'What are you connecting to?' : 'Select your connector'}
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              {currentStep === 'category'
+                ? 'Select the type of data source you want to connect. We support 238+ connectors across all major platforms.'
+                : `Choose the specific ${sourceCategories.find(c => c.id === selectedCategory)?.title.toLowerCase()} connector you want to use.`}
+            </p>
+          </div>
+        )}
 
-        {/* Category or Connector Selection */}
-        {!selectedCategory ? (
+        {/* Step 1: Category Selection */}
+        {currentStep === 'category' && (
           <>
             {/* Search */}
             <div className="relative max-w-2xl">
@@ -341,7 +316,10 @@ export default function NewSourcePage() {
               })}
             </div>
           </>
-        ) : (
+        )}
+
+        {/* Step 2: Connector Selection */}
+        {currentStep === 'connector' && selectedCategory && (
           <>
             {/* Category Selector */}
             <Card className="bg-muted/50">
@@ -418,29 +396,39 @@ export default function NewSourcePage() {
           </>
         )}
 
+        {/* Step 3: Method Selection */}
+        {currentStep === 'method' && selectedCategory && selectedConnector && (
+          <MethodSelectionStep
+            onMethodSelected={handleMethodSelected}
+            sourceCategory={selectedCategory}
+            onBack={handleBack}
+          />
+        )}
 
-        {/* Navigation */}
-        <div className="flex items-center justify-between pt-6 border-t">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {!selectedCategory ? 'Back to Sources' : 'Back to Categories'}
-          </Button>
-
-          {selectedConnector && (
+        {/* Navigation - Only show for category and connector steps */}
+        {currentStep !== 'method' && (
+          <div className="flex items-center justify-between pt-6 border-t">
             <Button
-              onClick={handleContinue}
+              variant="outline"
+              onClick={handleBack}
               className="gap-2"
-              size="lg"
             >
-              Continue to Connect & Browse
-              <ArrowRight className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4" />
+              {currentStep === 'category' ? 'Back to Sources' : 'Back to Categories'}
             </Button>
-          )}
-        </div>
+
+            {selectedConnector && currentStep === 'connector' && (
+              <Button
+                onClick={handleContinueToMethod}
+                className="gap-2"
+                size="lg"
+              >
+                Continue to Select Method
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

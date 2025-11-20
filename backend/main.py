@@ -45,6 +45,8 @@ from .api.table_analysis_routes import router as table_analysis_router
 from .api.progressive_workspace_routes import router as progressive_workspace_router
 from .api.user_progression_routes import router as user_progression_router
 from .api.dashboard_intelligence_routes import router as dashboard_intelligence_router
+from .api.dbt_routes import router as dbt_router
+from .api.transformation_routes import router as transformation_router
 # TODO: Fix data_profiling_routes import - missing dependency
 # from .api.data_profiling_routes import router as data_profiling_router
 from .models import schemas  # Import to register models
@@ -169,6 +171,8 @@ app.include_router(table_analysis_router, prefix="/api/table-analysis")
 app.include_router(progressive_workspace_router)
 app.include_router(user_progression_router)
 app.include_router(dashboard_intelligence_router)
+app.include_router(dbt_router, prefix="/api")
+app.include_router(transformation_router)  # Phase 1 & 2: Transformation Registration
 # TODO: Fix data_profiling_router - missing dependency
 # app.include_router(data_profiling_router, prefix="/api")
 

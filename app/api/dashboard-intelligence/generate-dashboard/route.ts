@@ -9,37 +9,55 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
+// Increase Next.js route timeout to 10 minutes for CrewAI operations
+export const maxDuration = 600; // 10 minutes in seconds
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
     console.log('[Dashboard Intelligence] Proxying generation request to backend');
 
-    const response = await fetch(`${BACKEND_URL}/api/dashboard-intelligence/generate-dashboard`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-      // Increase timeout for long-running CrewAI operations (multi-agent workflow takes ~3.5-4 minutes)
-      signal: AbortSignal.timeout(300000), // 5 minutes for full CrewAI workflow
-    });
+    // Create an AbortController with 8-minute timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 480000); // 8 minutes (480 seconds)
 
-    const data = await response.json();
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/dashboard-intelligence/generate-dashboard`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Connection': 'keep-alive',
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+        // @ts-ignore - undici-specific options
+        keepalive: true,
+      });
 
-    console.log(`[Dashboard Intelligence] Backend responded with status ${response.status}`);
+      clearTimeout(timeoutId);
 
-    return NextResponse.json(data, {
-      status: response.status,
-    });
+      const data = await response.json();
+
+      console.log(`[Dashboard Intelligence] Backend responded with status ${response.status}`);
+
+      return NextResponse.json(data, {
+        status: response.status,
+      });
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      throw fetchError;
+    }
   } catch (error: any) {
     console.error('[Dashboard Intelligence] Proxy error:', error);
+    console.error('[Dashboard Intelligence] Error name:', error.name);
+    console.error('[Dashboard Intelligence] Error message:', error.message);
 
     if (error.name === 'AbortError' || error.name === 'TimeoutError') {
       return NextResponse.json(
         {
           success: false,
-          error: 'Dashboard generation timed out. This typically happens with very complex queries. Please try a simpler query or contact support.',
+          error: 'Dashboard generation timed out. This typically happens with very complex queries or when the AI service is under heavy load. Please try again or use a simpler query.',
           valid: false,
           validatedDashboard: null,
           validationErrors: [],

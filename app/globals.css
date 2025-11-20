@@ -38,7 +38,6 @@
 /* Smooth hover effects for command items */
 .nexus-command-palette [data-cmdk-item]:hover {
   background: rgba(91, 110, 255, 0.05) !important;
-  border-left: 2px solid #5B6EFF;
   transform: translateX(2px);
   transition: all 0.2s ease;
 }
@@ -212,7 +211,6 @@
 /* Focus trap styling */
 .nexus-command-palette [data-cmdk-item][data-selected="true"] {
   background: rgba(91, 110, 255, 0.1) !important;
-  border-left: 3px solid #5B6EFF;
 }
 
 /* Context bar styling */
@@ -1188,6 +1186,26 @@ body {
   * {
     @apply border-border;
   }
+
+  /* Remove left borders from dropdown menu items */
+  [role="menuitem"],
+  [data-radix-dropdown-menu-item] {
+    border-left: none !important;
+  }
+
+  [role="menuitem"]:hover,
+  [role="menuitem"]:focus,
+  [role="menuitem"]:focus-visible,
+  [role="menuitem"][data-highlighted],
+  [role="menuitem"][data-state],
+  [data-radix-dropdown-menu-item]:hover,
+  [data-radix-dropdown-menu-item]:focus,
+  [data-radix-dropdown-menu-item]:focus-visible,
+  [data-radix-dropdown-menu-item][data-highlighted],
+  [data-radix-dropdown-menu-item][data-state] {
+    border-left: none !important;
+  }
+
   body {
     @apply text-foreground;
     position: relative;

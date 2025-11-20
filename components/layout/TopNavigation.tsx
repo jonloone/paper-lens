@@ -295,10 +295,10 @@ export const TopNavigation = () => {
       hasDropdown: true,
       dropdownItems: [
         {
-          href: '/analyze/chat',
-          label: 'Chat',
+          href: '/analyze/explore',
+          label: 'Explore',
           icon: 'MessageSquare',
-          description: 'Ask questions about your data'
+          description: 'Ask questions and productize queries'
         },
         {
           href: '/analyze/workbench',

@@ -4,7 +4,7 @@
  * Phase 1 Week 7-8: Backend Integration
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 // ============================================================================
 // Type Definitions (matching backend Pydantic models)

@@ -12,8 +12,8 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
 
-  // Hide nav and dock when in build workspace or explore page
-  const hideNavAndDock = pathname === '/build' || pathname?.startsWith('/build/') || pathname?.startsWith('/explore');
+  // Hide nav and dock when in build workspace or explore pages
+  const hideNavAndDock = pathname === '/build' || pathname?.startsWith('/build/') || pathname?.startsWith('/explore') || pathname?.startsWith('/analyze/explore');
 
   return (
     <div className="min-h-screen relative">

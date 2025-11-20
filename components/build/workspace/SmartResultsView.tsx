@@ -20,7 +20,7 @@ import {
 } from '@/lib/services/dashboard-intelligence-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BarChart3, Info, ChevronDown, ChevronUp, Layout, Database, Table2, Loader2 } from 'lucide-react';
+import { BarChart3, Info, ChevronDown, ChevronUp, Layout, Database, Table2, Loader2, Zap } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -46,6 +46,7 @@ interface SmartResultsViewProps {
   rawColumns?: string[];
   rawRows?: any[][];
   onExport: () => void;
+  onProductize?: () => void; // Callback to productize this query
   dataSources?: DataSource[]; // Data sources used in the query
 }
 
@@ -58,6 +59,7 @@ export function SmartResultsView({
   rawColumns,
   rawRows,
   onExport,
+  onProductize,
   dataSources,
 }: SmartResultsViewProps) {
   const [showReasoning, setShowReasoning] = useState(false);
@@ -400,12 +402,27 @@ export function SmartResultsView({
         <div className="border-t border-border">
           {/* Table Header */}
           <div className="px-4 py-3 bg-muted/30 border-b border-border">
-            <div className="flex items-center gap-2">
-              <Table2 className="h-4 w-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold text-foreground">Query Results</h3>
-              <Badge variant="secondary" className="text-xs">
-                {result.rowCount} rows
-              </Badge>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Table2 className="h-4 w-4 text-muted-foreground" />
+                <h3 className="text-sm font-semibold text-foreground">Query Results</h3>
+                <Badge variant="secondary" className="text-xs">
+                  {result.rowCount} rows
+                </Badge>
+              </div>
+
+              {/* Productize Button - Only show if onProductize handler provided and we have SQL */}
+              {onProductize && sql && result.rowCount > 0 && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={onProductize}
+                  className="h-7 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Zap className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium">Productize This Query</span>
+                </Button>
+              )}
             </div>
           </div>
           {/* Table Content - No separate scroll, part of document flow */}
